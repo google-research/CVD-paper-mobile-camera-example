@@ -1,8 +1,13 @@
-.idea
+**/.idea
 .gradle
 **/.gradle
 !**/gradle/wrapper/gradle-wrapper.jar
 !**/gradle/wrapper/gradle-wrapper.properties
-**/build
-**/local.properties
+build
+local.properties
 **/.DS_Store
+*.iml
+**/local.properties
+**/captures
+.externalNativeBuild
+.cxx
