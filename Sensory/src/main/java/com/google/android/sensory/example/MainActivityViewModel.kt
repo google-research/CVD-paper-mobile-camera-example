@@ -10,7 +10,7 @@ import kotlinx.coroutines.launch
 class MainActivityViewModel(application: Application) : AndroidViewModel(application)  {
   fun triggerOneTimeSync() {
     viewModelScope.launch {
-      UploadSync.enqueueUniqueWork<AppSensorDataUploadWorker>(getApplication())
+      UploadSync.enqueueUploadUniqueWork<AppSensorDataUploadWorker>(getApplication())
     }
   }
 }

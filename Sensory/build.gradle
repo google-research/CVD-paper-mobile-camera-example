@@ -3,6 +3,7 @@ plugins {
     id "kotlin-android"
     id "kotlin-kapt"
     id "com.google.devtools.ksp" version "1.8.10-1.0.9"
+    id "androidx.navigation.safeargs"
 }
 
 android {
@@ -33,6 +34,9 @@ android {
     }
     buildFeatures {
         viewBinding = true
+    }
+    packagingOptions {
+        exclude "META-INF/*"
     }
 }
 
@@ -89,15 +93,18 @@ dependencies {
     //========= reactive streams =========//
 
     //========= fitbit.sensing.common.libraries =========//
-    // https://mvnrepository.com/artifact/com.google.guava/guava
-    annotationProcessor("com.google.auto.value:auto-value:1.10.1")
     implementation("com.google.auto.value:auto-value-annotations:1.10.1")
+    // https://mvnrepository.com/artifact/com.google.guava/guava
+    kapt "com.google.auto.value:auto-value:1.10.1"
     // https://mvnrepository.com/artifact/com.google.flogger/flogger
     implementation("com.google.flogger:flogger:0.7.4")
+    // https://mvnrepository.com/artifact/org.apache.commons/commons-csv
+    implementation("org.apache.commons:commons-csv:1.10.0")
     //========= fitbit.sensing.common.libraries =========//
 
     //========= FHIR SDC =========//
-//    implementation("com.google.android.fhir.data-capture:1.0.0")
+    implementation("com.google.android.fhir:data-capture:1.0.0")
+    implementation("com.google.android.fhir:engine:0.1.0-beta03")
     //========= FHIR SDC =========//
 
 

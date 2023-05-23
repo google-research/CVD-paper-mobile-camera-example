@@ -111,7 +111,7 @@ internal class SensingEngineImpl(
           resourceInfoId = resourceInfo.resourceInfoId,
           zipFile = outputZipFile,
           fileSize = File(outputZipFile).length(),
-          uploadURL = resourceFolderRelativePath,
+          uploadURL = "$resourceFolderRelativePath.zip",
           lastUpdatedTime = Date.from(Instant.now()),
           bytesUploaded = 0L,
           status = RequestStatus.PENDING,

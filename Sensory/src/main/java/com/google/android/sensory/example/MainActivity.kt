@@ -18,6 +18,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.camera2.interop.CaptureRequestOptions
 import androidx.core.app.ActivityCompat
 import androidx.fragment.app.Fragment
+import androidx.navigation.fragment.NavHostFragment
 import com.google.android.sensory.R
 import com.google.android.sensory.example.data.AppSensorDataUploadWorker
 import com.google.android.sensory.sensing_sdk.capture.model.CaptureSettings
@@ -39,16 +40,8 @@ class MainActivity : AppCompatActivity() {
     if (!hasPermissions()) {
       permissionsRequestCount = 0
       ActivityCompat.requestPermissions(this, REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS)
-    } else {
-      startHomeFragment()
     }
-  }
-
-  private fun startHomeFragment() {
     // UploadSync.enqueueUploadPeriodicWork<AppSensorDataUploadWorker>(applicationContext)
-    participantId = ""
-    val homeFragment: Fragment = HomeFragment()
-    supportFragmentManager.beginTransaction().replace(R.id.flContainer, homeFragment).commit()
   }
 
   private fun hasPermissions(): Boolean {
@@ -82,8 +75,6 @@ class MainActivity : AppCompatActivity() {
           val dialog = builder.create()
           dialog.show()
         }
-      } else {
-        startHomeFragment()
       }
     }
   }

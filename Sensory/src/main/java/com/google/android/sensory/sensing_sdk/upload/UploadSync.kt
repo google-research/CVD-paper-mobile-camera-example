@@ -14,7 +14,7 @@ import com.google.android.sensory.sensing_sdk.defaultPeriodicSyncConfiguration
 import com.google.android.sensory.sensing_sdk.defaultRetryConfiguration
 
 object UploadSync {
-  inline fun <reified  W: SensorDataUploadWorker> enqueueUniqueWork(
+  inline fun <reified  W: SensorDataUploadWorker> enqueueUploadUniqueWork(
     context: Context,
     retryConfiguration: RetryConfiguration = defaultRetryConfiguration
   ) {

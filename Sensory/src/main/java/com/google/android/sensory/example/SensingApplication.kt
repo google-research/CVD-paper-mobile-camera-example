@@ -2,15 +2,21 @@ package com.google.android.sensory.example
 
 import android.app.Application
 import android.content.Context
+import com.google.android.fhir.FhirEngine
+import com.google.android.fhir.FhirEngineProvider
 import com.google.android.sensory.sensing_sdk.SensingEngine
 import com.google.android.sensory.sensing_sdk.SensingEngineProvider
 import com.google.android.sensory.sensing_sdk.UploadConfiguration
 import java.util.Properties
 
 class SensingApplication: Application() {
+  private val fhirEngine by lazy { constructFhirEngine() }
   private val sensingEngine by lazy { constructSensingEngine() }
   private val uploadConfiguration by lazy { constructUploadConfiguration() }
 
+  private fun constructFhirEngine(): FhirEngine {
+    return FhirEngineProvider.getInstance(this)
+  }
   private fun constructSensingEngine(): SensingEngine {
     SensingEngineProvider.init(uploadConfiguration)
     return SensingEngineProvider.getOrCreateSensingEngine(
@@ -31,6 +37,8 @@ class SensingApplication: Application() {
   }
 
   companion object{
+
+    fun fhirEngine(context: Context) = (context.applicationContext as SensingApplication).fhirEngine
     fun sensingEngine(context: Context) = (context.applicationContext as SensingApplication).sensingEngine
 
     fun uploadConfiguration(context: Context) = (context.applicationContext as SensingApplication).uploadConfiguration
