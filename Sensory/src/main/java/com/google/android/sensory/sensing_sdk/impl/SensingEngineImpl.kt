@@ -161,6 +161,7 @@ internal class SensingEngineImpl(
           uploadRequest.apply {
             lastUpdatedTime = result.lastUploadTime
             bytesUploaded = uploadRequest.bytesUploaded + result.bytesUploaded
+            nextPart = uploadRequest.nextPart + 1
           }
         }
         is UploadResult.Completed -> {
