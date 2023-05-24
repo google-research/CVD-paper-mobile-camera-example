@@ -54,5 +54,10 @@
   <!--  From FHIR demo-->
   <string name="submit">Submit</string>
   <string name="add_patient">Add Patient</string>
+  <string
+      name="cancel_questionnaire_message"
+      >Are you sure you want to discard the answers?</string>
+  <string name="inputs_missing">Inputs are missing.</string>
+  <string name="resources_saved">Resources are saved.</string>
   <!--  From FHIR demo-->
 </resources>

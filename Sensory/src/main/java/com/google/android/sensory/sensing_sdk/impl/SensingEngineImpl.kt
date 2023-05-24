@@ -37,7 +37,7 @@ internal class SensingEngineImpl(
   private val database: Database,
   private val context: Context,
   private val uploadConfiguration: UploadConfiguration
-): SensingEngine {
+) : SensingEngine {
 
   private val contextWrapper = ContextWrapper(context)
   override fun captureSensorData(
@@ -45,8 +45,8 @@ internal class SensingEngineImpl(
     folderId: String,
     captureType: CaptureType,
     captureSettings: CaptureSettings,
-    captureId: String?
-  ){
+    captureId: String?,
+  ) {
     val captureManager = CaptureManager(context)
     val captureInfo = CaptureInfo(
       folderId = folderId,
@@ -55,10 +55,12 @@ internal class SensingEngineImpl(
       captureId = captureId ?: UUID.randomUUID().toString(),
       captureSettings = captureSettings
     )
-    if(captureId != null){
+    if (captureId != null) {
       // delete everything in folder associated with this captureId to re-capture
-      val file = contextWrapper.getDir(captureInfo.captureFolder, Context.MODE_PRIVATE)
-      file.deleteRecursively()
+      if (File(captureInfo.captureFolder).exists()) {
+        val file = contextWrapper.getDir(captureInfo.captureFolder, Context.MODE_PRIVATE)
+        file.deleteRecursively()
+      }
     }
     runBlocking {
       database.addCaptureInfo(captureInfo)
@@ -93,13 +95,17 @@ internal class SensingEngineImpl(
         database.addResourceInfo(resourceInfo)
         /** Zipping logic from: https://stackoverflow.com/a/63828765*/
         /** CaptureManager stores files here*/
-        val resourceFolder = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), resourceFolderRelativePath)
+        val resourceFolder = File(
+          Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
+          resourceFolderRelativePath
+        )
         val outputZipFile = resourceFolder.absolutePath + ".zip"
         val zipOutputStream = ZipOutputStream(BufferedOutputStream(FileOutputStream(outputZipFile)))
         zipOutputStream.use { zos ->
           resourceFolder.walkTopDown().forEach { file ->
-            val zipFileName = file.absolutePath.removePrefix(resourceFolder.absolutePath).removePrefix("/")
-            val entry = ZipEntry( "$zipFileName${(if (file.isDirectory) "/" else "" )}")
+            val zipFileName =
+              file.absolutePath.removePrefix(resourceFolder.absolutePath).removePrefix("/")
+            val entry = ZipEntry("$zipFileName${(if (file.isDirectory) "/" else "")}")
             zos.putNextEntry(entry)
             if (file.isFile) {
               file.inputStream().use { fis -> fis.copyTo(zos) }
@@ -145,18 +151,19 @@ internal class SensingEngineImpl(
     // uploadRequest.status = RequestStatus.UPLOADING
     // println("Uploaded part ${uploadRequest.nextPart - 1} until ${uploadRequest.bytesUploaded}")
     // return uploadRequest.status
-    upload(database.listUploadRequests(RequestStatus.PENDING)).collect{ result ->
+    upload(database.listUploadRequests(RequestStatus.PENDING)).collect { result ->
       val uploadRequest = result.uploadRequest
       val requestsPreviousStatus = uploadRequest.status
-      when(result){
+      when (result) {
         is UploadResult.Started -> {
-          uploadRequest.apply{
+          uploadRequest.apply {
             lastUpdatedTime = result.startTime
             bytesUploaded = 0
             status = RequestStatus.UPLOADING
             uploadId = result.uploadId
           }
         }
+
         is UploadResult.Success -> {
           uploadRequest.apply {
             lastUpdatedTime = result.lastUploadTime
@@ -164,6 +171,7 @@ internal class SensingEngineImpl(
             nextPart = uploadRequest.nextPart + 1
           }
         }
+
         is UploadResult.Completed -> {
           assert(uploadRequest.bytesUploaded == uploadRequest.fileSize)
           uploadRequest.apply {
@@ -171,6 +179,7 @@ internal class SensingEngineImpl(
             status = RequestStatus.UPLOADED
           }
         }
+
         is UploadResult.Failure -> {
           uploadRequest.apply {
             lastUpdatedTime = uploadRequest.lastUpdatedTime
@@ -180,7 +189,7 @@ internal class SensingEngineImpl(
       }
       database.updateUploadRequest(uploadRequest)
       // Update status of ResourceInfo only when UploadRequest.status changes
-      if(requestsPreviousStatus != uploadRequest.status){
+      if (requestsPreviousStatus != uploadRequest.status) {
         val resourceInfo = database.getResourceInfo(uploadRequest.resourceInfoId)!!
         resourceInfo.apply {
           status = uploadRequest.status
@@ -198,17 +207,17 @@ internal class SensingEngineImpl(
     TODO("Not yet implemented")
   }
 
-  companion object{
+  companion object {
     /** File format is configured in captureSettings. */
-    private fun resourceInfoFileType(sensorType: SensorType, captureInfo: CaptureInfo): String{
-      return when(sensorType){
+    private fun resourceInfoFileType(sensorType: SensorType, captureInfo: CaptureInfo): String {
+      return when (sensorType) {
         SensorType.CAMERA -> captureInfo.captureSettings.fileTypeMap[sensorType]!!
       }
     }
 
     /** Returns folder for a specific sensor type in For both captureType we zip the stored files into a folder for uploading*/
-    fun resourceInfoFileUri(sensorType: SensorType, captureInfo: CaptureInfo): String{
-      return when(captureInfo.captureType){
+    fun resourceInfoFileUri(sensorType: SensorType, captureInfo: CaptureInfo): String {
+      return when (captureInfo.captureType) {
         CaptureType.IMAGE -> "${captureInfo.captureFolder}/${sensorType.name}"
         CaptureType.VIDEO_PPG -> "${captureInfo.captureFolder}/${sensorType.name}"
       }
