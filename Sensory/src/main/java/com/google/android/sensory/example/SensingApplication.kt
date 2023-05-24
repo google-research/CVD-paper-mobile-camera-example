@@ -22,11 +22,7 @@ class SensingApplication : Application(), DataCaptureConfig.Provider {
 
   override fun onCreate() {
     super.onCreate()
-    dataCaptureConfig =
-      DataCaptureConfig().apply {
-        // urlResolver = ReferenceUrlResolver(this@SensingApplication as Context)
-        // xFhirQueryResolver = XFhirQueryResolver { fhirEngine.search(it) }
-      }
+    dataCaptureConfig = DataCaptureConfig()
   }
 
   private fun constructFhirEngine(): FhirEngine {

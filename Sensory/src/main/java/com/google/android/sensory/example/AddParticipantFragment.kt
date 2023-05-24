@@ -101,13 +101,6 @@ class AddParticipantFragment : Fragment(R.layout.fragment_add_participant) {
         return@observe
       }
       Toast.makeText(requireContext(), "Patient is saved.", Toast.LENGTH_SHORT).show()
-      SensingApplication.sensingEngine(requireContext().applicationContext).captureSensorData(
-        context = requireActivity(),
-        folderId = "Participant_${it.idElement.idPart}",
-        captureType = CaptureType.VIDEO_PPG,
-        captureSettings =  CaptureSettings(fileTypeMap = mapOf(SensorType.CAMERA to "jpeg")),
-        captureId = null
-      )
       findNavController().navigate(
         AddParticipantFragmentDirections.actionAddParticipantFragmentToAnemiaScreenerFragment(it.idElement.idPart))
     }

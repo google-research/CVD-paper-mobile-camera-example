@@ -51,16 +51,14 @@ internal class SensingEngineImpl(
     val captureInfo = CaptureInfo(
       folderId = folderId,
       captureType = captureType,
-      captureFolder = "Sensory/Participant_${folderId}/${captureType.name}",
+      captureFolder = "Sensory/${folderId}/${captureType.name}",
       captureId = captureId ?: UUID.randomUUID().toString(),
       captureSettings = captureSettings
     )
     if (captureId != null) {
       // delete everything in folder associated with this captureId to re-capture
-      if (File(captureInfo.captureFolder).exists()) {
-        val file = contextWrapper.getDir(captureInfo.captureFolder, Context.MODE_PRIVATE)
-        file.deleteRecursively()
-      }
+      val file = contextWrapper.getDir(captureInfo.captureFolder, Context.MODE_PRIVATE)
+      file.deleteRecursively()
     }
     runBlocking {
       database.addCaptureInfo(captureInfo)

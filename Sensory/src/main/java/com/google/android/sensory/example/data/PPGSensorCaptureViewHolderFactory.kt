@@ -10,6 +10,7 @@ import com.google.android.fhir.datacapture.views.factories.QuestionnaireItemView
 import com.google.android.fhir.datacapture.views.factories.QuestionnaireItemViewHolderFactory
 import com.google.android.sensory.R
 import com.google.android.sensory.example.SensingApplication
+import com.google.android.sensory.example.data.AnemiaScreenerFragment.Companion.SENSOR_CAPTURE_FOLDER
 import com.google.android.sensory.sensing_sdk.SensingEngine
 import com.google.android.sensory.sensing_sdk.capture.model.CaptureSettings
 import com.google.android.sensory.sensing_sdk.model.CaptureType
@@ -26,7 +27,7 @@ object PPGSensorCaptureViewHolderFactory :
       override lateinit var questionnaireViewItem: QuestionnaireViewItem
       private lateinit var capturePpgButton: Button
       private lateinit var textView: TextView
-      private lateinit var captureId: String
+      private var captureId: String? = null
       private lateinit var context: AppCompatActivity
       private lateinit var sensingEngine: SensingEngine
 
@@ -41,10 +42,6 @@ object PPGSensorCaptureViewHolderFactory :
 
       override fun bind(questionnaireViewItem: QuestionnaireViewItem) {
         this.questionnaireViewItem = questionnaireViewItem
-        captureId = if (questionnaireViewItem.answers.isEmpty())
-          UUID.randomUUID().toString()
-        else
-          questionnaireViewItem.answers.first().valueCoding.code
         displayCapturePpgButton(questionnaireViewItem.questionnaireItem)
         capturePpgButton.setOnClickListener { view ->
           onCapturePpgButtonClicked(
@@ -68,7 +65,7 @@ object PPGSensorCaptureViewHolderFactory :
         questionnaireViewItem: QuestionnaireViewItem,
       ) {
 
-        val folderId = UUID.randomUUID().toString()
+        val folderId = SENSOR_CAPTURE_FOLDER
         sensingEngine.captureSensorData(
           context = this.context,
           folderId = folderId,

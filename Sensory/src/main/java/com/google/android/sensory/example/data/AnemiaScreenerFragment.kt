@@ -125,5 +125,6 @@ class AnemiaScreenerFragment : Fragment(R.layout.fragment_anemia_screening) {
   companion object {
     const val QUESTIONNAIRE_FILE_PATH_KEY = "questionnaire-file-path-key"
     const val QUESTIONNAIRE_FRAGMENT_TAG = "questionnaire-fragment-tag"
+    const val SENSOR_CAPTURE_FOLDER = "AnemiaStudy"
   }
 }

@@ -162,7 +162,7 @@ class AnemiaScreenerViewModel(application: Application, private val state: Saved
     bundle.entry.forEach {
       when (val resource = it.resource) {
         is DocumentReference -> {
-          val captureId = resource.type.coding[0].code
+          val captureId = if (resource.type.coding.isNullOrEmpty()) "" else resource.type.coding[0].code
           resource.id = generateUuid()
           resource.status = Enumerations.DocumentReferenceStatus.CURRENT
           resource.subject = subjectReference
