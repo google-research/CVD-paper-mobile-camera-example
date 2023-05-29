@@ -10,11 +10,11 @@ import com.google.android.sensory.sensing_sdk.model.UploadRequest
 import net.sqlcipher.database.SQLiteDatabase
 import net.sqlcipher.database.SupportFactory
 
-internal class DatabaseImpl(context: Context, enableEncryption: Boolean): Database{
+internal class DatabaseImpl(context: Context, enableEncryption: Boolean) : Database {
   val db: ResourceDatabase = Room
     .databaseBuilder(context, ResourceDatabase::class.java, ENCRYPTED_DATABASE_NAME)
     .apply {
-      if(enableEncryption){
+      if (enableEncryption) {
         openHelperFactory(SupportFactory(SQLiteDatabase.getBytes("PassPhrase".toCharArray())))
       }
     }
@@ -60,7 +60,7 @@ internal class DatabaseImpl(context: Context, enableEncryption: Boolean): Databa
     return resourceInfoDao.getResourceInfo(resourceInfoId)
   }
 
-  companion object{
+  companion object {
     const val ENCRYPTED_DATABASE_NAME = "sensor_resources_encrypted.db"
   }
 }

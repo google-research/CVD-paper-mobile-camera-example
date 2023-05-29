@@ -13,11 +13,14 @@ import java.io.OutputStreamWriter;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 
-/** Helper methods for {@link Files} compatible with older Android versions. */
+/**
+ * Helper methods for {@link Files} compatible with older Android versions.
+ */
 @CheckReturnValue
 public final class FilesCompat {
 
-  private FilesCompat() {}
+  private FilesCompat() {
+  }
 
   public static BufferedWriter newBufferedWriter(File file) throws IOException {
     return newBufferedWriter(file, UTF_8);

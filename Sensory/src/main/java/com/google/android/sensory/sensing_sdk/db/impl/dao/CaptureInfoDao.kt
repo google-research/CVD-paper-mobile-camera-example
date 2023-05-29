@@ -13,10 +13,10 @@ internal abstract class CaptureInfoDao {
   abstract suspend fun insertCaptureInfoEntity(captureInfoEntity: CaptureInfoEntity)
 
   @Transaction
-  open suspend fun insertCaptureInfo(captureInfo: CaptureInfo): String{
+  open suspend fun insertCaptureInfo(captureInfo: CaptureInfo): String {
     // convert to CaptureInfoEntity and insert
     val entity: CaptureInfoEntity
-    with(captureInfo){
+    with(captureInfo) {
       entity = CaptureInfoEntity(
         id = 0,
         participantId = participantId,

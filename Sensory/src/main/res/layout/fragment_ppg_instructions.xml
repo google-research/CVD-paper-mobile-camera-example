@@ -33,10 +33,10 @@
         android:gravity="center_vertical"
         android:text="@string/step1_instruction1"
         android:textAppearance="@style/text_style"
+        app:drawableStartCompat="@drawable/one_icon"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/iv_ppg"
-        app:drawableStartCompat="@drawable/one_icon" />
+        app:layout_constraintTop_toBottomOf="@id/iv_ppg" />
     <TextView
         android:id="@+id/tv_step1_instruction2"
         android:layout_width="0dp"
@@ -46,10 +46,10 @@
         android:gravity="center_vertical"
         android:text="@string/step1_instruction2"
         android:textAppearance="@style/text_style"
+        app:drawableStartCompat="@drawable/two_icon"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tv_step1_instruction1"
-        app:drawableStartCompat="@drawable/two_icon" />
+        app:layout_constraintTop_toBottomOf="@id/tv_step1_instruction1" />
     <TextView
         android:id="@+id/tv_step1_instruction3"
         android:layout_width="0dp"
@@ -59,10 +59,10 @@
         android:gravity="center_vertical"
         android:text="@string/step1_instruction3"
         android:textAppearance="@style/text_style"
+        app:drawableStartCompat="@drawable/three_icon"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tv_step1_instruction2"
-        app:drawableStartCompat="@drawable/three_icon" />
+        app:layout_constraintTop_toBottomOf="@id/tv_step1_instruction2" />
     <TextView
         android:id="@+id/tv_ppg_instructions_title"
         android:layout_width="0dp"

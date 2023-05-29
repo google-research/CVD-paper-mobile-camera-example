@@ -8,6 +8,7 @@ import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 
 // TODO(b/212072718) - Consider making an interface and using single abstract method.
+
 /**
  * Basic implementation of {@link Subscriber} that requests an unbounded number of values.
  *
@@ -17,14 +18,27 @@ import org.reactivestreams.Subscription;
  * <p>This class includes empty implementations for the {@link #onError} and {@link onComplete}
  * methods.
  */
-@CheckReturnValue // see go/why-crv
+@CheckReturnValue 
 public abstract class AbstractUnboundedSubscriber<T> implements Subscriber<T> {
 
-  @Nullable private Subscription subscription;
+  @Nullable
+  private Subscription subscription;
 
-  protected AbstractUnboundedSubscriber() {}
+  protected AbstractUnboundedSubscriber() {
+  }
 
-  /** Requests an unbounded number of events from provided {@link Subscription}. */
+  public static <T> Subscriber<T> of(Consumer<T> onNextHandler) {
+    return new AbstractUnboundedSubscriber<T>() {
+      @Override
+      public void onNext(T t) {
+        onNextHandler.accept(t);
+      }
+    };
+  }
+
+  /**
+   * Requests an unbounded number of events from provided {@link Subscription}.
+   */
   @Override
   public void onSubscribe(Subscription subscription) {
     if (this.subscription != null) {
@@ -43,17 +57,10 @@ public abstract class AbstractUnboundedSubscriber<T> implements Subscriber<T> {
   public abstract void onNext(T t);
 
   @Override
-  public void onError(Throwable throwable) {}
+  public void onError(Throwable throwable) {
+  }
 
   @Override
-  public void onComplete() {}
-
-  public static <T> Subscriber<T> of(Consumer<T> onNextHandler) {
-    return new AbstractUnboundedSubscriber<T>() {
-      @Override
-      public void onNext(T t) {
-        onNextHandler.accept(t);
-      }
-    };
+  public void onComplete() {
   }
 }

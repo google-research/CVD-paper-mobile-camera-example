@@ -38,7 +38,6 @@ import org.hl7.fhir.r4.model.Condition
 import org.hl7.fhir.r4.model.DocumentReference
 import org.hl7.fhir.r4.model.Encounter
 import org.hl7.fhir.r4.model.Enumerations
-import org.hl7.fhir.r4.model.Identifier
 import org.hl7.fhir.r4.model.Observation
 import org.hl7.fhir.r4.model.Questionnaire
 import org.hl7.fhir.r4.model.QuestionnaireResponse
@@ -65,7 +64,8 @@ class AnemiaScreenerViewModel(application: Application, private val state: Saved
   private var questionnaireJson: String? = null
   private var fhirEngine: FhirEngine = SensingApplication.fhirEngine(application.applicationContext)
 
-  private var sensingEngine: SensingEngine = SensingApplication.sensingEngine(application.applicationContext)
+  private var sensingEngine: SensingEngine =
+    SensingApplication.sensingEngine(application.applicationContext)
 
   /**
    * Saves screener encounter questionnaire response into the application database.
@@ -183,7 +183,8 @@ class AnemiaScreenerViewModel(application: Application, private val state: Saved
     bundle.entry.forEach {
       when (val resource = it.resource) {
         is DocumentReference -> {
-          val captureId = if (resource.type.coding.isNullOrEmpty()) "" else resource.type.coding[0].code
+          val captureId =
+            if (resource.type.coding.isNullOrEmpty()) "" else resource.type.coding[0].code
           resource.id = generateUuid()
           resource.status = Enumerations.DocumentReferenceStatus.CURRENT
           resource.subject = subjectReference

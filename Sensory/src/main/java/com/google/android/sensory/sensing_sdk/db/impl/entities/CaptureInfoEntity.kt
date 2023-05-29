@@ -9,12 +9,12 @@ import com.google.android.sensory.sensing_sdk.model.CaptureType
   indices = [
     Index(value = ["captureId"], unique = true),
     Index(value = ["captureFolder"], unique = true),
-    ]
+  ]
 )
 internal data class CaptureInfoEntity(
-  @PrimaryKey (autoGenerate = true) val id: Long,
+  @PrimaryKey(autoGenerate = true) val id: Long,
   val participantId: String,
   val captureType: CaptureType,
   val captureFolder: String,
-  val captureId: String
+  val captureId: String,
 )

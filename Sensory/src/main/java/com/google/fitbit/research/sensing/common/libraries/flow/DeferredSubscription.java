@@ -9,7 +9,8 @@ import javax.annotation.Nullable;
 import org.reactivestreams.Subscription;
 
 /**
- * {@link Subscription} that allows requests to be made before an upstream Subscription is attached.
+ * {@link Subscription} that allows requests to be made before an upstream Subscription is
+ * attached.
  *
  * <p>DeferredSubscription can be used to implement Processors that allow adding Subscribers before
  * the Processor itself is subscribed to a Publisher:
@@ -35,14 +36,16 @@ import org.reactivestreams.Subscription;
  * publisher.subscribe(processor);
  * }</pre>
  */
-@CheckReturnValue // see go/why-crv
+@CheckReturnValue 
 public class DeferredSubscription implements Subscription {
 
-  @Nullable private Subscription subscription;
+  @Nullable
+  private Subscription subscription;
   private boolean cancelled;
   private long requests;
 
-  public DeferredSubscription() {}
+  public DeferredSubscription() {
+  }
 
   @Override
   public synchronized void request(long n) {

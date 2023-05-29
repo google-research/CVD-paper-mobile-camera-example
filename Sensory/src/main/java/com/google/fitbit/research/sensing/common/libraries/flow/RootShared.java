@@ -16,14 +16,13 @@ import org.reactivestreams.Subscriber;
  * <p>This is generally done in a {@link org.reactivestreams.Publisher} so that multiple {@link
  * org.reactivestreams.Subscriber}s can safely shared the same resource.
  */
-@CheckReturnValue // see go/why-crv
+@CheckReturnValue 
 public class RootShared<T extends AutoCloseable> implements Shared<T>, AutoCloseable {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
-
+  private final Set<Object> keys;
   private T value;
   private Object rootKey;
-  private final Set<Object> keys;
 
   public RootShared(T value, Publisher<?> rootKey) {
     checkNotNull(value);
@@ -32,28 +31,6 @@ public class RootShared<T extends AutoCloseable> implements Shared<T>, AutoClose
     this.rootKey = rootKey;
     this.keys = new HashSet<>();
     this.keys.add(rootKey);
-  }
-
-  private class InnerHolder implements Shared.Holder<T> {
-    private final Object key;
-
-    private InnerHolder(Object key) {
-      this.key = key;
-    }
-
-    @Override
-    public void close() {
-      releaseInternal(key);
-    }
-
-    @Override
-    public T get() {
-      synchronized (keys) {
-        checkState(keys.contains(key), "Cannot retrieve value from closed Holder");
-        checkNotNull(value);
-        return value;
-      }
-    }
   }
 
   @Override
@@ -94,13 +71,39 @@ public class RootShared<T extends AutoCloseable> implements Shared<T>, AutoClose
     rootKey = null;
   }
 
-  /** Thrown when {@link #acquire} fails because the underlying object has already been closed. */
+  /**
+   * Thrown when {@link #acquire} fails because the underlying object has already been closed.
+   */
   public static final class ClosedException extends RuntimeException {
+
     public ClosedException() {
       super(
           "Failed to acquire a Shared that has already been fully closed. Check that all uses of"
               + " Subscriber<Shared> and Processor<Shared> are immediately calling acquire() in"
               + " onNext().");
+    }
+  }
+
+  private class InnerHolder implements Shared.Holder<T> {
+
+    private final Object key;
+
+    private InnerHolder(Object key) {
+      this.key = key;
+    }
+
+    @Override
+    public void close() {
+      releaseInternal(key);
+    }
+
+    @Override
+    public T get() {
+      synchronized (keys) {
+        checkState(keys.contains(key), "Cannot retrieve value from closed Holder");
+        checkNotNull(value);
+        return value;
+      }
     }
   }
 }

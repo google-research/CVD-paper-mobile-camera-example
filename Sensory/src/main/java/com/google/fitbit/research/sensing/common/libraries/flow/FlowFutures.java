@@ -9,12 +9,14 @@ import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 
 /**
- * Contains methods for creating one-time {@link ListenableFuture}s from continuous ReactiveStreams.
+ * Contains methods for creating one-time {@link ListenableFuture}s from continuous
+ * ReactiveStreams.
  */
-@CheckReturnValue // see go/why-crv
+@CheckReturnValue 
 public final class FlowFutures {
 
-  private FlowFutures() {}
+  private FlowFutures() {
+  }
 
   public static <T> ListenableFuture<ImmutableList<T>> toList(Publisher<T> publisher, int counts) {
     ListFutureSubscriber<T> subscriber = new ListFutureSubscriber<T>(counts);

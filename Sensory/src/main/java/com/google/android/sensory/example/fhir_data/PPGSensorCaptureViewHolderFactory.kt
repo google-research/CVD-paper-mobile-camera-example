@@ -44,10 +44,14 @@ object PPGSensorCaptureViewHolderFactory :
       private lateinit var sensingEngine: SensingEngine
 
       override fun init(itemView: View) {
-        itemView.findViewById<Button>(com.google.android.fhir.datacapture.R.id.helpButton).visibility = View.GONE
-        itemView.findViewById<MaterialCardView>(com.google.android.fhir.datacapture.R.id.helpCardView).visibility = View.GONE
-        itemView.findViewById<TextView>(com.google.android.fhir.datacapture.R.id.helpText).visibility = View.GONE
-        itemView.findViewById<Button>(com.google.android.fhir.datacapture.R.id.file_delete).visibility = View.GONE
+        itemView.findViewById<Button>(com.google.android.fhir.datacapture.R.id.helpButton).visibility =
+          View.GONE
+        itemView.findViewById<MaterialCardView>(com.google.android.fhir.datacapture.R.id.helpCardView).visibility =
+          View.GONE
+        itemView.findViewById<TextView>(com.google.android.fhir.datacapture.R.id.helpText).visibility =
+          View.GONE
+        itemView.findViewById<Button>(com.google.android.fhir.datacapture.R.id.file_delete).visibility =
+          View.GONE
         takePhotoButton = itemView.findViewById(com.google.android.fhir.datacapture.R.id.take_photo)
         takePhotoButton.text = "Capture PPG"
         filePreview = itemView.findViewById(com.google.android.fhir.datacapture.R.id.file_preview)
@@ -61,7 +65,12 @@ object PPGSensorCaptureViewHolderFactory :
         this.questionnaireViewItem = questionnaireViewItem
         displayOrClearInitialPreview()
         displayCapturePpgButton(questionnaireViewItem.questionnaireItem)
-        takePhotoButton.setOnClickListener { view -> onCapturePpgButtonClicked(view, questionnaireViewItem) }
+        takePhotoButton.setOnClickListener { view ->
+          onCapturePpgButtonClicked(
+            view,
+            questionnaireViewItem
+          )
+        }
       }
 
       override fun setReadOnly(isReadOnly: Boolean) {
@@ -72,7 +81,7 @@ object PPGSensorCaptureViewHolderFactory :
         takePhotoButton.visibility = View.VISIBLE
       }
 
-      private fun displayOrClearInitialPreview(){
+      private fun displayOrClearInitialPreview() {
         val answer = questionnaireViewItem.answers.firstOrNull()
         // Clear preview if there is no answer to prevent showing old previews in views that have
         // been recycled.
@@ -87,7 +96,7 @@ object PPGSensorCaptureViewHolderFactory :
           CoroutineScope(Dispatchers.IO).launch {
             livePath.postValue(sensingEngine.listResourceInfoInCapture(captureId)[0].title)
           }
-          livePath.observe(context){
+          livePath.observe(context) {
             loadFilePreview(com.google.android.fhir.datacapture.R.drawable.ic_document_file, it)
           }
         }
@@ -102,7 +111,7 @@ object PPGSensorCaptureViewHolderFactory :
           context
         ) { _, result ->
           val captured = result.getBoolean(CaptureFragment.CAPTURED)
-          if(!captured){
+          if (!captured) {
             return@setFragmentResultListener
           }
           val captureId = result.getString(CaptureFragment.CAPTURE_ID)
@@ -120,8 +129,9 @@ object PPGSensorCaptureViewHolderFactory :
           context,
         ) { _, result ->
           context.supportFragmentManager.popBackStack()
-          val instructionsUnderstood = result.getBoolean(InstructionsFragment.INSTRUCTION_UNDERSTOOD)
-          if(!instructionsUnderstood){
+          val instructionsUnderstood =
+            result.getBoolean(InstructionsFragment.INSTRUCTION_UNDERSTOOD)
+          if (!instructionsUnderstood) {
             return@setFragmentResultListener
           }
           /** [TODO] Need to get patientId anyhow! */

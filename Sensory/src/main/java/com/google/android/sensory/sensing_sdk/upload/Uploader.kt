@@ -1,10 +1,10 @@
 package com.google.android.sensory.sensing_sdk.upload
+
 import com.google.android.sensory.sensing_sdk.model.UploadRequest
 import com.google.android.sensory.sensing_sdk.model.UploadResult
 import com.google.common.collect.HashMultimap
 import io.minio.ListPartsResponse
 import io.minio.MinioAsyncClient
-import io.minio.ObjectWriteResponse
 import io.minio.UploadPartResponse
 import io.minio.messages.Part
 import java.io.File
@@ -23,11 +23,12 @@ class Uploader(
   private val bucketName: String,
   private val uploadPartSizeInBytes: Long,
   private val multiPartUpload: Boolean = true,
-  client: MinioAsyncClient)  {
+  client: MinioAsyncClient,
+) {
   private var minPartSizeInBytes: Long = 5242880  // 5MB
   private val blobstoreService = BlobstoreService(client)
-  suspend fun upload(uploadRequestList: List<UploadRequest>): Flow<UploadResult> = flow{
-    uploadRequestList.forEach{ uploadRequest ->
+  suspend fun upload(uploadRequestList: List<UploadRequest>): Flow<UploadResult> = flow {
+    uploadRequestList.forEach { uploadRequest ->
       if (uploadRequest.uploadId.isNullOrEmpty()) {
         val headers = HashMultimap.create<String, String>()
         headers.put("Content-Type", "application/octet-stream")
@@ -39,7 +40,13 @@ class Uploader(
           null
         )
         println("UploadID: ${uploadRequest.uploadId}")
-        emit(UploadResult.Started(uploadRequest, Date.from(Instant.now()), uploadRequest.uploadId!!))
+        emit(
+          UploadResult.Started(
+            uploadRequest,
+            Date.from(Instant.now()),
+            uploadRequest.uploadId!!
+          )
+        )
       }
       val dataStream = withContext(Dispatchers.IO) {
         FileInputStream(File(uploadRequest.zipFile))
@@ -54,18 +61,18 @@ class Uploader(
         uploadPart(uploadRequest, bytes, chunkSize)
         emit(mergeMultipartUpload(uploadRequest))
         println("File Uploaded and Merged")
-      }
-      else{
+      } else {
         while (uploadRequest.bytesUploaded < uploadRequest.fileSize) {
           // If the remaining bytes after the present chunk is less than minPartSizeInBytes (~5MB),
           // let the final chunk cover all remaining bytes instead of chunkSize
-          chunkSize = if (uploadRequest.fileSize - uploadRequest.bytesUploaded < uploadPartSizeInBytes + minPartSizeInBytes) {
-            uploadRequest.fileSize - uploadRequest.bytesUploaded
-          } else {
-            // chunk size is either uploadPartSizeInBytes or the remaining bytes in the file stream
-            // (as long as the chunk is greater than ~5MB)
-            min(uploadPartSizeInBytes, uploadRequest.fileSize - uploadRequest.bytesUploaded)
-          }
+          chunkSize =
+            if (uploadRequest.fileSize - uploadRequest.bytesUploaded < uploadPartSizeInBytes + minPartSizeInBytes) {
+              uploadRequest.fileSize - uploadRequest.bytesUploaded
+            } else {
+              // chunk size is either uploadPartSizeInBytes or the remaining bytes in the file stream
+              // (as long as the chunk is greater than ~5MB)
+              min(uploadPartSizeInBytes, uploadRequest.fileSize - uploadRequest.bytesUploaded)
+            }
           val buffer = ByteArray(chunkSize.toInt())
           withContext(Dispatchers.IO) {
             dataStream.read(buffer)
@@ -80,6 +87,7 @@ class Uploader(
       }
     }
   }
+
   private fun mergeMultipartUpload(uploadRequest: UploadRequest): UploadResult {
     val parts = arrayOfNulls<Part>(1000)
     val partResult: ListPartsResponse = blobstoreService.listMultipart(
@@ -97,7 +105,12 @@ class Uploader(
     )
     return UploadResult.Completed(uploadRequest, Date.from(Instant.now()))
   }
-  private fun uploadPart(uploadRequest: UploadRequest, data: ByteArray, chunkSize: Long): UploadPartResponse? {
+
+  private fun uploadPart(
+    uploadRequest: UploadRequest,
+    data: ByteArray,
+    chunkSize: Long,
+  ): UploadPartResponse? {
     return blobstoreService.uploadFilePart(
       bucketName,
       null,

@@ -8,11 +8,26 @@ import com.google.fitbit.research.sensing.common.libraries.flow.DirectPublisher;
 import java.util.concurrent.Executor;
 import org.reactivestreams.Subscriber;
 
-/** Publishes camera frames from an {@link ImageAnalysis}. */
+/**
+ * Publishes camera frames from an {@link ImageAnalysis}.
+ */
 public final class ImageProxyPublisher implements CloseablePublisher<SharedImageProxy> {
 
   private final ImageAnalysis imageAnalysis;
   private final DirectPublisher<SharedImageProxy> outputPublisher;
+  private final ImageAnalysis.Analyzer analyzer =
+      new ImageAnalysis.Analyzer() {
+        @Override
+        public void analyze(ImageProxy imageProxy) {
+          if (outputPublisher.isTerminal()) {
+            imageAnalysis.clearAnalyzer();
+          } else {
+            SharedImageProxy shared = new SharedImageProxy(imageProxy, ImageProxyPublisher.this);
+            outputPublisher.next(shared);
+            shared.close();
+          }
+        }
+      };
 
   private ImageProxyPublisher(
       ExtendableBuilder<ImageAnalysis> imageAnalysisBuilder, Executor executor) {
@@ -31,7 +46,9 @@ public final class ImageProxyPublisher implements CloseablePublisher<SharedImage
     outputPublisher.subscribe(subscriber);
   }
 
-  /** Returns the {@link ImageAnalysis} that publishes to this stream. */
+  /**
+   * Returns the {@link ImageAnalysis} that publishes to this stream.
+   */
   public ImageAnalysis getImageAnalysis() {
     return imageAnalysis;
   }
@@ -41,18 +58,4 @@ public final class ImageProxyPublisher implements CloseablePublisher<SharedImage
     imageAnalysis.clearAnalyzer();
     outputPublisher.complete();
   }
-
-  private final ImageAnalysis.Analyzer analyzer =
-      new ImageAnalysis.Analyzer() {
-        @Override
-        public void analyze(ImageProxy imageProxy) {
-          if (outputPublisher.isTerminal()) {
-            imageAnalysis.clearAnalyzer();
-          } else {
-            SharedImageProxy shared = new SharedImageProxy(imageProxy, ImageProxyPublisher.this);
-            outputPublisher.next(shared);
-            shared.close();
-          }
-        }
-      };
 }

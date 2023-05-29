@@ -40,7 +40,7 @@ import org.reactivestreams.Subscription;
  * <p>This example will constantly append data from a stream of motion sensor events to a TSV file
  * until the stream terminates.
  */
-@CheckReturnValue // see go/why-crv
+@CheckReturnValue 
 public final class StreamToTsvSubscriber<O> implements Subscriber<O> {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
@@ -54,7 +54,8 @@ public final class StreamToTsvSubscriber<O> implements Subscriber<O> {
   private final FlowSupplier<O, Writer> writerSupplier;
 
   private long events;
-  @Nullable private Subscription subscription;
+  @Nullable
+  private Subscription subscription;
   private FluentFuture<Optional<CSVPrinter>> writerFuture;
 
   StreamToTsvSubscriber(
@@ -72,6 +73,20 @@ public final class StreamToTsvSubscriber<O> implements Subscriber<O> {
     this.flushInterval = flushInterval;
     this.eventsPerFile = eventsPerFile;
     this.events = 0;
+  }
+
+  // setWriteExecutor should be replaced in TikTok apps
+  @SuppressLint("ConcurrentForbiddenDependencies")
+  public static <T> Builder<T> builder() {
+    return new AutoBuilder_StreamToTsvSubscriber_Builder<T>()
+        .setFlushInterval(100)
+        .setWriteExecutor(
+            Executors.newSingleThreadExecutor(
+                (r) -> {
+                  Thread thread = new Thread(r);
+                  thread.setName(StreamToTsvSubscriber.class.getName() + ".WriterThread");
+                  return thread;
+                }));
   }
 
   @Override
@@ -161,24 +176,20 @@ public final class StreamToTsvSubscriber<O> implements Subscriber<O> {
             writeExecutor);
   }
 
-  // setWriteExecutor should be replaced in TikTok apps
-  @SuppressLint("ConcurrentForbiddenDependencies")
-  public static <T> Builder<T> builder() {
-    return new AutoBuilder_StreamToTsvSubscriber_Builder<T>()
-        .setFlushInterval(100)
-        .setWriteExecutor(
-            Executors.newSingleThreadExecutor(
-                (r) -> {
-                  Thread thread = new Thread(r);
-                  thread.setName(StreamToTsvSubscriber.class.getName() + ".WriterThread");
-                  return thread;
-                }));
-  }
-
-  /** Builder for {@link StreamToTsvSubscriber}. */
+  /**
+   * Builder for {@link StreamToTsvSubscriber}.
+   */
   @AutoBuilder(ofClass = StreamToTsvSubscriber.class)
   public abstract static class Builder<O> {
-    /** Defines columns for the TSV file. */
+
+    private static Writer getFileWriter(File file) throws IOException {
+      file.getParentFile().mkdirs();
+      return FilesCompat.newBufferedWriter(file);
+    }
+
+    /**
+     * Defines columns for the TSV file.
+     */
     public abstract Builder<O> setTsvWriter(TsvWriter<O> tsvWriter);
 
     /**
@@ -188,44 +199,50 @@ public final class StreamToTsvSubscriber<O> implements Subscriber<O> {
     public abstract Builder<O> setWriteExecutor(Executor writeExecutor);
 
     /**
-     * Sets the subscriber to automatically chunk the stream into multiple files. {@code
-     * fileSupplier} should return a new, unique file each time it is called, otherwise previous
-     * files will be overwitten with later data.
+     * Sets the subscriber to automatically chunk the stream into multiple files.
+     * {@code fileSupplier} should return a new, unique file each time it is called, otherwise
+     * previous files will be overwitten with later data.
      */
     public Builder<O> setFileChunks(Callable<File> fileSupplier, long eventsPerFile) {
       return this.setWriterChunks(() -> getFileWriter(fileSupplier.call()), eventsPerFile);
     }
 
     /**
-     * Sets the subscriber to automatically chunk the stream into multiple files. {@code
-     * writeSupplier} should return a writer with a new destination each time it is called in order
-     * to properly chunk data.
+     * Sets the subscriber to automatically chunk the stream into multiple files.
+     * {@code writeSupplier} should return a writer with a new destination each time it is called in
+     * order to properly chunk data.
      */
     public Builder<O> setWriterChunks(Callable<Writer> writerSupplier, long eventsPerFile) {
       return this.setWriterSupplier(writerSupplier).setEventsPerFile(eventsPerFile);
     }
 
     /**
-     * Sets the subscriber to automatically chunk the stream into multiple files. {@code
-     * writeSupplier.get()} should return a writer with a new destination each time it is called in
-     * order to properly chunk data.
+     * Sets the subscriber to automatically chunk the stream into multiple files.
+     * {@code writeSupplier.get()} should return a writer with a new destination each time it is
+     * called in order to properly chunk data.
      */
     public Builder<O> setWriterChunks(FlowSupplier<O, Writer> writerSupplier, long eventsPerFile) {
       return this.setWriterSupplier(writerSupplier).setEventsPerFile(eventsPerFile);
     }
 
-    /** Sets the subscriber to write all data to a single File. */
+    /**
+     * Sets the subscriber to write all data to a single File.
+     */
     public Builder<O> setSingleFile(File file) {
       return this.setSingleFile(() -> file);
     }
 
-    /** Sets the subscriber to write all data to a single File. */
+    /**
+     * Sets the subscriber to write all data to a single File.
+     */
     public Builder<O> setSingleFile(Callable<File> fileSuppler) {
       return this.setWriterSupplier(() -> getFileWriter(fileSuppler.call()))
           .setEventsPerFile(Long.MAX_VALUE);
     }
 
-    /** Sets the subscriber to write all data to a single Writer. */
+    /**
+     * Sets the subscriber to write all data to a single Writer.
+     */
     public Builder<O> setSingleWriter(Writer writer) {
       return this.setWriterSupplier(() -> writer).setEventsPerFile(Long.MAX_VALUE);
     }
@@ -248,8 +265,9 @@ public final class StreamToTsvSubscriber<O> implements Subscriber<O> {
     }
 
     /**
-     * Sets the subscriber to write to a new Writer for every single event. {@code
-     * writerSupplier.get()} should return a writer with a new destination each time it is called.
+     * Sets the subscriber to write to a new Writer for every single event.
+     * {@code writerSupplier.get()} should return a writer with a new destination each time it is
+     * called.
      */
     public Builder<O> setWriterPerEvent(FlowSupplier<O, Writer> writerSupplier) {
       return this.setWriterChunks(writerSupplier, 1);
@@ -263,7 +281,9 @@ public final class StreamToTsvSubscriber<O> implements Subscriber<O> {
      */
     public abstract Builder<O> setFlushInterval(long flushInterval);
 
-    /** Set writer supplier */
+    /**
+     * Set writer supplier
+     */
     Builder<O> setWriterSupplier(Callable<Writer> writerSupplier) {
       return setWriterSupplier(FlowSupplier.<O, Writer>fromCallable(writerSupplier));
     }
@@ -271,11 +291,6 @@ public final class StreamToTsvSubscriber<O> implements Subscriber<O> {
     abstract Builder<O> setWriterSupplier(FlowSupplier<O, Writer> writerSupplier);
 
     abstract Builder<O> setEventsPerFile(long eventsPerFile);
-
-    private static Writer getFileWriter(File file) throws IOException {
-      file.getParentFile().mkdirs();
-      return FilesCompat.newBufferedWriter(file);
-    }
 
     public abstract StreamToTsvSubscriber<O> build();
   }

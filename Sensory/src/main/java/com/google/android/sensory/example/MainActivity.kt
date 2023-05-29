@@ -27,7 +27,10 @@ class MainActivity : AppCompatActivity() {
 
   private fun hasPermissions(): Boolean {
     return !Arrays.stream(REQUIRED_PERMISSIONS).anyMatch {
-      ActivityCompat.checkSelfPermission(applicationContext, it) != PackageManager.PERMISSION_GRANTED
+      ActivityCompat.checkSelfPermission(
+        applicationContext,
+        it
+      ) != PackageManager.PERMISSION_GRANTED
     }
   }
 

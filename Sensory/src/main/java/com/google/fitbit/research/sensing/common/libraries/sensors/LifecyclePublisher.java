@@ -12,7 +12,7 @@ import org.reactivestreams.Publisher;
  * <p>Subscribing to this Publisher using {@code untilStop().subscribe(subscriber)} will signal
  * {@code onComplete} when the associated lifecycle reaches {@code onStop}.
  */
-@CheckReturnValue // see go/why-crv
+@CheckReturnValue 
 public interface LifecyclePublisher<T> extends Publisher<T> {
 
   /**

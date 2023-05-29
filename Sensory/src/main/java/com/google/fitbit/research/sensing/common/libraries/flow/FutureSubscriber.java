@@ -15,9 +15,11 @@ import org.reactivestreams.Subscriber;
  * <p>Once resolved, instances of FutureSubscriber should not be resubscribed, as {@link
  * #resultFuture} will remain permanently resolved.
  */
-@CheckReturnValue // see go/why-crv
+@CheckReturnValue 
 public interface FutureSubscriber<I, O> extends Subscriber<I> {
 
-  /** Resolves when a specific condition is met, or if the stream terminates. */
+  /**
+   * Resolves when a specific condition is met, or if the stream terminates.
+   */
   public ListenableFuture<O> resultFuture();
 }

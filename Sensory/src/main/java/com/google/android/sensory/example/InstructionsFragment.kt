@@ -10,7 +10,7 @@ import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.setFragmentResult
 import com.google.android.sensory.R
 
-class InstructionsFragment: DialogFragment() {
+class InstructionsFragment : DialogFragment() {
   private lateinit var btnCancel: Button
   private lateinit var btnNext: Button
   override fun onCreateView(
@@ -25,7 +25,7 @@ class InstructionsFragment: DialogFragment() {
     super.onViewCreated(view, savedInstanceState)
     btnCancel = view.findViewById(R.id.btn_cancel)
     btnNext = view.findViewById(R.id.btn_next)
-    btnCancel.setOnClickListener{
+    btnCancel.setOnClickListener {
       setFragmentResult(INSTRUCTION_FRAGMENT_RESULT, bundleOf(INSTRUCTION_UNDERSTOOD to false))
       dismiss()
     }

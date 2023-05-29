@@ -7,10 +7,9 @@ import android.hardware.camera2.params.RggbChannelVector
 import androidx.camera.camera2.interop.CaptureRequestOptions
 import androidx.camera.camera2.interop.ExperimentalCamera2Interop
 import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.MutableLiveData
 
 @ExperimentalCamera2Interop
-class CaptureViewModel(application: Application) : AndroidViewModel(application)  {
+class CaptureViewModel(application: Application) : AndroidViewModel(application) {
   fun getCaptureRequestOptions(lockExposure: Boolean): CaptureRequestOptions {
     // https://developer.android.com/reference/android/hardware/camera2/params/ColorSpaceTransform#ColorSpaceTransform(int[])
     // 3*3 identity matrix represented in numerator, denominator format

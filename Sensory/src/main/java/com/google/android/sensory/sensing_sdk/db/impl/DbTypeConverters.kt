@@ -4,7 +4,8 @@ import androidx.room.TypeConverter
 import java.time.Instant
 
 internal object DbTypeConverters {
-  @JvmStatic @TypeConverter
+  @JvmStatic
+  @TypeConverter
   fun instantToLong(value: Instant?): Long? = value?.toEpochMilli()
 
   @JvmStatic

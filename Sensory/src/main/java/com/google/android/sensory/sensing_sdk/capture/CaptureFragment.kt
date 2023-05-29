@@ -63,7 +63,7 @@ import java.util.concurrent.TimeUnit
 class CaptureFragment(
   private val captureInfo: CaptureInfo,
   private val onCaptureComplete: ((CaptureInfo) -> String),
-): Fragment() {
+) : Fragment() {
 
   private val captureViewModel: CaptureViewModel by viewModels()
 
@@ -84,8 +84,8 @@ class CaptureFragment(
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
     /** For a different [CaptureType] sensors will be initialized and subscribed differently. */
-    when(captureInfo.captureType){
-      CaptureType.VIDEO_PPG-> {
+    when (captureInfo.captureType) {
+      CaptureType.VIDEO_PPG -> {
         preview = Preview.Builder().build()
         camera = Camera2InteropSensor.builder()
           .setContext(requireContext())
@@ -99,6 +99,7 @@ class CaptureFragment(
         recordingGate = FlowGate.createClosed()
         showOverheatDialog()
       }
+
       CaptureType.IMAGE -> {
         // Following camera initialization is same as above but it will depend on settings in CaptureInfo and hence not clubbed.
         preview = Preview.Builder().build()
@@ -123,18 +124,19 @@ class CaptureFragment(
     requireActivity().window.decorView.fitsSystemWindows = true
     (requireActivity() as AppCompatActivity).supportActionBar?.hide()
     val layout =
-      when(captureInfo.captureType){
+      when (captureInfo.captureType) {
         CaptureType.VIDEO_PPG -> R.layout.fragment_video_ppg
         CaptureType.IMAGE -> R.layout.fragment_image
       }
     val view = inflater.inflate(layout, container, false)
-    when(captureInfo.captureType){
+    when (captureInfo.captureType) {
       CaptureType.VIDEO_PPG -> {
         previewView = view.findViewById(R.id.preview_view)
         recordFab = view.findViewById(R.id.record_fab)
         toggleFlashFab = view.findViewById(R.id.toggle_flash_fab)
         recordTimer = view.findViewById(R.id.record_timer)
       }
+
       CaptureType.IMAGE -> {
         previewView = view.findViewById(R.id.preview_view)
         toggleFlashFab = view.findViewById(R.id.toggle_flash_fab)
@@ -146,7 +148,7 @@ class CaptureFragment(
 
   override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
     super.onViewCreated(view, savedInstanceState)
-    when(captureInfo.captureType){
+    when (captureInfo.captureType) {
       CaptureType.VIDEO_PPG -> {
         // Start the camera and preview
         preview!!.setSurfaceProvider(previewView.surfaceProvider)
@@ -156,18 +158,20 @@ class CaptureFragment(
             object : DefaultLifecycleObserver {
               override fun onCreate(owner: LifecycleOwner) {
                 camera!!.cameraXSensor.cameraControl!!.enableTorch(true)
-                camera!!.camera2Control!!.captureRequestOptions = captureViewModel.getCaptureRequestOptions(false)
+                camera!!.camera2Control!!.captureRequestOptions =
+                  captureViewModel.getCaptureRequestOptions(false)
               }
             })
         recordTimer.text = "00 : 30"
         initializeTimer()
-        recordFab.setOnClickListener{
+        recordFab.setOnClickListener {
           processRecord()
         }
         toggleFlashFab.setOnClickListener {
           CaptureUtil.toggleFlash(camera!!, toggleFlashFab)
         }
       }
+
       CaptureType.IMAGE -> {
         preview!!.setSurfaceProvider(previewView.surfaceProvider)
         camera!!.lifecycle
@@ -175,7 +179,8 @@ class CaptureFragment(
             object : DefaultLifecycleObserver {
               override fun onCreate(owner: LifecycleOwner) {
                 camera!!.cameraXSensor.cameraControl!!.enableTorch(true)
-                camera!!.camera2Control!!.captureRequestOptions = CaptureRequestOptions.Builder().build()
+                camera!!.camera2Control!!.captureRequestOptions =
+                  CaptureRequestOptions.Builder().build()
               }
             })
         btnTakePhoto.setOnClickListener { capturePhoto() }
@@ -186,7 +191,7 @@ class CaptureFragment(
     }
   }
 
-  private fun processRecord(){
+  private fun processRecord() {
     if (recordingGate.isOpen) {
       stopRecording()
     } else if (!isPhoneSafeToUse) {
@@ -241,7 +246,8 @@ class CaptureFragment(
 
   // Safe to ignore CameraControl futures
   private fun lockExposure() {
-    camera!!.camera2Control!!.captureRequestOptions = captureViewModel.getCaptureRequestOptions(true)
+    camera!!.camera2Control!!.captureRequestOptions =
+      captureViewModel.getCaptureRequestOptions(true)
   }
 
   private fun showOverheatDialog() {
@@ -271,6 +277,7 @@ class CaptureFragment(
           stopRecording()
         }
       }
+
       override fun onFinish() {}
     }
   }
@@ -279,7 +286,10 @@ class CaptureFragment(
   private fun capturePhoto() {
     Futures.addCallback(
       Camera2InteropActions.captureSingleJpegWithMetadata(
-        camera, { getCameraResourceFile() }, { getCameraMetadataFile() }, Executors.newSingleThreadExecutor()
+        camera,
+        { getCameraResourceFile() },
+        { getCameraMetadataFile() },
+        Executors.newSingleThreadExecutor()
       ),
       object : FutureCallback<Boolean?> {
         override fun onSuccess(success: Boolean?) {
@@ -296,26 +306,31 @@ class CaptureFragment(
   }
 
   private fun getCameraResourceFile(): File {
-    val filePath = "${captureInfo.captureFolder}/${SensorType.CAMERA}/Participant${captureInfo.participantId}_${captureInfo.captureSettings.title}_data_${System.currentTimeMillis()}.${captureInfo.captureSettings.fileTypeMap[SensorType.CAMERA]}"
+    val filePath =
+      "${captureInfo.captureFolder}/${SensorType.CAMERA}/Participant${captureInfo.participantId}_${captureInfo.captureSettings.title}_data_${System.currentTimeMillis()}.${captureInfo.captureSettings.fileTypeMap[SensorType.CAMERA]}"
     val fileFolder = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-    return File( fileFolder, filePath)
+    return File(fileFolder, filePath)
   }
 
   private fun getCameraMetadataFile(): File {
-    val filePath = "${captureInfo.captureFolder}/${SensorType.CAMERA}/Participant_${captureInfo.participantId}_${captureInfo.captureSettings.title}_metadata_${System.currentTimeMillis()}.${captureInfo.captureSettings.metaDataTypeMap[SensorType.CAMERA]}"
+    val filePath =
+      "${captureInfo.captureFolder}/${SensorType.CAMERA}/Participant_${captureInfo.participantId}_${captureInfo.captureSettings.title}_metadata_${System.currentTimeMillis()}.${captureInfo.captureSettings.metaDataTypeMap[SensorType.CAMERA]}"
     val fileFolder = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-    return File( fileFolder, filePath)
+    return File(fileFolder, filePath)
   }
 
-  private fun finishCapturing(){
+  private fun finishCapturing() {
     onCaptureComplete(captureInfo)
     captured = true
-    setFragmentResult(CAPTURE_COMPLETE, bundleOf(CAPTURE_ID to captureInfo.captureId, CAPTURED to captured))
+    setFragmentResult(
+      CAPTURE_COMPLETE,
+      bundleOf(CAPTURE_ID to captureInfo.captureId, CAPTURED to captured)
+    )
     requireActivity().supportFragmentManager.popBackStack()
   }
 
   override fun onDetach() {
-    if(!captured) {
+    if (!captured) {
       setFragmentResult(CAPTURE_COMPLETE, bundleOf(CAPTURED to false))
     }
     requireActivity().window.decorView.fitsSystemWindows = false

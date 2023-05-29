@@ -9,8 +9,8 @@ import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 
 /**
- * Simple {@link LifecyclePublisher} implementation that forwards signals from an existing {@link
- * Publisher}.
+ * Simple {@link LifecyclePublisher} implementation that forwards signals from an existing
+ * {@link Publisher}.
  *
  * <p>Should be added to one, and only one, {@link androidx.lifecycle.Lifecycle#addObserver}.
  */
@@ -22,18 +22,21 @@ public final class ForwardingLifecyclePublisher<T>
   private final Publisher<T> whileCreatedPublisher = whileCreatedGate.passThrough(deferred);
   private final FlowGate whileStartedGate = FlowGate.createClosed();
 
+  ForwardingLifecyclePublisher() {
+  }
+
   public static <T> ForwardingLifecyclePublisher<T> create() {
     return new ForwardingLifecyclePublisher<>();
   }
 
-  /** Creates and {@link #set}s a new ForwardingLifecyclePublisher. */
+  /**
+   * Creates and {@link #set}s a new ForwardingLifecyclePublisher.
+   */
   public static <T> ForwardingLifecyclePublisher<T> create(Publisher<T> publisher) {
     ForwardingLifecyclePublisher<T> forwarding = new ForwardingLifecyclePublisher<>();
     forwarding.set(publisher);
     return forwarding;
   }
-
-  ForwardingLifecyclePublisher() {}
 
   /**
    * Begins forwarding signals from the given {@link Publisher}.

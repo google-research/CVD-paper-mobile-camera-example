@@ -46,14 +46,19 @@ object ConjunctivaPhotoSensorCaptureViewHolderFactory :
 
 
       override fun init(itemView: View) {
-        itemView.findViewById<Button>(com.google.android.fhir.datacapture.R.id.helpButton).visibility = View.GONE
-        itemView.findViewById<MaterialCardView>(com.google.android.fhir.datacapture.R.id.helpCardView).visibility = View.GONE
-        itemView.findViewById<TextView>(com.google.android.fhir.datacapture.R.id.helpText).visibility = View.GONE
-        itemView.findViewById<Button>(com.google.android.fhir.datacapture.R.id.photo_delete).visibility = View.GONE
+        itemView.findViewById<Button>(com.google.android.fhir.datacapture.R.id.helpButton).visibility =
+          View.GONE
+        itemView.findViewById<MaterialCardView>(com.google.android.fhir.datacapture.R.id.helpCardView).visibility =
+          View.GONE
+        itemView.findViewById<TextView>(com.google.android.fhir.datacapture.R.id.helpText).visibility =
+          View.GONE
+        itemView.findViewById<Button>(com.google.android.fhir.datacapture.R.id.photo_delete).visibility =
+          View.GONE
         takePhotoButton = itemView.findViewById(com.google.android.fhir.datacapture.R.id.take_photo)
         takePhotoButton.text = "Capture Conjunctiva Photo"
         photoPreview = itemView.findViewById(com.google.android.fhir.datacapture.R.id.photo_preview)
-        photoThumbnail = itemView.findViewById(com.google.android.fhir.datacapture.R.id.photo_thumbnail)
+        photoThumbnail =
+          itemView.findViewById(com.google.android.fhir.datacapture.R.id.photo_thumbnail)
         photoTitle = itemView.findViewById(com.google.android.fhir.datacapture.R.id.photo_title)
         context = itemView.context.tryUnwrapContext()!!
         sensingEngine = SensingApplication.sensingEngine(context)
@@ -75,7 +80,7 @@ object ConjunctivaPhotoSensorCaptureViewHolderFactory :
         takePhotoButton.visibility = View.VISIBLE
       }
 
-      private fun displayOrClearInitialPreview(){
+      private fun displayOrClearInitialPreview() {
         val answer = questionnaireViewItem.answers.firstOrNull()
         // Clear preview if there is no answer to prevent showing old previews in views that have
         // been recycled.
@@ -88,11 +93,15 @@ object ConjunctivaPhotoSensorCaptureViewHolderFactory :
           val captureId = code.code
           val livePath = MutableLiveData<Uri>()
           CoroutineScope(Dispatchers.IO).launch {
-            livePath.postValue(getFirstOrNullImageUri(sensingEngine
-                                                        .listResourceInfoInCapture(captureId)[0]
-                                                        .resourceFolderPath)!!)
+            livePath.postValue(
+              getFirstOrNullImageUri(
+                sensingEngine
+                  .listResourceInfoInCapture(captureId)[0]
+                  .resourceFolderPath
+              )!!
+            )
           }
-          livePath.observe(context){
+          livePath.observe(context) {
             displayPreview(
               attachmentTitle = "Conjunctiva",
               attachmentUri = it
@@ -107,7 +116,7 @@ object ConjunctivaPhotoSensorCaptureViewHolderFactory :
           context
         ) { _, result ->
           val captured = result.getBoolean(CaptureFragment.CAPTURED)
-          if(!captured){
+          if (!captured) {
             return@setFragmentResultListener
           }
           val captureId = result.getString(CaptureFragment.CAPTURE_ID)
@@ -125,8 +134,9 @@ object ConjunctivaPhotoSensorCaptureViewHolderFactory :
           context,
         ) { _, result ->
           context.supportFragmentManager.popBackStack()
-          val instructionsUnderstood = result.getBoolean(InstructionsFragment.INSTRUCTION_UNDERSTOOD)
-          if(!instructionsUnderstood){
+          val instructionsUnderstood =
+            result.getBoolean(InstructionsFragment.INSTRUCTION_UNDERSTOOD)
+          if (!instructionsUnderstood) {
             return@setFragmentResultListener
           }
           /** [TODO] Need to get patientId anyhow! */
@@ -152,7 +162,8 @@ object ConjunctivaPhotoSensorCaptureViewHolderFactory :
         }
         context.supportFragmentManager.beginTransaction()
           .replace(R.id.nav_host_fragment, InstructionsFragment().apply {
-            arguments = bundleOf(InstructionsFragment.LAYOUT to R.layout.fragment_conjunctiva_instructions)
+            arguments =
+              bundleOf(InstructionsFragment.LAYOUT to R.layout.fragment_conjunctiva_instructions)
           })
           .setReorderingAllowed(true)
           .addToBackStack(null)
@@ -169,7 +180,7 @@ object ConjunctivaPhotoSensorCaptureViewHolderFactory :
       private fun displayPreview(
         attachmentTitle: String,
         attachmentByteArray: ByteArray? = null,
-        attachmentUri: Uri? = null
+        attachmentUri: Uri? = null,
       ) {
         if (attachmentByteArray != null) {
           loadPhotoPreview(attachmentByteArray, attachmentTitle)

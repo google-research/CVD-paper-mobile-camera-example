@@ -11,21 +11,23 @@ import org.reactivestreams.Subscription;
  * Abstract base class for {@link Subscriber}s that collect items from a ReactiveStream.
  *
  * <p>Instances of CollectingFutureSubscriber can be attached to a stream, accumulate values until
- * specific conditions are met or until the stream completes, then resolves an associated {@link
- * ListenableFuture} with the accumulated result.
+ * specific conditions are met or until the stream completes, then resolves an associated
+ * {@link ListenableFuture} with the accumulated result.
  *
  * <p>Instances of CollectingFutureSubscriber should generally only subscribe once. Changing
  * subscriptions for an unresolved CollectingFutureSubscriber will reset accumulated state, but this
  * can be prone to race conditions and is best avoided by not re-using instances of
  * CollectingFutureSubscriber.
  */
-@CheckReturnValue // see go/why-crv
+@CheckReturnValue 
 public abstract class CollectingFutureSubscriber<T, R> implements FutureSubscriber<T, R> {
 
   private final SettableFuture<R> resultFuture = SettableFuture.<R>create();
-  @Nullable private Subscription subscription;
+  @Nullable
+  private Subscription subscription;
 
-  public CollectingFutureSubscriber() {}
+  public CollectingFutureSubscriber() {
+  }
 
   @Override
   public void onSubscribe(Subscription subscription) {

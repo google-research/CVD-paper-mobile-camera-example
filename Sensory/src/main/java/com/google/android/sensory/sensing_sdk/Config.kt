@@ -32,14 +32,14 @@ class PeriodicSyncConfiguration(
   val repeat: RepeatInterval,
 
   /** Configuration for synchronization retry */
-  val retryConfiguration: RetryConfiguration? = defaultRetryConfiguration
+  val retryConfiguration: RetryConfiguration? = defaultRetryConfiguration,
 )
 
 data class RepeatInterval(
   /** The interval at which the sync should be triggered in */
   val interval: Long,
   /** The time unit for the repeat interval */
-  val timeUnit: TimeUnit
+  val timeUnit: TimeUnit,
 )
 
 /** Configuration for synchronization retry */
@@ -51,7 +51,7 @@ data class RetryConfiguration(
   val backoffCriteria: BackoffCriteria,
 
   /** Maximum retries for a failing [SensorDataUploadWorker] */
-  val maxRetries: Int
+  val maxRetries: Int,
 )
 
 /**
@@ -70,15 +70,15 @@ data class BackoffCriteria(
   val backoffDelay: Long,
 
   /** The time unit for [backoffDelay] */
-  val timeUnit: TimeUnit
+  val timeUnit: TimeUnit,
 )
 
-data class UploadConfiguration (
+data class UploadConfiguration(
   val HOST: String,
   val ACCESS_HOST: String,
   val bucketName: String,
   val user: String,
-  val password: String
+  val password: String,
 ) {
   fun getBlobStorageAccessURL() = "$ACCESS_HOST/$bucketName"
 }

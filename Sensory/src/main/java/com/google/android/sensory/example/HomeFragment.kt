@@ -1,25 +1,19 @@
 package com.google.android.sensory.example
 
-import android.content.DialogInterface
 import android.os.Bundle
 import android.view.LayoutInflater
-import android.view.Menu
-import android.view.MenuInflater
-import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.MenuProvider
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
-import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.fragment.findNavController
 import com.google.android.sensory.R
 import com.google.android.sensory.databinding.FragmentHomeBinding
 
 
-class HomeFragment: Fragment() {
+class HomeFragment : Fragment() {
   private var _binding: FragmentHomeBinding? = null
   private val binding
     get() = _binding!!
@@ -48,7 +42,7 @@ class HomeFragment: Fragment() {
     }
   }
 
-  private fun setupListeners(){
+  private fun setupListeners() {
     binding.fab.setOnClickListener {
       mainActivityViewModel.triggerOneTimeSync()
     }
@@ -77,7 +71,7 @@ class HomeFragment: Fragment() {
     dialog.show()
   }
 
-  private fun goToParticipantRegistration(){
+  private fun goToParticipantRegistration() {
     findNavController().navigate(HomeFragmentDirections.actionHomeFragmentToAddParticipantFragment())
   }
 }

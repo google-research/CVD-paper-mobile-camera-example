@@ -1,6 +1,5 @@
 package com.google.fitbit.research.sensing.common.libraries.flow;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.flogger.FluentLogger;
 import com.google.errorprone.annotations.CheckReturnValue;
@@ -15,18 +14,23 @@ import org.reactivestreams.Subscriber;
  * <p>This class can be used from within an asynchronous event loop to convert the event into a
  * ReactiveStreams {@link Publisher} that does not queue or buffer events.
  */
-@CheckReturnValue // see go/why-crv
+@CheckReturnValue 
 public final class DirectPublisher<T> implements CloseablePublisher<T> {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   private final Object lock = new Object();
-  @Nullable private Multicaster<T> multicaster = new Multicaster<>();
-  @Nullable private Publisher<T> terminalPublisher;
+  @Nullable
+  private Multicaster<T> multicaster = new Multicaster<>();
+  @Nullable
+  private Publisher<T> terminalPublisher;
 
-  public DirectPublisher() {}
+  public DirectPublisher() {
+  }
 
-  /** Subscribes to this Publisher. */
+  /**
+   * Subscribes to this Publisher.
+   */
   @Override
   public void subscribe(Subscriber<? super T> subscriber) {
     synchronized (lock) {
@@ -39,7 +43,9 @@ public final class DirectPublisher<T> implements CloseablePublisher<T> {
     }
   }
 
-  /** Signals all Subscribers with {@code onNext}. */
+  /**
+   * Signals all Subscribers with {@code onNext}.
+   */
   public void next(T t) {
     synchronized (lock) {
       if (multicaster == null) {
@@ -50,7 +56,9 @@ public final class DirectPublisher<T> implements CloseablePublisher<T> {
     }
   }
 
-  /** Signals all Subscribers with {@code onError} and terminates this Publisher. */
+  /**
+   * Signals all Subscribers with {@code onError} and terminates this Publisher.
+   */
   public void error(Throwable t) {
     synchronized (lock) {
       if (multicaster == null) {
@@ -63,7 +71,9 @@ public final class DirectPublisher<T> implements CloseablePublisher<T> {
     }
   }
 
-  /** Signals all Subscribers with {@code onComplete} and terminates this Publisher. */
+  /**
+   * Signals all Subscribers with {@code onComplete} and terminates this Publisher.
+   */
   public void complete() {
     if (multicaster == null) {
       logger.atFine().log("Terminal publisher cannot signal onComplete");
@@ -74,7 +84,9 @@ public final class DirectPublisher<T> implements CloseablePublisher<T> {
     }
   }
 
-  /** Equivalent to {@link #complete}. */
+  /**
+   * Equivalent to {@link #complete}.
+   */
   @Override
   public void close() {
     complete();

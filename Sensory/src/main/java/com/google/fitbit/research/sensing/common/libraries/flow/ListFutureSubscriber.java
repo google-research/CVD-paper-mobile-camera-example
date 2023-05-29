@@ -9,7 +9,7 @@ import org.reactivestreams.Subscription;
  * A {@link Subscriber} that collects a fixed number of signals from a stream and accumulates values
  * into a {@link ImmutableList}.
  */
-@CheckReturnValue // see go/why-crv
+@CheckReturnValue 
 public class ListFutureSubscriber<T> extends CollectingFutureSubscriber<T, ImmutableList<T>> {
 
   private final int numItems;

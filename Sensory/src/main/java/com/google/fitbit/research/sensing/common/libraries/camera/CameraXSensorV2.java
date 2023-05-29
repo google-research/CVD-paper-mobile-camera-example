@@ -31,8 +31,10 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import javax.annotation.Nullable;
 
-/** Implementation of {@link MobileSensorV2} that publishes camera frames from CameraX. */
-@CheckReturnValue // see go/why-crv
+/**
+ * Implementation of {@link MobileSensorV2} that publishes camera frames from CameraX.
+ */
+@CheckReturnValue 
 public final class CameraXSensorV2 implements MobileSensorV2<SharedImageProxy> {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
@@ -46,15 +48,73 @@ public final class CameraXSensorV2 implements MobileSensorV2<SharedImageProxy> {
   private final ImageProxyPublisher imageProxyPublisher;
 
   private UseCase[] boundUseCases = NO_USE_CASES;
-  @Nullable private Camera camera;
+  @Nullable
+  private Camera camera;
+  private final DefaultLifecycleObserver lifecycleObserver =
+      new DefaultLifecycleObserver() {
+        @Override
+        public void onCreate(LifecycleOwner owner) {
+          ProcessCameraProvider cameraProvider = null;
+          try {
+            cameraProvider = Futures.getDone(processCameraProvider);
+          } catch (ExecutionException e) {
+            logger.atSevere().withCause(e).log("Failed to get camera provider");
+            lifecycleImageProxyPublisher.setException(e);
+            return;
+          }
+
+          boundUseCases = new UseCase[useCases.size() + 1];
+          useCases.toArray(boundUseCases);
+          boundUseCases[boundUseCases.length - 1] = imageProxyPublisher.getImageAnalysis();
+
+          try {
+            camera = cameraProvider.bindToLifecycle(owner, cameraSelector, boundUseCases);
+            lifecycleImageProxyPublisher.set(imageProxyPublisher);
+          } catch (IllegalStateException | IllegalArgumentException e) {
+            logger.atSevere().withCause(e).log("Failed to bind camera");
+            lifecycleImageProxyPublisher.setException(e);
+          }
+
+          lifecycleImageProxyPublisher.onCreate(owner);
+          lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_CREATE);
+        }
+
+        @Override
+        public void onStart(LifecycleOwner owner) {
+          lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_START);
+          lifecycleImageProxyPublisher.onStart(owner);
+        }
+
+        @Override
+        public void onStop(LifecycleOwner owner) {
+          lifecycleImageProxyPublisher.onStop(owner);
+          lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_STOP);
+        }
+
+        @Override
+        public void onDestroy(LifecycleOwner owner) {
+          imageProxyPublisher.close();
+          lifecycleImageProxyPublisher.onDestroy(owner);
+
+          try {
+            ProcessCameraProvider cameraProvider = Futures.getDone(processCameraProvider);
+            cameraProvider.unbind(boundUseCases);
+          } catch (ExecutionException e) {
+            // We already checked this in onCreate(), so no need to log again.
+          }
+          boundUseCases = NO_USE_CASES;
+
+          lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_DESTROY);
+        }
+      };
 
   CameraXSensorV2(
-    Context context,
-    CameraSelector cameraSelector,
-    ImmutableList<UseCase> useCases,
-    ExtendableBuilder<ImageAnalysis> imageAnalysisBuilder,
-    Executor executor,
-    LifecycleOwner boundLifecycle) {
+      Context context,
+      CameraSelector cameraSelector,
+      ImmutableList<UseCase> useCases,
+      ExtendableBuilder<ImageAnalysis> imageAnalysisBuilder,
+      Executor executor,
+      LifecycleOwner boundLifecycle) {
     this.cameraSelector = cameraSelector;
     this.useCases = useCases;
     this.lifecycle = new LifecycleRegistry(this);
@@ -65,73 +125,30 @@ public final class CameraXSensorV2 implements MobileSensorV2<SharedImageProxy> {
     bindToLifecycle(boundLifecycle, context);
   }
 
+  // Executors should be replaced in TikTok apps
+  @SuppressLint("ConcurrentForbiddenDependencies")
+  public static Builder builder() {
+    return new AutoBuilder_CameraXSensorV2_Builder()
+        .setImageAnalysisBuilder(new ImageAnalysis.Builder())
+        .setExecutor(
+            Executors.newSingleThreadExecutor(
+                (r) -> {
+                  Thread thread = new Thread(r);
+                  thread.setName(CameraXSensorV2.class.getName() + ".ImageAnalysisThread");
+                  return thread;
+                }))
+        .setCameraSelector(CameraSelector.DEFAULT_BACK_CAMERA);
+  }
+
   @SuppressWarnings(
-    "TikTok.AndroidContextLeak") // boundLifecycle isn't used in a background executor
+      "TikTok.AndroidContextLeak") // boundLifecycle isn't used in a background executor
   private void bindToLifecycle(LifecycleOwner boundLifecycle, Context context) {
     Lifecycle lifecycleToObserve = boundLifecycle.getLifecycle();
     processCameraProvider.addListener(
-      // If ProcessCameraProvider.getInstance() fails, errors are handled in onCreate().
-      () -> lifecycleToObserve.addObserver(lifecycleObserver),
-    ContextCompat.getMainExecutor(context));
+        // If ProcessCameraProvider.getInstance() fails, errors are handled in onCreate().
+        () -> lifecycleToObserve.addObserver(lifecycleObserver),
+        ContextCompat.getMainExecutor(context));
   }
-
-  private final DefaultLifecycleObserver lifecycleObserver =
-  new DefaultLifecycleObserver() {
-    @Override
-    public void onCreate(LifecycleOwner owner) {
-      ProcessCameraProvider cameraProvider = null;
-      try {
-        cameraProvider = Futures.getDone(processCameraProvider);
-      } catch (ExecutionException e) {
-        logger.atSevere().withCause(e).log("Failed to get camera provider");
-        lifecycleImageProxyPublisher.setException(e);
-        return;
-      }
-
-      boundUseCases = new UseCase[useCases.size() + 1];
-      useCases.toArray(boundUseCases);
-      boundUseCases[boundUseCases.length - 1] = imageProxyPublisher.getImageAnalysis();
-
-      try {
-        camera = cameraProvider.bindToLifecycle(owner, cameraSelector, boundUseCases);
-        lifecycleImageProxyPublisher.set(imageProxyPublisher);
-      } catch (IllegalStateException | IllegalArgumentException e) {
-      logger.atSevere().withCause(e).log("Failed to bind camera");
-      lifecycleImageProxyPublisher.setException(e);
-    }
-
-      lifecycleImageProxyPublisher.onCreate(owner);
-      lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_CREATE);
-    }
-
-    @Override
-    public void onStart(LifecycleOwner owner) {
-      lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_START);
-      lifecycleImageProxyPublisher.onStart(owner);
-    }
-
-    @Override
-    public void onStop(LifecycleOwner owner) {
-      lifecycleImageProxyPublisher.onStop(owner);
-      lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_STOP);
-    }
-
-    @Override
-    public void onDestroy(LifecycleOwner owner) {
-      imageProxyPublisher.close();
-      lifecycleImageProxyPublisher.onDestroy(owner);
-
-      try {
-        ProcessCameraProvider cameraProvider = Futures.getDone(processCameraProvider);
-        cameraProvider.unbind(boundUseCases);
-      } catch (ExecutionException e) {
-        // We already checked this in onCreate(), so no need to log again.
-      }
-      boundUseCases = NO_USE_CASES;
-
-      lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_DESTROY);
-    }
-  };
 
   @Override
   public LifecyclePublisher<SharedImageProxy> dataPublisher() {
@@ -195,31 +212,18 @@ public final class CameraXSensorV2 implements MobileSensorV2<SharedImageProxy> {
   public <U extends UseCase> U getUseCase(Class<U> useCaseClass) {
     final UseCase[] useCases = boundUseCases;
     for (UseCase useCase : useCases) {
-    if (useCase.getClass().equals(useCaseClass)) {
-      return (U) useCase;
+      if (useCase.getClass().equals(useCaseClass)) {
+        return (U) useCase;
+      }
     }
-  }
     return null;
   }
 
-  // Executors should be replaced in TikTok apps
-  @SuppressLint("ConcurrentForbiddenDependencies")
-  public static Builder builder() {
-    return new AutoBuilder_CameraXSensorV2_Builder()
-      .setImageAnalysisBuilder(new ImageAnalysis.Builder())
-      .setExecutor(
-        Executors.newSingleThreadExecutor(
-          (r) -> {
-    Thread thread = new Thread(r);
-    thread.setName(CameraXSensorV2.class.getName() + ".ImageAnalysisThread");
-    return thread;
-  }))
-    .setCameraSelector(CameraSelector.DEFAULT_BACK_CAMERA);
-  }
-
-  /** Builder for new {@link CameraXSensorV2} instances. */
+  /**
+   * Builder for new {@link CameraXSensorV2} instances.
+   */
   @AutoBuilder(ofClass = CameraXSensorV2.class)
-    public abstract static class Builder implements MobileSensorV2.Builder<SharedImageProxy> {
+  public abstract static class Builder implements MobileSensorV2.Builder<SharedImageProxy> {
 
     private final ImmutableList.Builder<UseCase> useCases = ImmutableList.<UseCase>builder();
 
@@ -231,9 +235,9 @@ public final class CameraXSensorV2 implements MobileSensorV2<SharedImageProxy> {
 
     public abstract Builder setCameraSelector(CameraSelector cameraSelector);
 
-    public abstract Builder setImageAnalysisBuilder(ExtendableBuilder<ImageAnalysis> builder);
-
     abstract ExtendableBuilder<ImageAnalysis> getImageAnalysisBuilder();
+
+    public abstract Builder setImageAnalysisBuilder(ExtendableBuilder<ImageAnalysis> builder);
 
     public abstract Builder setExecutor(Executor executor);
 
@@ -241,16 +245,16 @@ public final class CameraXSensorV2 implements MobileSensorV2<SharedImageProxy> {
      * Adds a {@link UseCase} to the camera.
      *
      * <p>{@link ImageAnalysis} instances should not be added via {@code addUseCase}. The {@code
-     * ImageAnalysis} instance used by {@code CameraXSensorV2} can be configured using {@link
-     * #setImageAnalysisBuilder}.
+     * ImageAnalysis} instance used by {@code CameraXSensorV2} can be configured using
+     * {@link #setImageAnalysisBuilder}.
      *
      * @throws IllegalArgumentException if the UseCase is an ImageAnalysis instance.
      */
     @CanIgnoreReturnValue
     public Builder addUseCase(UseCase useCase) {
       Preconditions.checkArgument(
-        !(useCase instanceof ImageAnalysis),
-        "Use setImageAnalysisBuilder instead of addUseCase to configure ImageAnalysis");
+          !(useCase instanceof ImageAnalysis),
+          "Use setImageAnalysisBuilder instead of addUseCase to configure ImageAnalysis");
       useCases.add(useCase);
       return this;
     }

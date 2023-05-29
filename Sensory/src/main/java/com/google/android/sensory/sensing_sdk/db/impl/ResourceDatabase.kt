@@ -20,7 +20,7 @@ import com.google.android.sensory.sensing_sdk.db.impl.entities.UploadRequestEnti
   exportSchema = true
 )
 @TypeConverters(DbTypeConverters::class)
-internal abstract class ResourceDatabase: RoomDatabase(){
+internal abstract class ResourceDatabase : RoomDatabase() {
   abstract fun captureInfoDao(): CaptureInfoDao
   abstract fun resourceInfoDao(): ResourceInfoDao
   abstract fun uploadRequestDao(): UploadRequestDao

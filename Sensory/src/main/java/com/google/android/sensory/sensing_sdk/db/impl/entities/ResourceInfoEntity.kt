@@ -15,7 +15,7 @@ import com.google.android.sensory.sensing_sdk.model.RequestStatus
   ]
 )
 /** Information about the resource collected per capture. This is not involved in uploading.*/
-internal data class ResourceInfoEntity (
+internal data class ResourceInfoEntity(
   @PrimaryKey(autoGenerate = true) val id: Long,
   val resourceInfoId: String,
   val captureId: String,
@@ -26,5 +26,5 @@ internal data class ResourceInfoEntity (
   val resourceFolderPath: String,
   /** uploadUrl should be known at instance creation and not changed post partial uploading.*/
   val uploadURL: String,
-  val status: RequestStatus
+  val status: RequestStatus,
 )

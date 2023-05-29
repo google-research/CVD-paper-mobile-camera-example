@@ -16,11 +16,14 @@ import com.google.common.base.Preconditions;
 import com.google.errorprone.annotations.CheckReturnValue;
 import java.nio.ByteBuffer;
 
-/** Utility methods for encoding images. */
-@CheckReturnValue // see go/why-crv
+/**
+ * Utility methods for encoding images.
+ */
+@CheckReturnValue 
 public final class ImageEncoders {
 
-  private ImageEncoders() {}
+  private ImageEncoders() {
+  }
 
   /**
    * Converts an {@link Image} with format {@link ImageFormat.YUV_420_888} to a {@link YuvImage}.
@@ -87,7 +90,7 @@ public final class ImageEncoders {
   /**
    * Converts an Image to a Bitmap.
    *
-   * <p>This involves a YUV_420_888 to RBGA_8888 (32RGBA) conversion. Taken from go/so/47498843
+   * <p>This involves a YUV_420_888 to RBGA_8888 (32RGBA) conversion.
    *
    * <p>Throws if the input Image is invalid.
    *
@@ -111,8 +114,7 @@ public final class ImageEncoders {
     final Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
     final Allocation allocationRgb = Allocation.createFromBitmap(rs, bitmap);
 
-    // go/bugpattern/ByteBufferBackingArray: The ByteBuffer 'output' was initialized using
-    // allocateDirect() inside imageToByteBuffer, using yuvByes.array() is legitimate.
+    // The ByteBuffer 'output' was initialized using allocateDirect() inside imageToByteBuffer, using yuvByes.array() is legitimate.
     final Allocation allocationYuv =
         Allocation.createSized(rs, Element.U8(rs), yuvBytes.array().length);
     allocationYuv.copyFrom(yuvBytes.array());
@@ -133,9 +135,6 @@ public final class ImageEncoders {
 
   /**
    * Converts an Image to a ByteBuffer.
-   *
-   * <p>Taken from package com.google.android.apps.lens.spatial.capture.utils, in turn taken from
-   * go/so/47498843
    */
   private static ByteBuffer imageToByteBuffer(final Image image) throws InvalidImageException {
     final Rect crop = image.getCropRect();
@@ -187,9 +186,7 @@ public final class ImageEncoders {
 
         if (pixelStride == 1 && outputStride == 1) {
           length = widthShifted;
-          // go/bugpattern/ByteBufferBackingArray: The ByteBuffer 'output' was initialized using
-          // allocateDirect(), and the computed channelOffset and length are a required part of the
-          // image conversion.
+          // The ByteBuffer 'output' was initialized using allocateDirect(), and the computed channelOffset and length are a required part of the image conversion.
           buffer.get(output.array(), channelOffset, length);
           channelOffset += length;
         } else {
@@ -197,9 +194,7 @@ public final class ImageEncoders {
           buffer.get(rowData, 0, length);
 
           for (int col = 0; col < widthShifted; col++) {
-            // go/bugpattern/ByteBufferBackingArray: The ByteBuffer 'output' was initialized using
-            // allocateDirect(), and the computed channelOffset and length are a required part of
-            // the image conversion.
+            //The ByteBuffer 'output' was initialized using allocateDirect(), and the computed channelOffset and length are a required part of the image conversion.
             output.array()[channelOffset] = rowData[col * pixelStride];
             channelOffset += outputStride;
           }
@@ -214,8 +209,11 @@ public final class ImageEncoders {
     return output;
   }
 
-  /** Exception thrown when an image cannot be converted to a Bitmap. */
+  /**
+   * Exception thrown when an image cannot be converted to a Bitmap.
+   */
   public static final class InvalidImageException extends Exception {
+
     InvalidImageException(String msg) {
       super(msg);
     }

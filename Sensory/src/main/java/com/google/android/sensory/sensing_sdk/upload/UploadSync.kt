@@ -14,9 +14,9 @@ import com.google.android.sensory.sensing_sdk.defaultPeriodicSyncConfiguration
 import com.google.android.sensory.sensing_sdk.defaultRetryConfiguration
 
 object UploadSync {
-  inline fun <reified  W: SensorDataUploadWorker> enqueueUploadUniqueWork(
+  inline fun <reified W : SensorDataUploadWorker> enqueueUploadUniqueWork(
     context: Context,
-    retryConfiguration: RetryConfiguration = defaultRetryConfiguration
+    retryConfiguration: RetryConfiguration = defaultRetryConfiguration,
   ) {
     WorkManager.getInstance(context)
       .enqueueUniqueWork(
@@ -29,7 +29,7 @@ object UploadSync {
   @PublishedApi
   internal inline fun <W : SensorDataUploadWorker> createOneTimeWorkRequest(
     retryConfiguration: RetryConfiguration?,
-    clazz: Class<W>
+    clazz: Class<W>,
   ): OneTimeWorkRequest {
     val oneTimeWorkRequestBuilder = OneTimeWorkRequest.Builder(clazz)
     retryConfiguration?.let {
@@ -45,9 +45,9 @@ object UploadSync {
     return oneTimeWorkRequestBuilder.build()
   }
 
-  inline fun <reified W: SensorDataUploadWorker> enqueueUploadPeriodicWork(
+  inline fun <reified W : SensorDataUploadWorker> enqueueUploadPeriodicWork(
     context: Context,
-    periodicSyncConfiguration: PeriodicSyncConfiguration = defaultPeriodicSyncConfiguration
+    periodicSyncConfiguration: PeriodicSyncConfiguration = defaultPeriodicSyncConfiguration,
   ) {
     WorkManager.getInstance(context)
       .enqueueUniquePeriodicWork(
@@ -60,7 +60,7 @@ object UploadSync {
   @PublishedApi
   internal inline fun <W : SensorDataUploadWorker> createPeriodicWorkRequest(
     periodicSyncConfiguration: PeriodicSyncConfiguration,
-    clazz: Class<W>
+    clazz: Class<W>,
   ): PeriodicWorkRequest {
     val periodicWorkRequestBuilder =
       PeriodicWorkRequest.Builder(

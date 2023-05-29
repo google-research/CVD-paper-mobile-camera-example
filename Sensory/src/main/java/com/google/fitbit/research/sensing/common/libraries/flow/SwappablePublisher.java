@@ -22,8 +22,8 @@ import org.reactivestreams.Subscription;
  * will stop receiving signals from the old Publisher and begin receiving signals from the new
  * Publisher.
  *
- * <p>If an upstream Publisher signals termination with {@code onComplete} or {@code onError}, or if
- * {@link #setException} or {@link #setComplete} are called, then subscriptions will remain
+ * <p>If an upstream Publisher signals termination with {@code onComplete} or {@code onError}, or
+ * if {@link #setException} or {@link #setComplete} are called, then subscriptions will remain
  * terminated even if the terminated Publisher is replaced.
  */
 public final class SwappablePublisher<T> implements CloseablePublisher<T> {
@@ -32,7 +32,18 @@ public final class SwappablePublisher<T> implements CloseablePublisher<T> {
       Collections.synchronizedSet(new HashSet<>());
   private DeferredPublisher<T> upstreamPublisher = new DeferredPublisher<>();
 
-  private SwappablePublisher() {}
+  private SwappablePublisher() {
+  }
+
+  public static <T> SwappablePublisher<T> create() {
+    return new SwappablePublisher<T>();
+  }
+
+  public static <T> SwappablePublisher<T> create(Publisher<T> initialPublisher) {
+    SwappablePublisher<T> publisher = new SwappablePublisher<T>();
+    publisher.setPublisher(initialPublisher);
+    return publisher;
+  }
 
   @Override
   public void subscribe(Subscriber<? super T> subscriber) {
@@ -76,7 +87,9 @@ public final class SwappablePublisher<T> implements CloseablePublisher<T> {
     setPublisher(FailedPublisher.create(t));
   }
 
-  /** Equivalent to {@link #setComplete}. */
+  /**
+   * Equivalent to {@link #setComplete}.
+   */
   @Override
   public void close() {
     setComplete();
@@ -103,12 +116,18 @@ public final class SwappablePublisher<T> implements CloseablePublisher<T> {
     }
   }
 
+  @VisibleForTesting
+  int numCurrentSubscribers() {
+    return downstreamSubscriptions.size();
+  }
+
   /**
    * Subscription that passes signals from an upstream Publisher to a downstream Subscriber. The
    * upstream Publisher can be removed or changed at any time without the downstream Subscriber
    * knowing.
    */
   private final class SwappableSubscription implements Subscription {
+
     private final Subscribed<T> subscribed;
     private final AtomicReference<Subscription> upstream;
 
@@ -194,20 +213,5 @@ public final class SwappablePublisher<T> implements CloseablePublisher<T> {
           };
       upstreamPublisher.subscribe(forwardUpstreamToDownstream);
     }
-  }
-
-  @VisibleForTesting
-  int numCurrentSubscribers() {
-    return downstreamSubscriptions.size();
-  }
-
-  public static <T> SwappablePublisher<T> create() {
-    return new SwappablePublisher<T>();
-  }
-
-  public static <T> SwappablePublisher<T> create(Publisher<T> initialPublisher) {
-    SwappablePublisher<T> publisher = new SwappablePublisher<T>();
-    publisher.setPublisher(initialPublisher);
-    return publisher;
   }
 }

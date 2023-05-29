@@ -15,8 +15,9 @@ import org.reactivestreams.Subscription;
  * and whether or not the subscription is still active.
  */
 public class Subscribed<S> {
-  private Optional<Subscriber<? super S>> subscriber;
+
   private final AtomicLong requests;
+  private Optional<Subscriber<? super S>> subscriber;
 
   public Subscribed(Subscriber<? super S> subscriber) {
     this.subscriber = Optional.of(subscriber);
@@ -27,7 +28,9 @@ public class Subscribed<S> {
     return subscriber.isPresent() ? requests.get() : 0;
   }
 
-  /** Returns the {@link Subscriber} if the subscription is still active. */
+  /**
+   * Returns the {@link Subscriber} if the subscription is still active.
+   */
   @Nullable
   Subscriber<? super S> getSubscriber() {
     return subscriber.orElse(null);
@@ -46,7 +49,9 @@ public class Subscribed<S> {
     }
   }
 
-  /** Terminates the subscription. */
+  /**
+   * Terminates the subscription.
+   */
   public void cancel() {
     synchronized (this) {
       subscriber = Optional.empty();
@@ -84,7 +89,9 @@ public class Subscribed<S> {
     return false;
   }
 
-  /** Signals {@link Subscriber#onError} and marks this subscription as terminated. */
+  /**
+   * Signals {@link Subscriber#onError} and marks this subscription as terminated.
+   */
   public void error(Throwable t) {
     synchronized (this) {
       Optional<Subscriber<? super S>> current = subscriber;
@@ -93,7 +100,9 @@ public class Subscribed<S> {
     }
   }
 
-  /** Signals {@link Subscriber#onComplete} and marks this subscription as terminated. */
+  /**
+   * Signals {@link Subscriber#onComplete} and marks this subscription as terminated.
+   */
   public void complete() {
     synchronized (this) {
       Optional<Subscriber<? super S>> current = subscriber;

@@ -10,14 +10,21 @@ import com.google.fitbit.research.sensing.common.libraries.flow.DirectPublisher;
 import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 
-/** Publishes {@link CaptureRequest}s and {@link CaptureResult}s from a camera session. */
-@CheckReturnValue // see go/why-crv
+/**
+ * Publishes {@link CaptureRequest}s and {@link CaptureResult}s from a camera session.
+ */
+@CheckReturnValue 
 public final class CameraCapturePublisher extends CameraCaptureSession.CaptureCallback
     implements Publisher<TotalCaptureResult> {
 
   private final DirectPublisher<TotalCaptureResult> internalPublisher = new DirectPublisher<>();
 
-  public CameraCapturePublisher() {}
+  public CameraCapturePublisher() {
+  }
+
+  public static Publisher<CaptureRequest> asRequests(Publisher<? extends CaptureResult> results) {
+    return DirectProcessor.transformPublisher(results, CaptureResult::getRequest);
+  }
 
   @Override
   public void onCaptureCompleted(
@@ -28,9 +35,5 @@ public final class CameraCapturePublisher extends CameraCaptureSession.CaptureCa
   @Override
   public void subscribe(Subscriber<? super TotalCaptureResult> subscriber) {
     internalPublisher.subscribe(subscriber);
-  }
-
-  public static Publisher<CaptureRequest> asRequests(Publisher<? extends CaptureResult> results) {
-    return DirectProcessor.transformPublisher(results, CaptureResult::getRequest);
   }
 }

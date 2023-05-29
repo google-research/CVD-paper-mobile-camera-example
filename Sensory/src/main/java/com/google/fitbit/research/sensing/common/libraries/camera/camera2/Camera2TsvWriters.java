@@ -1,5 +1,5 @@
-
 package com.google.fitbit.research.sensing.common.libraries.camera.camera2;
+
 import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CaptureRequest;
 import android.hardware.camera2.CaptureResult;
@@ -13,53 +13,16 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.function.Function;
-/** {@link TsvWriter}s for camera2 metadata. */
-@CheckReturnValue // see go/why-crv
+
+/**
+ * {@link TsvWriter}s for camera2 metadata.
+ */
+@CheckReturnValue 
 public final class Camera2TsvWriters {
-  private Camera2TsvWriters() {}
-  public static CaptureResultTsvWriterBuilder captureResultBuilder() {
-    return new CaptureResultTsvWriterBuilder();
-  }
+
   /**
-   * Builds a {@link TsvWriter} that records separate columns for {@link CaptureResult} keys and
-   * values.
-   */
-  public static class CaptureResultTsvWriterBuilder extends TsvWriter.Builder<CaptureResult> {
-    CaptureResultTsvWriterBuilder() {
-      super();
-    }
-    public CaptureResultTsvWriterBuilder addFrameNumberColumn() {
-      return (CaptureResultTsvWriterBuilder)
-          addColumn("frameNumber", CaptureResult::getFrameNumber);
-    }
-    public CaptureResultTsvWriterBuilder addColumn(CaptureResult.Key<?> key) {
-      return (CaptureResultTsvWriterBuilder) addColumn(key.getName(), (result) -> result.get(key));
-    }
-    public CaptureResultTsvWriterBuilder addRggbChannelVectorColumn(
-        CaptureResult.Key<RggbChannelVector> key) {
-      return this.addTransformedColumn(key.getName() + "_red", key, RggbChannelVector::getRed)
-          .addTransformedColumn(key.getName() + "_greenEven", key, RggbChannelVector::getGreenEven)
-          .addTransformedColumn(key.getName() + "_greenOdd", key, RggbChannelVector::getGreenOdd)
-          .addTransformedColumn(key.getName() + "_blue", key, RggbChannelVector::getBlue);
-    }
-    public CaptureResultTsvWriterBuilder addRangeColumn(CaptureResult.Key<Range<Integer>> key) {
-      return this.addTransformedColumn(key.getName() + "_lower", key, Range::getLower)
-          .addTransformedColumn(key.getName() + "_upper", key, Range::getUpper);
-    }
-    private <V> CaptureResultTsvWriterBuilder addTransformedColumn(
-        String columnName, CaptureResult.Key<V> key, Function<V, Object> transform) {
-      return (CaptureResultTsvWriterBuilder)
-          addColumn(
-              columnName,
-              (result) -> {
-                V value = result.get(key);
-                return value == null ? null : transform.apply(value);
-              });
-    }
-  }
-  /**
-   * {@link TsvWriter} that serializes an entire {@link CaptureResult} and its corresponding {@link
-   * CaptureRequest}.
+   * {@link TsvWriter} that serializes an entire {@link CaptureResult} and its corresponding
+   * {@link CaptureRequest}.
    *
    * <p>Each row contains a key name and its corresponding values from {@link CaptureRequest} and
    * {@link CaptureResult}, if present.
@@ -70,6 +33,7 @@ public final class Camera2TsvWriters {
         public ImmutableList<String> header() {
           return ImmutableList.of("key", "resultValue", "requestValue");
         }
+
         @Override
         public ImmutableList<String> row(CaptureResult captureResult) {
           ImmutableList.Builder<String> rowBuilder = ImmutableList.<String>builder();
@@ -112,6 +76,7 @@ public final class Camera2TsvWriters {
         public ImmutableList<String> header() {
           return ImmutableList.of("characteristicKey", "characteristicValue");
         }
+
         @Override
         public ImmutableList<String> row(CameraCharacteristics characteristics) {
           ImmutableList.Builder<String> rowBuilder = ImmutableList.<String>builder();
@@ -122,6 +87,14 @@ public final class Camera2TsvWriters {
           return rowBuilder.build();
         }
       };
+
+  private Camera2TsvWriters() {
+  }
+
+  public static CaptureResultTsvWriterBuilder captureResultBuilder() {
+    return new CaptureResultTsvWriterBuilder();
+  }
+
   private static String objToString(Object value) {
     if (value == null) {
       return "";
@@ -131,6 +104,7 @@ public final class Camera2TsvWriters {
       return value.toString();
     }
   }
+
   private static String arrayToString(Object obj) {
     if (obj instanceof Object[]) {
       return Arrays.deepToString((Object[]) obj);
@@ -160,5 +134,49 @@ public final class Camera2TsvWriters {
       return Arrays.toString((double[]) obj);
     }
     return "";
+  }
+
+  /**
+   * Builds a {@link TsvWriter} that records separate columns for {@link CaptureResult} keys and
+   * values.
+   */
+  public static class CaptureResultTsvWriterBuilder extends TsvWriter.Builder<CaptureResult> {
+
+    CaptureResultTsvWriterBuilder() {
+      super();
+    }
+
+    public CaptureResultTsvWriterBuilder addFrameNumberColumn() {
+      return (CaptureResultTsvWriterBuilder)
+          addColumn("frameNumber", CaptureResult::getFrameNumber);
+    }
+
+    public CaptureResultTsvWriterBuilder addColumn(CaptureResult.Key<?> key) {
+      return (CaptureResultTsvWriterBuilder) addColumn(key.getName(), (result) -> result.get(key));
+    }
+
+    public CaptureResultTsvWriterBuilder addRggbChannelVectorColumn(
+        CaptureResult.Key<RggbChannelVector> key) {
+      return this.addTransformedColumn(key.getName() + "_red", key, RggbChannelVector::getRed)
+          .addTransformedColumn(key.getName() + "_greenEven", key, RggbChannelVector::getGreenEven)
+          .addTransformedColumn(key.getName() + "_greenOdd", key, RggbChannelVector::getGreenOdd)
+          .addTransformedColumn(key.getName() + "_blue", key, RggbChannelVector::getBlue);
+    }
+
+    public CaptureResultTsvWriterBuilder addRangeColumn(CaptureResult.Key<Range<Integer>> key) {
+      return this.addTransformedColumn(key.getName() + "_lower", key, Range::getLower)
+          .addTransformedColumn(key.getName() + "_upper", key, Range::getUpper);
+    }
+
+    private <V> CaptureResultTsvWriterBuilder addTransformedColumn(
+        String columnName, CaptureResult.Key<V> key, Function<V, Object> transform) {
+      return (CaptureResultTsvWriterBuilder)
+          addColumn(
+              columnName,
+              (result) -> {
+                V value = result.get(key);
+                return value == null ? null : transform.apply(value);
+              });
+    }
   }
 }

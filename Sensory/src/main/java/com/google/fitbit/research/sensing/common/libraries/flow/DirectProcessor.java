@@ -13,23 +13,41 @@ import org.reactivestreams.Subscription;
  * and multicasts the results to all {@link Subscriber}s with pending requests. {@code onComplete}
  * and {@code onError} signals are forwarded directly to all Subscribers with no change.
  *
- * <p>Transformations should be lightweight. Long-running operations in the transformation can block
- * further upstream signals from being processed.
+ * <p>Transformations should be lightweight. Long-running operations in the transformation can
+ * block further upstream signals from being processed.
  *
- * <p>Requests are handled lazily. DirectProcessor does not make any requests to its upstream {@link
- * Publisher} until required by a downstream Subscriber.
+ * <p>Requests are handled lazily. DirectProcessor does not make any requests to its upstream
+ * {@link Publisher} until required by a downstream Subscriber.
  */
-@CheckReturnValue // see go/why-crv
+@CheckReturnValue 
 public abstract class DirectProcessor<T, R> implements Processor<T, R> {
 
   private final Object lock = new Object();
   private final DeferredSubscription incoming = new DeferredSubscription();
-  @Nullable private Distributor<R> distributor = new Distributor<>(incoming);
-  @Nullable private Publisher<R> terminalPublisher;
+  @Nullable
+  private Distributor<R> distributor = new Distributor<>(incoming);
+  @Nullable
+  private Publisher<R> terminalPublisher;
+
+  public static <I, O> DirectProcessor<I, O> transformPublisher(
+      Publisher<I> publisher, Function<I, O> transform) {
+    DirectProcessor<I, O> processor = DirectProcessor.withTransform(transform);
+    publisher.subscribe(processor);
+    return processor;
+  }
+
+  public static <I, O> DirectProcessor<I, O> withTransform(Function<I, O> transform) {
+    return new DirectProcessor<I, O>() {
+      @Override
+      public O process(I input) {
+        return transform.apply(input);
+      }
+    };
+  }
 
   /**
-   * Transforms inputs from {@link #onNext} before sending them downstream. Throwing a {@link
-   * DirectProcessorException} will signal {@link #onError} and terminate this processor.
+   * Transforms inputs from {@link #onNext} before sending them downstream. Throwing a
+   * {@link DirectProcessorException} will signal {@link #onError} and terminate this processor.
    */
   public abstract R process(T input) throws DirectProcessorException;
 
@@ -84,23 +102,9 @@ public abstract class DirectProcessor<T, R> implements Processor<T, R> {
     }
   }
 
-  public static <I, O> DirectProcessor<I, O> transformPublisher(
-      Publisher<I> publisher, Function<I, O> transform) {
-    DirectProcessor<I, O> processor = DirectProcessor.withTransform(transform);
-    publisher.subscribe(processor);
-    return processor;
-  }
-
-  public static <I, O> DirectProcessor<I, O> withTransform(Function<I, O> transform) {
-    return new DirectProcessor<I, O>() {
-      @Override
-      public O process(I input) {
-        return transform.apply(input);
-      }
-    };
-  }
-
-  /** Thrown when an error is encountered during {@link #process}. */
+  /**
+   * Thrown when an error is encountered during {@link #process}.
+   */
   public static final class DirectProcessorException extends Exception {
 
     public DirectProcessorException(String message) {

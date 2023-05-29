@@ -10,16 +10,19 @@ import java.util.List;
  *
  * <p>This class is not thread safe. Calls to each method should be externally synchronized.
  */
-@CheckReturnValue // see go/why-crv
+@CheckReturnValue 
 public final class SubscribedList<T> {
 
-  @VisibleForTesting final List<Subscribed<T>> list = new ArrayList<>(1);
+  @VisibleForTesting
+  final List<Subscribed<T>> list = new ArrayList<>(1);
 
   public void add(Subscribed<T> subscribed) {
     list.add(subscribed);
   }
 
-  /** Signals all subscriptions with {@code onNext}. */
+  /**
+   * Signals all subscriptions with {@code onNext}.
+   */
   @SuppressWarnings("ForeachList")
   public void next(T t) {
     // Iterate manually in case of re-entrancy. If Subscribed.next() results in another
@@ -32,7 +35,9 @@ public final class SubscribedList<T> {
     list.removeIf(Subscribed::isTerminated);
   }
 
-  /** Signals all subscriptions with {@code onError}. */
+  /**
+   * Signals all subscriptions with {@code onError}.
+   */
   public void error(Throwable t) {
     for (Subscribed<T> s : list) {
       s.error(t);
@@ -40,7 +45,9 @@ public final class SubscribedList<T> {
     list.clear();
   }
 
-  /** Signals all subscriptions with {@code onError}. */
+  /**
+   * Signals all subscriptions with {@code onError}.
+   */
   public void complete() {
     for (Subscribed<T> s : list) {
       s.complete();

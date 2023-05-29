@@ -43,7 +43,7 @@ import org.reactivestreams.Subscription;
  * given instance has finished writing, the same instance will not restart even when re-subscribed
  * to a new stream.
  */
-@CheckReturnValue // see go/why-crv
+@CheckReturnValue 
 public final class WriteJpegFutureSubscriber implements FutureSubscriber<Shared<Image>, Long> {
 
   private final Executor writeExecutor;
@@ -53,7 +53,8 @@ public final class WriteJpegFutureSubscriber implements FutureSubscriber<Shared<
   private final FlowSupplier<Long, OutputStream> timestampedOutputStreams;
   private final SettableFuture<Long> resultFuture = SettableFuture.create();
 
-  @Nullable private Subscription subscription;
+  @Nullable
+  private Subscription subscription;
   private FluentFuture<Long> writesCompleted;
   private long framesReceived = 0;
 
@@ -69,6 +70,21 @@ public final class WriteJpegFutureSubscriber implements FutureSubscriber<Shared<
     this.quality = quality;
     this.timestampedOutputStreams = timestampedOutputStreams;
     this.writesCompleted = FluentFuture.from(Futures.immediateFuture(0L));
+  }
+
+  // setWriteExecutor should be replaced with BackgroundExecutor in TikTok apps.
+  @SuppressLint("ConcurrentForbiddenDependencies")
+  public static Builder builder() {
+    return new AutoBuilder_WriteJpegFutureSubscriber_Builder()
+        .setQuality(100)
+        .setQueueSize(10L)
+        .setWriteExecutor(
+            Executors.newSingleThreadExecutor(
+                (r) -> {
+                  Thread thread = new Thread(r);
+                  thread.setName(WriteJpegFutureSubscriber.class.getName() + ".WriteThread");
+                  return thread;
+                }));
   }
 
   @Override
@@ -160,42 +176,32 @@ public final class WriteJpegFutureSubscriber implements FutureSubscriber<Shared<
     return resultFuture;
   }
 
-  /** Returned by {@link #resultFuture} when JPEG encoding fails. */
+  /**
+   * Returned by {@link #resultFuture} when JPEG encoding fails.
+   */
   public static final class EncodeFailedException extends Exception {
+
     EncodeFailedException(String msg) {
       super(msg);
     }
   }
 
-  // setWriteExecutor should be replaced with BackgroundExecutor in TikTok apps.
-  @SuppressLint("ConcurrentForbiddenDependencies")
-  public static Builder builder() {
-    return new AutoBuilder_WriteJpegFutureSubscriber_Builder()
-        .setQuality(100)
-        .setQueueSize(10L)
-        .setWriteExecutor(
-            Executors.newSingleThreadExecutor(
-                (r) -> {
-                  Thread thread = new Thread(r);
-                  thread.setName(WriteJpegFutureSubscriber.class.getName() + ".WriteThread");
-                  return thread;
-                }));
-  }
-
-  /** Builds a new {@link WriteJpegFutureSubscriber}. */
+  /**
+   * Builds a new {@link WriteJpegFutureSubscriber}.
+   */
   @AutoBuilder(ofClass = WriteJpegFutureSubscriber.class)
   public abstract static class Builder {
 
     /**
      * Sets the background Executor responsible for writing to disk. This can be a multi- or
-     * single-threaded Executor. If multi-threaded, {@link #setFileSupplier} and {@link
-     * #setOutputStreamSupplier} should be thread-safe.
+     * single-threaded Executor. If multi-threaded, {@link #setFileSupplier} and
+     * {@link #setOutputStreamSupplier} should be thread-safe.
      */
     public abstract Builder setWriteExecutor(Executor executor);
 
     /**
-     * Sets the number of frames to record. To record indefinitely, this can be set to {@link
-     * Long.MAX_VALUE}.
+     * Sets the number of frames to record. To record indefinitely, this can be set to
+     * {@link Long.MAX_VALUE}.
      */
     public abstract Builder setTotalFrames(long totalFrames);
 
@@ -203,14 +209,16 @@ public final class WriteJpegFutureSubscriber implements FutureSubscriber<Shared<
      * Sets the maximum number of frames that can be queued for writing. Frames will be dropped if
      * the queue overflows.
      *
-     * <p>This can be set to {@link Long.MAX_VALUE} for an unlimited queue size. This should only be
-     * done to guarantee no missed frames on a very short recording, i.e. {@link setTotalFrames} is
-     * set to something small. If frames are produced faster than they are written, this will
+     * <p>This can be set to {@link Long.MAX_VALUE} for an unlimited queue size. This should only
+     * be done to guarantee no missed frames on a very short recording, i.e. {@link setTotalFrames}
+     * is set to something small. If frames are produced faster than they are written, this will
      * eventually lead to the app throwing an OutOfMemoryException.
      */
     public abstract Builder setQueueSize(long queueSize);
 
-    /** Value from 0 to 100 indicating compression quality. */
+    /**
+     * Value from 0 to 100 indicating compression quality.
+     */
     public abstract Builder setQuality(int quality);
 
     /**
@@ -241,24 +249,31 @@ public final class WriteJpegFutureSubscriber implements FutureSubscriber<Shared<
           });
     }
 
-    /** Configures this subscriber to record only a single frame. */
+    /**
+     * Configures this subscriber to record only a single frame.
+     */
     public Builder setSingleOutputStream(Callable<OutputStream> outputStreamSupplier) {
       return this.setTotalFrames(1L).setQueueSize(1L).setOutputStreamSupplier(outputStreamSupplier);
     }
 
-    /** Configures this subscriber to record only a single frame. */
+    /**
+     * Configures this subscriber to record only a single frame.
+     */
     public Builder setSingleFile(Callable<File> fileSupplier) {
       return this.setTotalFrames(1L).setQueueSize(1L).setFileSupplier(fileSupplier);
     }
 
-    /** Configures this subscriber to record only a single frame. */
+    /**
+     * Configures this subscriber to record only a single frame.
+     */
     public Builder setSingleFile(File file) {
       return this.setSingleFile(() -> file);
     }
 
     /**
      * Configures this subscriber to record to new files in the given folder. Each new file will be
-     * named {@code <timestamp>.jpg}, where the timestamp corresponds to {@link Image#getTimestamp}.
+     * named {@code <timestamp>.jpg}, where the timestamp corresponds to
+     * {@link Image#getTimestamp}.
      */
     public Builder setTimestampedFiles(Callable<File> folder) {
       return this.setTimestampedOutputStreams(
@@ -274,13 +289,16 @@ public final class WriteJpegFutureSubscriber implements FutureSubscriber<Shared<
 
     /**
      * Configures this subscriber to record to new files in the given folder. Each new file will be
-     * named {@code <timestamp>.jpg}, where the timestamp corresponds to {@link Image#getTimestamp}.
+     * named {@code <timestamp>.jpg}, where the timestamp corresponds to
+     * {@link Image#getTimestamp}.
      */
     public Builder setTimestampedFiles(File folder) {
       return this.setTimestampedFiles(() -> folder);
     }
 
-    /** Configures this subscriber to record */
+    /**
+     * Configures this subscriber to record
+     */
     public abstract WriteJpegFutureSubscriber build();
   }
 }

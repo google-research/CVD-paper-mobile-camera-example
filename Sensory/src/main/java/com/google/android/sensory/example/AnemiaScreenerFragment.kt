@@ -36,8 +36,8 @@ class AnemiaScreenerFragment : Fragment(R.layout.fragment_anemia_screening) {
     }
   }
 
-  private fun setupMenu(){
-    (requireActivity() as MainActivity).addMenuProvider(object: MenuProvider {
+  private fun setupMenu() {
+    (requireActivity() as MainActivity).addMenuProvider(object : MenuProvider {
       override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
         menuInflater.inflate(R.menu.anemia_screen_encounter_fragment_menu, menu)
       }
@@ -48,10 +48,12 @@ class AnemiaScreenerFragment : Fragment(R.layout.fragment_anemia_screening) {
             onSubmitAction()
             true
           }
+
           android.R.id.home -> {
             showCancelScreenerQuestionnaireAlertDialog()
             true
           }
+
           else -> true
         }
       }

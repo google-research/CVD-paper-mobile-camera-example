@@ -24,7 +24,32 @@ public final class DeferredPublisher<T> implements Publisher<T> {
   private final Object lock = new Object();
   private final List<Subscriber<? super T>> deferredSubscribers =
       Collections.synchronizedList(new ArrayList<>());
-  @Nullable private Publisher<T> publisher;
+  @Nullable
+  private Publisher<T> publisher;
+
+  /**
+   * Creates a DeferredPublisher from a {@code ListenableFuture<Publisher>}, which can be subscribed
+   * to before the final Publisher is available.
+   */
+  public static <P> DeferredPublisher<P> fromPublisherFuture(
+      ListenableFuture<? extends Publisher<P>> future, Executor executor) {
+    DeferredPublisher<P> deferred = new DeferredPublisher<>();
+    Futures.addCallback(
+        future,
+        new FutureCallback<Publisher<P>>() {
+          @Override
+          public void onSuccess(Publisher<P> publisher) {
+            deferred.set(publisher);
+          }
+
+          @Override
+          public void onFailure(Throwable t) {
+            deferred.setException(t);
+          }
+        },
+        executor);
+    return deferred;
+  }
 
   @Override
   public void subscribe(Subscriber<? super T> subscriber) {
@@ -37,7 +62,9 @@ public final class DeferredPublisher<T> implements Publisher<T> {
     }
   }
 
-  /** Returns true if {@link #set} or {@link #setException} has been called. */
+  /**
+   * Returns true if {@link #set} or {@link #setException} has been called.
+   */
   public boolean isSet() {
     synchronized (lock) {
       return publisher != null;
@@ -67,8 +94,8 @@ public final class DeferredPublisher<T> implements Publisher<T> {
   }
 
   /**
-   * Rejects all previous and future Subscribers by signalling {@code onSubscribe} then {@code
-   * onError}.
+   * Rejects all previous and future Subscribers by signalling {@code onSubscribe} then
+   * {@code onError}.
    *
    * <p>No-op if {@link #set}, {@link #setComplete}, or {@link #setException} were previously
    * called.
@@ -86,29 +113,5 @@ public final class DeferredPublisher<T> implements Publisher<T> {
    */
   public void setComplete() {
     set(CompletedPublisher.create());
-  }
-
-  /**
-   * Creates a DeferredPublisher from a {@code ListenableFuture<Publisher>}, which can be subscribed
-   * to before the final Publisher is available.
-   */
-  public static <P> DeferredPublisher<P> fromPublisherFuture(
-      ListenableFuture<? extends Publisher<P>> future, Executor executor) {
-    DeferredPublisher<P> deferred = new DeferredPublisher<>();
-    Futures.addCallback(
-        future,
-        new FutureCallback<Publisher<P>>() {
-          @Override
-          public void onSuccess(Publisher<P> publisher) {
-            deferred.set(publisher);
-          }
-
-          @Override
-          public void onFailure(Throwable t) {
-            deferred.setException(t);
-          }
-        },
-        executor);
-    return deferred;
   }
 }

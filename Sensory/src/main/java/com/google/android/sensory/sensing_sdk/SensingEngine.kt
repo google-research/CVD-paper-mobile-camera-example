@@ -30,7 +30,7 @@ interface SensingEngine {
     participantId: String,
     captureType: CaptureType,
     captureSettings: CaptureSettings,
-    captureId: String? = null
+    captureId: String? = null,
   ): CaptureFragment
 
   /** Lists all ResourceInfo given a participantId. This will return all ResourceInfo across multiple capturings. */

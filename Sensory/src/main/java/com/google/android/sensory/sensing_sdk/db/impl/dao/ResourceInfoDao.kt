@@ -8,7 +8,6 @@ import androidx.room.Transaction
 import androidx.room.Update
 import com.google.android.sensory.sensing_sdk.db.impl.entities.ResourceInfoEntity
 import com.google.android.sensory.sensing_sdk.model.ResourceInfo
-import java.lang.Exception
 
 @Dao
 internal abstract class ResourceInfoDao {
@@ -16,7 +15,7 @@ internal abstract class ResourceInfoDao {
   abstract suspend fun insertResourceInfoEntity(resourceInfoEntity: ResourceInfoEntity)
 
   @Transaction
-  open suspend fun insertResourceInfo(resourceInfo: ResourceInfo): String{
+  open suspend fun insertResourceInfo(resourceInfo: ResourceInfo): String {
     insertResourceInfoEntity(resourceInfo.toResourceInfoEntity())
     return resourceInfo.resourceInfoId
   }
@@ -57,7 +56,7 @@ internal abstract class ResourceInfoDao {
   abstract suspend fun updateResourceInfoEntity(resourceInfoEntity: ResourceInfoEntity)
 
   @Transaction
-  open suspend fun updateResourceInfo(resourceInfo: ResourceInfo){
+  open suspend fun updateResourceInfo(resourceInfo: ResourceInfo) {
     updateResourceInfoEntity(resourceInfo.toResourceInfoEntity())
   }
 

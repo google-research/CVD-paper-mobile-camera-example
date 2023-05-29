@@ -19,15 +19,20 @@ import java.io.File;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executor;
 
-/** Helper methods for common camera operations. */
+/**
+ * Helper methods for common camera operations.
+ */
 @ExperimentalCamera2Interop
 public final class Camera2InteropActions {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
-  private Camera2InteropActions() {}
+  private Camera2InteropActions() {
+  }
 
-  /** Locks/unlocks autoexposure and white balance. */
+  /**
+   * Locks/unlocks autoexposure and white balance.
+   */
   @MainThread
   public static ListenableFuture<Void> setAeAwbLocked(Camera2InteropSensor camera, boolean lock) {
     if (camera.isStarted()) {
@@ -42,7 +47,9 @@ public final class Camera2InteropActions {
     return Futures.immediateVoidFuture();
   }
 
-  /** Resolves when autoexposure and auto white balance converge. */
+  /**
+   * Resolves when autoexposure and auto white balance converge.
+   */
   public static ListenableFuture<Void> waitForAeAwbConverged(Camera2InteropSensor camera) {
     return Futures.transform(
         FlowFutures.<TotalCaptureResult>whenConditionOrComplete(

@@ -26,8 +26,8 @@ public interface MobileSensorV2<T> extends LifecycleOwner {
   }
 
   /**
-   * Returns this sensor's lifecycle, which roughly follows the lifecycle bound in {@link
-   * Builder#setBoundLifecycle}.
+   * Returns this sensor's lifecycle, which roughly follows the lifecycle bound in
+   * {@link Builder#setBoundLifecycle}.
    *
    * <p>This lifecycle can be observed to see the sensor's current state:
    *
@@ -46,8 +46,8 @@ public interface MobileSensorV2<T> extends LifecycleOwner {
   Lifecycle getLifecycle();
 
   /**
-   * Publisher for this sensor's primary data stream. Signals {@code onNext} while {@link
-   * #getLifecycle} is between {@code onStart} and {@code onStop}.
+   * Publisher for this sensor's primary data stream. Signals {@code onNext} while
+   * {@link #getLifecycle} is between {@code onStart} and {@code onStop}.
    *
    * <p>There are multiple ways to subscribe to this stream:
    *
@@ -67,7 +67,9 @@ public interface MobileSensorV2<T> extends LifecycleOwner {
    */
   LifecyclePublisher<T> dataPublisher();
 
-  /** Standard builder interface for MobileSensor instances. */
+  /**
+   * Standard builder interface for MobileSensor instances.
+   */
   public interface Builder<T> {
 
     @CanIgnoreReturnValue
@@ -80,8 +82,8 @@ public interface MobileSensorV2<T> extends LifecycleOwner {
      * cases, this should be an {@link androidx.lifecycle.LifecycleService}.
      *
      * <p>The sensor will be allocated in {@code onCreate}, runs only between {@code onStart} and
-     * {@code onStop}, and will be released in {@code onDestroy}. See {@link
-     * MobileSensorV2#getLifecycle} for more details.
+     * {@code onStop}, and will be released in {@code onDestroy}. See
+     * {@link MobileSensorV2#getLifecycle} for more details.
      */
     @CanIgnoreReturnValue
     public Builder<T> setBoundLifecycle(LifecycleOwner lifecycle);

@@ -72,7 +72,9 @@ class SensingApplication : Application(), DataCaptureConfig.Provider {
             QuestionnaireFragment.QuestionnaireItemViewHolderFactoryMatcher(
               FingernailsClosedPhotoSensorCaptureViewHolderFactory
             ) { questionnaireItem ->
-              questionnaireItem.getExtensionByUrl(FingernailsClosedPhotoSensorCaptureViewHolderFactory.WIDGET_EXTENSION)
+              questionnaireItem.getExtensionByUrl(
+                FingernailsClosedPhotoSensorCaptureViewHolderFactory.WIDGET_EXTENSION
+              )
                 .let {
                   if (it == null) false else it.value.toString() == FingernailsClosedPhotoSensorCaptureViewHolderFactory.WIDGET_TYPE
                 }

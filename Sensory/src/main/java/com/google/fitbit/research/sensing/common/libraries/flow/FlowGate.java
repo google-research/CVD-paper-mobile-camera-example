@@ -32,7 +32,7 @@ import org.reactivestreams.Subscriber;
  * }
  * }</pre>
  */
-@CheckReturnValue // see go/why-crv
+@CheckReturnValue 
 public final class FlowGate {
 
   private final List<Runnable> onOpen = Collections.synchronizedList(new ArrayList<>());
@@ -50,8 +50,8 @@ public final class FlowGate {
   }
 
   /**
-   * Opens the gate. Subscriptions to {@link #passThrough} will receive signals until {@link
-   * #completeAndClose} is called.
+   * Opens the gate. Subscriptions to {@link #passThrough} will receive signals until
+   * {@link #completeAndClose} is called.
    */
   @CanIgnoreReturnValue
   public FlowGate open() {
@@ -71,10 +71,10 @@ public final class FlowGate {
   }
 
   /**
-   * Wraps a {@link Publisher} so that signals are only sent while the {@link FlowGate} is {@link
-   * #open}. If the wrapped Publisher signals {@code onNext} while the gate is closed, these signals
-   * are dropped. Termination signals ({@code onComplete} and {@code onError}) will be delayed until
-   * the gate is opened.
+   * Wraps a {@link Publisher} so that signals are only sent while the {@link FlowGate} is
+   * {@link #open}. If the wrapped Publisher signals {@code onNext} while the gate is closed, these
+   * signals are dropped. Termination signals ({@code onComplete} and {@code onError}) will be
+   * delayed until the gate is opened.
    *
    * <p>After the gate is closed by {@link #completeAndClose}, any previous subscriptions to {@link
    * #passThrough} will be permanently terminated with {@code onComplete}. Subsequent calls to
@@ -118,8 +118,8 @@ public final class FlowGate {
   }
 
   /**
-   * Closes the gate. All subscriptions to {@link #passThrough} are signalled with {@code
-   * onComplete} and terminated.
+   * Closes the gate. All subscriptions to {@link #passThrough} are signalled with
+   * {@code onComplete} and terminated.
    */
   public synchronized void completeAndClose() {
     if (opened.getAndSet(false)) {

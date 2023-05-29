@@ -16,9 +16,6 @@ import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.fragment.findNavController
 import com.google.android.fhir.datacapture.QuestionnaireFragment
 import com.google.android.sensory.R
-import com.google.android.sensory.sensing_sdk.capture.CaptureSettings
-import com.google.android.sensory.sensing_sdk.model.CaptureType
-import com.google.android.sensory.sensing_sdk.model.SensorType
 import org.hl7.fhir.r4.model.QuestionnaireResponse
 
 /** A fragment class to show patient registration screen using SDC's [QuestionnaireFragment].
@@ -38,8 +35,8 @@ class AddParticipantFragment : Fragment(R.layout.fragment_add_participant) {
     observePatientSaveAction()
   }
 
-  private fun setupMenu(){
-    (requireActivity() as MainActivity).addMenuProvider(object: MenuProvider{
+  private fun setupMenu() {
+    (requireActivity() as MainActivity).addMenuProvider(object : MenuProvider {
       override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
         menuInflater.inflate(R.menu.add_patient_fragment_menu, menu)
       }
@@ -50,10 +47,12 @@ class AddParticipantFragment : Fragment(R.layout.fragment_add_participant) {
             onSubmitAction()
             true
           }
+
           android.R.id.home -> {
             NavHostFragment.findNavController(this@AddParticipantFragment).navigateUp()
             true
           }
+
           else -> true
         }
       }
@@ -99,11 +98,15 @@ class AddParticipantFragment : Fragment(R.layout.fragment_add_participant) {
         Toast.makeText(requireContext(), "Inputs are missing.", Toast.LENGTH_SHORT).show()
         return@observe
       }
-      val sharedPrefs = requireActivity().getSharedPreferences(SensingApplication.SHARED_PREFS_KEY, Context.MODE_PRIVATE)
+      val sharedPrefs = requireActivity().getSharedPreferences(
+        SensingApplication.SHARED_PREFS_KEY,
+        Context.MODE_PRIVATE
+      )
       sharedPrefs.edit().putString(SensingApplication.CURRENT_PATIENT_ID, it.id).apply()
       Toast.makeText(requireContext(), "Patient is saved.", Toast.LENGTH_SHORT).show()
       findNavController().navigate(
-        AddParticipantFragmentDirections.actionAddParticipantFragmentToAnemiaScreenerFragment(it.idElement.idPart))
+        AddParticipantFragmentDirections.actionAddParticipantFragmentToAnemiaScreenerFragment(it.idElement.idPart)
+      )
     }
   }
 

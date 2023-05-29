@@ -11,7 +11,7 @@ import org.reactivestreams.Subscription;
  * Wraps an existing {@link Subscriber}. Caps the number of {@code #onNext} signals that wrapped
  * {@link Subscriber} can receive. Signals {@link #onComplete} once the limit has been reached.
  */
-@CheckReturnValue // see go/why-crv
+@CheckReturnValue 
 final class LimitFutureSubscriber<T> implements FutureSubscriber<T, Long> {
 
   private final Subscriber<T> subscriber;

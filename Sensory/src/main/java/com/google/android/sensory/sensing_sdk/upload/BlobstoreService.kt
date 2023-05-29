@@ -1,4 +1,5 @@
 package com.google.android.sensory.sensing_sdk.upload
+
 import com.google.common.collect.Multimap
 import io.minio.ListPartsResponse
 import io.minio.MinioAsyncClient
@@ -15,6 +16,7 @@ import java.io.IOException
 import java.security.InvalidKeyException
 import java.security.NoSuchAlgorithmException
 import java.util.concurrent.ExecutionException
+
 class BlobstoreService(client: MinioAsyncClient) : MinioAsyncClient(client) {
   fun initMultiPartUpload(
     bucket: String?,
@@ -27,6 +29,7 @@ class BlobstoreService(client: MinioAsyncClient) : MinioAsyncClient(client) {
     // Blocking until there is a response
     return response.get().result().uploadId()
   }
+
   @Throws(
     InsufficientDataException::class,
     IOException::class,
@@ -60,6 +63,7 @@ class BlobstoreService(client: MinioAsyncClient) : MinioAsyncClient(client) {
       extraQueryParams
     ).get()
   }
+
   @Throws(
     IOException::class,
     InvalidKeyException::class,
@@ -92,6 +96,7 @@ class BlobstoreService(client: MinioAsyncClient) : MinioAsyncClient(client) {
       extraQueryParams
     ).get()
   }
+
   @Throws(
     NoSuchAlgorithmException::class,
     InsufficientDataException::class,

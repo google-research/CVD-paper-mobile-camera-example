@@ -28,7 +28,7 @@ import org.reactivestreams.Subscriber;
  * }
  * }</pre>
  */
-@CheckReturnValue // see go/why-crv
+@CheckReturnValue 
 public final class SharedImageProxy extends RootShared<ImageProxy> {
 
   private final Shared<Image> image =
@@ -44,7 +44,30 @@ public final class SharedImageProxy extends RootShared<ImageProxy> {
         }
       };
 
+  public SharedImageProxy(ImageProxy imageProxy, Publisher<SharedImageProxy> key) {
+    super(imageProxy, key);
+  }
+
+  /**
+   * Convenience method for transforming an {@code Publisher<SharedImageProxy>} into a
+   * {@code Publisher<Shared<Image>>}
+   */
+  public static Publisher<Shared<Image>> asImagePublisher(Publisher<SharedImageProxy> publisher) {
+    return DirectProcessor.transformPublisher(publisher, SharedImageProxy::asImage);
+  }
+
+  /**
+   * Returns a shared {@link Image} that uses the same keys as SharedImageProxy.
+   *
+   * <p>This serves as bridge between CameraX-based {@link org.reactivestreams.Publisher}s and
+   * Camera2-based {@link org.reactivestreams.Subscriber}s.
+   */
+  public Shared<Image> asImage() {
+    return image;
+  }
+
   private static final class ImageHolder implements Shared.Holder<Image> {
+
     private final Shared.Holder<ImageProxy> delegate;
 
     ImageHolder(Shared.Holder<ImageProxy> delegate) {
@@ -60,27 +83,5 @@ public final class SharedImageProxy extends RootShared<ImageProxy> {
     public void close() {
       delegate.close();
     }
-  }
-
-  public SharedImageProxy(ImageProxy imageProxy, Publisher<SharedImageProxy> key) {
-    super(imageProxy, key);
-  }
-
-  /**
-   * Returns a shared {@link Image} that uses the same keys as SharedImageProxy.
-   *
-   * <p>This serves as bridge between CameraX-based {@link org.reactivestreams.Publisher}s and
-   * Camera2-based {@link org.reactivestreams.Subscriber}s.
-   */
-  public Shared<Image> asImage() {
-    return image;
-  }
-
-  /**
-   * Convenience method for transforming an {@code Publisher<SharedImageProxy>} into a {@code
-   * Publisher<Shared<Image>>}
-   */
-  public static Publisher<Shared<Image>> asImagePublisher(Publisher<SharedImageProxy> publisher) {
-    return DirectProcessor.transformPublisher(publisher, SharedImageProxy::asImage);
   }
 }

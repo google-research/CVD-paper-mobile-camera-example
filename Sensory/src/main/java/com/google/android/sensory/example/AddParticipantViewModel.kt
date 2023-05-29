@@ -18,7 +18,7 @@ import org.hl7.fhir.r4.model.Questionnaire
 import org.hl7.fhir.r4.model.QuestionnaireResponse
 
 class AddParticipantViewModel(application: Application, private val state: SavedStateHandle) :
-  AndroidViewModel(application)  {
+  AndroidViewModel(application) {
 
   val questionnaire: String
     get() = getQuestionnaireJson()
@@ -67,7 +67,8 @@ class AddParticipantViewModel(application: Application, private val state: Saved
     questionnaireJson?.let {
       return it
     }
-    questionnaireJson = readFileFromAssets(state[AddParticipantFragment.QUESTIONNAIRE_FILE_PATH_KEY]!!)
+    questionnaireJson =
+      readFileFromAssets(state[AddParticipantFragment.QUESTIONNAIRE_FILE_PATH_KEY]!!)
     return questionnaireJson!!
   }
 

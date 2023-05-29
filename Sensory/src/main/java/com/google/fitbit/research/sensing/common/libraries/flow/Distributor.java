@@ -15,7 +15,7 @@ import org.reactivestreams.Subscription;
  * children Subscription receives requests. If there are multiple children, then requests can be
  * parallelized; one request to the parent will satisfy a single request across all children.
  */
-@CheckReturnValue // see go/why-crv
+@CheckReturnValue 
 public final class Distributor<T> {
 
   private final Subscription parent;
@@ -26,7 +26,9 @@ public final class Distributor<T> {
     this.parent = parent;
   }
 
-  /** Creates a child Subscription, to be passed to {@link Subscriber#onSubscribe}. */
+  /**
+   * Creates a child Subscription, to be passed to {@link Subscriber#onSubscribe}.
+   */
   public Subscription createSubscription(Subscriber<? super T> subscriber) {
     synchronized (children) {
       Subscribed<T> subscribed = new Subscribed<T>(subscriber);
@@ -52,7 +54,9 @@ public final class Distributor<T> {
     }
   }
 
-  /** Signals all child subscriptions with {@code onNext}. */
+  /**
+   * Signals all child subscriptions with {@code onNext}.
+   */
   public void next(T t) {
     synchronized (children) {
       activeRequests = max(0, activeRequests - 1);
@@ -60,7 +64,9 @@ public final class Distributor<T> {
     }
   }
 
-  /** Signals all child subscriptions with {@code onError}. */
+  /**
+   * Signals all child subscriptions with {@code onError}.
+   */
   public void error(Throwable t) {
     synchronized (children) {
       children.error(t);
@@ -68,8 +74,8 @@ public final class Distributor<T> {
   }
 
   /**
-   * Signals all Subscribers with {@code onComplete} and cancels all associated {@link
-   * Subscriptions}.
+   * Signals all Subscribers with {@code onComplete} and cancels all associated
+   * {@link Subscriptions}.
    */
   public void complete() {
     synchronized (children) {

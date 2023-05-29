@@ -14,5 +14,5 @@ data class UploadRequest(
   var bytesUploaded: Long,
   var status: RequestStatus,
   var nextPart: Int,
-  var uploadId: String? = null
+  var uploadId: String? = null,
 )

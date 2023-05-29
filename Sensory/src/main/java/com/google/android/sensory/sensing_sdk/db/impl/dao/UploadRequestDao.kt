@@ -17,7 +17,7 @@ internal abstract class UploadRequestDao {
   abstract suspend fun insertUploadRequestEntity(uploadRequestEntity: UploadRequestEntity)
 
   @Transaction
-  open suspend fun insertUploadRequest(uploadRequest: UploadRequest): String{
+  open suspend fun insertUploadRequest(uploadRequest: UploadRequest): String {
     // convert to CaptureInfoEntity and insert
     insertUploadRequestEntity(uploadRequest.toUploadRequestEntity())
     return uploadRequest.requestUuid.toString()
@@ -34,7 +34,7 @@ internal abstract class UploadRequestDao {
 
   @Transaction
   open suspend fun listUploadRequests(status: RequestStatus): List<UploadRequest> {
-    return listUploadRequestEntities(status).map{
+    return listUploadRequestEntities(status).map {
       it.toUploadRequest()
     }
   }
@@ -43,7 +43,7 @@ internal abstract class UploadRequestDao {
   abstract suspend fun updateUploadRequestEntity(uploadRequestEntity: UploadRequestEntity)
 
   @Transaction
-  open suspend fun updateUploadRequest(uploadRequest: UploadRequest){
+  open suspend fun updateUploadRequest(uploadRequest: UploadRequest) {
     updateUploadRequestEntity(uploadRequest.toUploadRequestEntity())
   }
 }

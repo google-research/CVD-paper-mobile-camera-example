@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
@@ -26,37 +25,16 @@
       android:layout_height="wrap_content"
       android:layout_margin="10dp"
       android:textAppearance="@style/text_style"
-      app:layout_constraintTop_toTopOf="parent"
-      app:layout_constraintEnd_toEndOf="@id/right_margin_guideline"/>
+      app:layout_constraintEnd_toEndOf="@id/right_margin_guideline"
+      app:layout_constraintTop_toTopOf="parent" />
 
   <androidx.camera.view.PreviewView
       android:id="@+id/preview_view"
       android:layout_width="match_parent"
       android:layout_height="0dp"
       android:layout_marginTop="10dp"
-      app:layout_constraintTop_toBottomOf="@id/record_timer"
-      app:layout_constraintBottom_toBottomOf="parent"/>
-
-  <com.google.android.material.floatingactionbutton.FloatingActionButton
-      android:id="@+id/record_fab"
-      android:layout_width="wrap_content"
-      android:layout_height="wrap_content"
-      android:layout_margin="16dp"
-      android:layout_gravity="bottom|center_horizontal"
       app:layout_constraintBottom_toBottomOf="parent"
-      app:layout_constraintStart_toStartOf="parent"
-      app:layout_constraintEnd_toEndOf="parent"
-      style="?attr/floatingActionButtonPrimaryStyle" />
-
-  <com.google.android.material.floatingactionbutton.FloatingActionButton
-      android:id="@+id/toggle_flash_fab"
-      android:layout_width="wrap_content"
-      android:layout_height="wrap_content"
-      android:layout_margin="16dp"
-      android:layout_gravity="bottom|end"
-      app:layout_constraintBottom_toBottomOf="parent"
-      app:layout_constraintEnd_toEndOf="parent"
-      style="?attr/floatingActionButtonPrimaryStyle" />
+      app:layout_constraintTop_toBottomOf="@id/record_timer" />
 
   <androidx.constraintlayout.widget.Guideline
       android:id="@+id/top_margin_guideline"
@@ -85,4 +63,25 @@
       android:layout_height="wrap_content"
       android:orientation="horizontal"
       app:layout_constraintGuide_percent="0.98" />
+
+  <com.google.android.material.floatingactionbutton.FloatingActionButton
+      android:id="@+id/record_fab"
+      style="?attr/floatingActionButtonPrimaryStyle"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:layout_margin="16dp"
+      android:layout_gravity="bottom|center_horizontal"
+      app:layout_constraintBottom_toBottomOf="parent"
+      app:layout_constraintEnd_toEndOf="parent"
+      app:layout_constraintStart_toStartOf="parent" />
+
+  <com.google.android.material.floatingactionbutton.FloatingActionButton
+      android:id="@+id/toggle_flash_fab"
+      style="?attr/floatingActionButtonPrimaryStyle"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:layout_margin="16dp"
+      android:layout_gravity="bottom|end"
+      app:layout_constraintBottom_toBottomOf="parent"
+      app:layout_constraintEnd_toEndOf="parent" />
 </androidx.constraintlayout.widget.ConstraintLayout>

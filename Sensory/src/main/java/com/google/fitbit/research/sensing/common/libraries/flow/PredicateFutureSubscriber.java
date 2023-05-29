@@ -10,11 +10,12 @@ import org.reactivestreams.Subscription;
  * A {@link Subscriber} that resolves a [{@link ListenableFuture} when a matching event is received
  * or when the stream completes.
  */
-@CheckReturnValue // see go/why-crv
+@CheckReturnValue 
 public class PredicateFutureSubscriber<T> extends CollectingFutureSubscriber<T, Optional<T>> {
 
   private final Predicate<T> predicate;
-  @Nullable private T result;
+  @Nullable
+  private T result;
 
   public PredicateFutureSubscriber(Predicate<T> predicate) {
     this.predicate = predicate;

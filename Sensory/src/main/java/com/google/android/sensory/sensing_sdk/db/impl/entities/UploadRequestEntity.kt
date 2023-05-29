@@ -13,7 +13,7 @@ import java.util.UUID
     Index(value = ["requestUuid"], unique = true)
   ]
 )
-internal data class UploadRequestEntity (
+internal data class UploadRequestEntity(
   @PrimaryKey(autoGenerate = true) val id: Long,
   val requestUuid: UUID,
   val resourceInfoId: String,
@@ -25,5 +25,5 @@ internal data class UploadRequestEntity (
   val status: RequestStatus,
   val nextPart: Int,
   /** Assuming this value is either null or unique. Null because this is updated from first upload response.*/
-  val uploadId: String? = null
+  val uploadId: String? = null,
 )
