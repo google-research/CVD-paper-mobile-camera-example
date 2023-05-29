@@ -15,81 +15,80 @@
       app:layout_constraintTop_toTopOf="@id/top_margin_guideline">
 
     <ImageView
-        android:id="@+id/iv_ppg"
-        android:layout_width="235dp"
-        android:layout_height="260dp"
+        android:id="@+id/iv_fingernails"
+        android:layout_width="244dp"
+        android:layout_height="272dp"
         android:layout_marginTop="9dp"
-        android:src="@drawable/measure_ppg"
+        android:src="@drawable/fingernails_open"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tv_ppg_instructions_title"
-        tools:src="@drawable/ic_launcher_background" />
+        app:layout_constraintTop_toBottomOf="@id/tv_photo_fingernails_title" />
     <TextView
-        android:id="@+id/tv_step1_instruction1"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="24dp"
-        android:drawablePadding="10dp"
-        android:gravity="center_vertical"
-        android:text="@string/step1_instruction1"
-        android:textAppearance="@style/text_style"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/iv_ppg"
-        app:drawableStartCompat="@drawable/one_icon" />
-    <TextView
-        android:id="@+id/tv_step1_instruction2"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="33dp"
-        android:drawablePadding="10dp"
-        android:gravity="center_vertical"
-        android:text="@string/step1_instruction2"
-        android:textAppearance="@style/text_style"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tv_step1_instruction1"
-        app:drawableStartCompat="@drawable/two_icon" />
-    <TextView
-        android:id="@+id/tv_step1_instruction3"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="33dp"
-        android:drawablePadding="10dp"
-        android:gravity="center_vertical"
-        android:text="@string/step1_instruction3"
-        android:textAppearance="@style/text_style"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tv_step1_instruction2"
-        app:drawableStartCompat="@drawable/three_icon" />
-    <TextView
-        android:id="@+id/tv_ppg_instructions_title"
-        android:layout_width="0dp"
+        android:id="@+id/tv_photo_fingernails_title"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
         android:gravity="center_horizontal"
-        android:text="@string/step1_title"
+        android:text="@string/step_photo_fingernails"
         android:textAppearance="@style/title_style"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tv_step1" />
+        app:layout_constraintTop_toBottomOf="@id/tv_step2" />
     <TextView
-        android:id="@+id/tv_step1"
+        android:id="@+id/tv_step2"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:gravity="center_horizontal"
-        android:text="@string/step1"
+        android:text="@string/step2"
         android:textAppearance="@style/text_style"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
+    <TextView
+        android:id="@+id/tv_step2_instruction1"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:drawablePadding="10dp"
+        android:drawableStart="@drawable/one_icon"
+        android:gravity="center_vertical"
+        android:text="@string/step2_instruction1"
+        android:textAppearance="@style/text_style"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/iv_fingernails" />
+    <TextView
+        android:id="@+id/tv_step2_instruction2"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="17dp"
+        android:drawablePadding="10dp"
+        android:drawableStart="@drawable/two_icon"
+        android:gravity="center_vertical"
+        android:text="@string/ensure_one_hand"
+        android:textAppearance="@style/text_style"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tv_step2_instruction1" />
+
+    <TextView
+        android:id="@+id/tv_step2_instruction3"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="17dp"
+        android:drawablePadding="10dp"
+        android:drawableStart="@drawable/three_icon"
+        android:gravity="center_vertical"
+        android:text="@string/take_photo"
+        android:textAppearance="@style/text_style"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tv_step2_instruction2" />
 
     <include
         layout="@layout/layout_instructions_cancel_next"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tv_step1_instruction3" />
+        app:layout_constraintTop_toBottomOf="@id/tv_step2_instruction3" />
 
   </androidx.constraintlayout.widget.ConstraintLayout>
 
@@ -120,5 +119,4 @@
       android:layout_height="wrap_content"
       android:orientation="horizontal"
       app:layout_constraintGuide_percent="0.98" />
-
 </androidx.constraintlayout.widget.ConstraintLayout>

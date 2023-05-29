@@ -36,8 +36,12 @@ internal class DatabaseImpl(context: Context, enableEncryption: Boolean): Databa
     return uploadRequestDao.insertUploadRequest(uploadRequest)
   }
 
-  override suspend fun listResourceInfo(captureId: String): List<ResourceInfo> {
-    return resourceInfoDao.listResourceInfo(captureId)
+  override suspend fun listResourceInfoForParticipant(participantId: String): List<ResourceInfo> {
+    return resourceInfoDao.listResourceInfoForParticipant(participantId)
+  }
+
+  override suspend fun listResourceInfoInCapture(captureId: String): List<ResourceInfo> {
+    return resourceInfoDao.listResourceInfoInCapture(captureId)
   }
 
   override suspend fun listUploadRequests(status: RequestStatus): List<UploadRequest> {
@@ -57,6 +61,6 @@ internal class DatabaseImpl(context: Context, enableEncryption: Boolean): Databa
   }
 
   companion object{
-    const val ENCRYPTED_DATABASE_NAME = "resources_encrypted.db"
+    const val ENCRYPTED_DATABASE_NAME = "sensor_resources_encrypted.db"
   }
 }

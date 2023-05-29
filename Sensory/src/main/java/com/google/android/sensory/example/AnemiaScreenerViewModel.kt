@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.google.android.sensory.example.data
+package com.google.android.sensory.example
 
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
@@ -24,10 +24,11 @@ import androidx.lifecycle.viewModelScope
 import ca.uhn.fhir.context.FhirContext
 import ca.uhn.fhir.context.FhirVersionEnum
 import com.google.android.fhir.FhirEngine
+import com.google.android.fhir.datacapture.QuestionnaireFragment
 import com.google.android.fhir.datacapture.mapping.ResourceMapper
 import com.google.android.fhir.datacapture.mapping.StructureMapExtractionContext
 import com.google.android.fhir.testing.jsonParser
-import com.google.android.sensory.example.SensingApplication
+import com.google.android.sensory.sensing_sdk.SensingEngine
 import java.util.Date
 import java.util.UUID
 import kotlinx.coroutines.launch
@@ -37,6 +38,7 @@ import org.hl7.fhir.r4.model.Condition
 import org.hl7.fhir.r4.model.DocumentReference
 import org.hl7.fhir.r4.model.Encounter
 import org.hl7.fhir.r4.model.Enumerations
+import org.hl7.fhir.r4.model.Identifier
 import org.hl7.fhir.r4.model.Observation
 import org.hl7.fhir.r4.model.Questionnaire
 import org.hl7.fhir.r4.model.QuestionnaireResponse
@@ -47,11 +49,14 @@ import org.hl7.fhir.r4.utils.StructureMapUtilities
 /** ViewModel for screener questionnaire screen {@link ScreenerEncounterFragment}. */
 class AnemiaScreenerViewModel(application: Application, private val state: SavedStateHandle) :
   AndroidViewModel(application) {
+
+  val questionnaireFragment = QuestionnaireFragment.builder().setQuestionnaire(questionnaire)
+    .setCustomQuestionnaireItemViewHolderFactoryMatchersProvider(SensingApplication.CUSTOM_VIEW_HOLDER_FACTORY_TAG)
+    .setShowSubmitButton(false)
+    .build()
   val questionnaire: String
     get() = getQuestionnaireJson()
   val isResourcesSaved = MutableLiveData<Boolean>()
-
-  val context = application.applicationContext
 
   private val questionnaireResource: Questionnaire
     get() =
@@ -59,6 +64,8 @@ class AnemiaScreenerViewModel(application: Application, private val state: Saved
         Questionnaire
   private var questionnaireJson: String? = null
   private var fhirEngine: FhirEngine = SensingApplication.fhirEngine(application.applicationContext)
+
+  private var sensingEngine: SensingEngine = SensingApplication.sensingEngine(application.applicationContext)
 
   /**
    * Saves screener encounter questionnaire response into the application database.
@@ -78,8 +85,10 @@ class AnemiaScreenerViewModel(application: Application, private val state: Saved
             src -> bundle.type = 'collection' "rule_bundle_type";
             src -> bundle.entry as entry, entry.resource = create('DocumentReference') as ppgdocref then
               ExtractPPGDocumentReference(src, ppgdocref) "rule_extract_document_reference";
-            src -> bundle.entry as entry, entry.resource = create('DocumentReference') as photofingernailsdocref then
-              ExtractFingernailsPhotoDocumentReference(src, photofingernailsdocref) "rule_extract_photo_fingernails_document_reference";
+            src -> bundle.entry as entry, entry.resource = create('DocumentReference') as photofingernailscloseddocref then
+              ExtractFingernailsClosedPhotoDocumentReference(src, photofingernailscloseddocref) "rule_extract_photo_fingernails_closed_document_reference";
+            src -> bundle.entry as entry, entry.resource = create('DocumentReference') as photofingernailsopendocref then
+              ExtractFingernailsOpenPhotoDocumentReference(src, photofingernailsopendocref) "rule_extract_photo_fingernails_open_document_reference";
             src -> bundle.entry as entry, entry.resource = create('DocumentReference') as photoconjunctivadocref then
               ExtractConjunctivaPhotoDocumentReference(src, photoconjunctivadocref) "rule_extract_photo_conjunctiva_document_reference";
           }
@@ -96,9 +105,21 @@ class AnemiaScreenerViewModel(application: Application, private val state: Saved
           };
         }
           
-          group ExtractFingernailsPhotoDocumentReference(source src : QuestionnaireResponse, target tgt : Patient) {
+          group ExtractFingernailsOpenPhotoDocumentReference(source src : QuestionnaireResponse, target tgt : Patient) {
             src.item as item where(linkId = 'sensing-capture-group') then {
-              item.item as inner_item where (linkId = 'photo-capture-fingernails-api-call') then {
+              item.item as inner_item where (linkId = 'photo-capture-fingernails-open-api-call') then {
+                    inner_item.answer first as ans then {
+                      ans.value as coding then {
+                        coding.code as val -> tgt.type = val "rule_photo_capture_id";
+                      };
+                    };
+                  };
+            };
+          }
+          
+          group ExtractFingernailsClosedPhotoDocumentReference(source src : QuestionnaireResponse, target tgt : Patient) {
+            src.item as item where(linkId = 'sensing-capture-group') then {
+              item.item as inner_item where (linkId = 'photo-capture-fingernails-closed-api-call') then {
                     inner_item.answer first as ans then {
                       ans.value as coding then {
                         coding.code as val -> tgt.type = val "rule_photo_capture_id";
@@ -137,7 +158,7 @@ class AnemiaScreenerViewModel(application: Application, private val state: Saved
         ResourceMapper.extract(
           uriTestQuestionnaire,
           uriTestQuestionnaireResponse,
-          StructureMapExtractionContext(context = context) { _, worker ->
+          StructureMapExtractionContext(context = getApplication<Application>().applicationContext) { _, worker ->
             StructureMapUtilities(worker).parse(mapping, "")
           },
         )
@@ -171,8 +192,7 @@ class AnemiaScreenerViewModel(application: Application, private val state: Saved
           // modify data based on the nature of the capture (obtained from captureId)
           val data = Attachment().apply {
             contentType = "application/gzip" // this is for PPG
-            url =
-              "http://localhost:9001/bucket/$captureId/SENSOR_TYPE/attachment.zip" // getBlobStoreUrl()
+            url = sensingEngine.listResourceInfoInCapture(captureId!!)[0].uploadURL
             title = "PPG data collected for 30 seconds" // this is for PPG
             creation = Date()
           }
@@ -215,8 +235,7 @@ class AnemiaScreenerViewModel(application: Application, private val state: Saved
 
   private fun isRequiredFieldMissing(bundle: Bundle): Boolean {
     bundle.entry.forEach {
-      val resource = it.resource
-      when (resource) {
+      when (val resource = it.resource) {
         is Observation -> {
           if (resource.hasValueQuantity() && !resource.valueQuantity.hasValueElement()) {
             return true
@@ -233,9 +252,7 @@ class AnemiaScreenerViewModel(application: Application, private val state: Saved
   }
 
   private fun getQuestionnaireJson(): String {
-    questionnaireJson?.let {
-      return it!!
-    }
+    questionnaireJson?.let { return it }
     questionnaireJson =
       readFileFromAssets(state[AnemiaScreenerFragment.QUESTIONNAIRE_FILE_PATH_KEY]!!)
     val questionnaire = jsonParser.parseResource(questionnaireJson) as Questionnaire

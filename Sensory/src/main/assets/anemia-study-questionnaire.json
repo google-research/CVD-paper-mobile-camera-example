@@ -44,11 +44,20 @@
           ]
         },
         {
-          "linkId": "photo-capture-fingernails-api-call",
+          "linkId": "photo-capture-fingernails-open-api-call",
           "extension": [
             {
               "url": "http://external-api-call/sensing-backbone",
-              "valueCode": "photo-fingernails-capture"
+              "valueCode": "photo-fingernails-open-capture"
+            }
+          ]
+        },
+        {
+          "linkId": "photo-capture-fingernails-closed-api-call",
+          "extension": [
+            {
+              "url": "http://external-api-call/sensing-backbone",
+              "valueCode": "photo-fingernails-closed-capture"
             }
           ]
         },

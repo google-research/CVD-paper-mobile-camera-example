@@ -1,4 +1,4 @@
-package com.google.android.sensory.example.data
+package com.google.android.sensory.example
 
 import android.os.Bundle
 import android.view.Menu
@@ -9,6 +9,7 @@ import android.widget.Toast
 import androidx.activity.addCallback
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.MenuProvider
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.commit
 import androidx.fragment.app.viewModels
@@ -20,12 +21,13 @@ import com.google.android.sensory.R
 /** A fragment class to show anemia questionnaire on screen. */
 class AnemiaScreenerFragment : Fragment(R.layout.fragment_anemia_screening) {
 
-  private val viewModel: AnemiaScreenerViewModel by viewModels()
+  private val anemiaScreenerViewModel: AnemiaScreenerViewModel by viewModels()
   private val args: AnemiaScreenerFragmentArgs by navArgs()
+
   override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
     super.onViewCreated(view, savedInstanceState)
     setUpActionBar()
-    setHasOptionsMenu(true)
+    setupMenu()
     updateArguments()
     onBackPressed()
     observeResourcesSaveAction()
@@ -34,29 +36,32 @@ class AnemiaScreenerFragment : Fragment(R.layout.fragment_anemia_screening) {
     }
   }
 
-  override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
-    super.onCreateOptionsMenu(menu, inflater)
-    inflater.inflate(R.menu.anemia_screen_encounter_fragment_menu, menu)
-  }
-
-  override fun onOptionsItemSelected(item: MenuItem): Boolean {
-    return when (item.itemId) {
-      R.id.action_add_patient_submit -> {
-        onSubmitAction()
-        true
+  private fun setupMenu(){
+    (requireActivity() as MainActivity).addMenuProvider(object: MenuProvider {
+      override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
+        menuInflater.inflate(R.menu.anemia_screen_encounter_fragment_menu, menu)
       }
 
-      android.R.id.home -> {
-        showCancelScreenerQuestionnaireAlertDialog()
-        true
+      override fun onMenuItemSelected(menuItem: MenuItem): Boolean {
+        return when (menuItem.itemId) {
+          R.id.action_add_patient_submit -> {
+            onSubmitAction()
+            true
+          }
+          android.R.id.home -> {
+            showCancelScreenerQuestionnaireAlertDialog()
+            true
+          }
+          else -> true
+        }
       }
 
-      else -> super.onOptionsItemSelected(item)
-    }
+    }, viewLifecycleOwner)
   }
 
   private fun setUpActionBar() {
     (requireActivity() as AppCompatActivity).supportActionBar?.apply {
+      title = requireContext().getString(R.string.anemia_screening)
       setDisplayHomeAsUpEnabled(true)
     }
   }
@@ -67,12 +72,9 @@ class AnemiaScreenerFragment : Fragment(R.layout.fragment_anemia_screening) {
 
   private fun addQuestionnaireFragment() {
     childFragmentManager.commit {
-      add(
-        R.id.add_patient_container,
-        QuestionnaireFragment.builder().setQuestionnaire(viewModel.questionnaire)
-          .setCustomQuestionnaireItemViewHolderFactoryMatchersProvider("sensor_capture")
-          .setShowSubmitButton(false)
-          .build(),
+      replace(
+        R.id.screener_container,
+        anemiaScreenerViewModel.questionnaireFragment,
         QUESTIONNAIRE_FRAGMENT_TAG
       )
     }
@@ -81,7 +83,7 @@ class AnemiaScreenerFragment : Fragment(R.layout.fragment_anemia_screening) {
   private fun onSubmitAction() {
     val questionnaireFragment =
       childFragmentManager.findFragmentByTag(QUESTIONNAIRE_FRAGMENT_TAG) as QuestionnaireFragment
-    viewModel.saveScreenerEncounter(
+    anemiaScreenerViewModel.saveScreenerEncounter(
       questionnaireFragment.getQuestionnaireResponse(),
       args.patientId
     )
@@ -110,7 +112,7 @@ class AnemiaScreenerFragment : Fragment(R.layout.fragment_anemia_screening) {
   }
 
   private fun observeResourcesSaveAction() {
-    viewModel.isResourcesSaved.observe(viewLifecycleOwner) {
+    anemiaScreenerViewModel.isResourcesSaved.observe(viewLifecycleOwner) {
       if (!it) {
         Toast.makeText(requireContext(), getString(R.string.inputs_missing), Toast.LENGTH_SHORT)
           .show()
@@ -122,9 +124,16 @@ class AnemiaScreenerFragment : Fragment(R.layout.fragment_anemia_screening) {
     }
   }
 
+  override fun onDestroy() {
+    super.onDestroy()
+  }
+
+  override fun onDestroyView() {
+    super.onDestroyView()
+  }
+
   companion object {
     const val QUESTIONNAIRE_FILE_PATH_KEY = "questionnaire-file-path-key"
     const val QUESTIONNAIRE_FRAGMENT_TAG = "questionnaire-fragment-tag"
-    const val SENSOR_CAPTURE_FOLDER = "AnemiaStudy"
   }
 }

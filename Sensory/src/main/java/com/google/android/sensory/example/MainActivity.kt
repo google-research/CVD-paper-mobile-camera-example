@@ -2,35 +2,16 @@ package com.google.android.sensory.example
 
 
 import android.Manifest
-import android.annotation.SuppressLint
-import android.content.ContentValues
 import android.content.DialogInterface
 import android.content.pm.PackageManager
-import android.hardware.camera2.CaptureRequest
-import android.hardware.camera2.params.ColorSpaceTransform
-import android.hardware.camera2.params.RggbChannelVector
-import android.net.Uri
 import android.os.Bundle
-import android.os.Environment
-import android.provider.MediaStore
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.camera.camera2.interop.CaptureRequestOptions
 import androidx.core.app.ActivityCompat
-import androidx.fragment.app.Fragment
-import androidx.navigation.fragment.NavHostFragment
 import com.google.android.sensory.R
-import com.google.android.sensory.example.data.AppSensorDataUploadWorker
-import com.google.android.sensory.sensing_sdk.capture.model.CaptureSettings
-import com.google.android.sensory.sensing_sdk.model.CaptureType
-import com.google.android.sensory.sensing_sdk.model.SensorType
-import com.google.android.sensory.sensing_sdk.upload.UploadSync
 import java.util.Arrays
 
 class MainActivity : AppCompatActivity() {
-  var participantId: String? = null
-  var fingernailsFilePath: String? = null
-  var conjunctivaFilePath: String? = null
   private var permissionsRequestCount = 0
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)

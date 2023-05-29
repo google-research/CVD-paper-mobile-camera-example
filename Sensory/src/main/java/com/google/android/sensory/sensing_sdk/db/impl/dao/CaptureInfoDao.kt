@@ -19,13 +19,13 @@ internal abstract class CaptureInfoDao {
     with(captureInfo){
       entity = CaptureInfoEntity(
         id = 0,
-        folderId = folderId,
+        participantId = participantId,
         captureType = captureType,
         captureFolder = captureFolder,
         captureId = captureId
       )
     }
     insertCaptureInfoEntity(entity)
-    return captureInfo.folderId
+    return captureInfo.participantId
   }
 }

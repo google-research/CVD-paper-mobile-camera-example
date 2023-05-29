@@ -75,9 +75,10 @@ data class BackoffCriteria(
 
 data class UploadConfiguration (
   val HOST: String,
+  val ACCESS_HOST: String,
   val bucketName: String,
   val user: String,
   val password: String
 ) {
-  fun getBucketURL() = "$HOST/$bucketName"
+  fun getBlobStorageAccessURL() = "$ACCESS_HOST/$bucketName"
 }

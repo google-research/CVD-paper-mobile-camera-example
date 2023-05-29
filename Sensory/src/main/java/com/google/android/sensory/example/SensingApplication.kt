@@ -6,9 +6,10 @@ import com.google.android.fhir.FhirEngine
 import com.google.android.fhir.FhirEngineProvider
 import com.google.android.fhir.datacapture.DataCaptureConfig
 import com.google.android.fhir.datacapture.QuestionnaireFragment
-import com.google.android.sensory.example.data.ConjunctivaPhotoSensorCaptureViewHolderFactory
-import com.google.android.sensory.example.data.FingernailsPhotoSensorCaptureViewHolderFactory
-import com.google.android.sensory.example.data.PPGSensorCaptureViewHolderFactory
+import com.google.android.sensory.example.fhir_data.ConjunctivaPhotoSensorCaptureViewHolderFactory
+import com.google.android.sensory.example.fhir_data.FingernailsClosedPhotoSensorCaptureViewHolderFactory
+import com.google.android.sensory.example.fhir_data.FingernailsOpenPhotoSensorCaptureViewHolderFactory
+import com.google.android.sensory.example.fhir_data.PPGSensorCaptureViewHolderFactory
 import com.google.android.sensory.sensing_sdk.SensingEngine
 import com.google.android.sensory.sensing_sdk.SensingEngineProvider
 import com.google.android.sensory.sensing_sdk.UploadConfiguration
@@ -42,6 +43,7 @@ class SensingApplication : Application(), DataCaptureConfig.Provider {
     val properties = Properties().apply { load(applicationContext.assets.open("local.properties")) }
     return UploadConfiguration(
       HOST = properties.getProperty("HOST"),
+      ACCESS_HOST = properties.getProperty("ACCESS_HOST"),
       bucketName = properties.getProperty("BUCKET_NAME"),
       user = properties.getProperty("USER"),
       password = properties.getProperty("PASSWORD")
@@ -49,7 +51,9 @@ class SensingApplication : Application(), DataCaptureConfig.Provider {
   }
 
   companion object {
-
+    const val SHARED_PREFS_KEY = "shared_prefs_key"
+    const val CURRENT_PATIENT_ID = "patient-id"
+    const val CUSTOM_VIEW_HOLDER_FACTORY_TAG = "sensor_capture"
     fun fhirEngine(context: Context) = (context.applicationContext as SensingApplication).fhirEngine
     fun sensingEngine(context: Context) =
       (context.applicationContext as SensingApplication).sensingEngine
@@ -60,17 +64,25 @@ class SensingApplication : Application(), DataCaptureConfig.Provider {
 
   override fun getDataCaptureConfig(): DataCaptureConfig {
     return DataCaptureConfig(questionnaireItemViewHolderFactoryMatchersProviderFactory = { tag ->
-      "sensor_capture"
+      CUSTOM_VIEW_HOLDER_FACTORY_TAG
       object : QuestionnaireFragment.QuestionnaireItemViewHolderFactoryMatchersProvider() {
 
         override fun get(): List<QuestionnaireFragment.QuestionnaireItemViewHolderFactoryMatcher> {
           return listOf(
             QuestionnaireFragment.QuestionnaireItemViewHolderFactoryMatcher(
-              FingernailsPhotoSensorCaptureViewHolderFactory
+              FingernailsClosedPhotoSensorCaptureViewHolderFactory
             ) { questionnaireItem ->
-              questionnaireItem.getExtensionByUrl(FingernailsPhotoSensorCaptureViewHolderFactory.WIDGET_EXTENSION)
+              questionnaireItem.getExtensionByUrl(FingernailsClosedPhotoSensorCaptureViewHolderFactory.WIDGET_EXTENSION)
                 .let {
-                  if (it == null) false else it.value.toString() == FingernailsPhotoSensorCaptureViewHolderFactory.WIDGET_TYPE
+                  if (it == null) false else it.value.toString() == FingernailsClosedPhotoSensorCaptureViewHolderFactory.WIDGET_TYPE
+                }
+            },
+            QuestionnaireFragment.QuestionnaireItemViewHolderFactoryMatcher(
+              FingernailsOpenPhotoSensorCaptureViewHolderFactory
+            ) { questionnaireItem ->
+              questionnaireItem.getExtensionByUrl(FingernailsOpenPhotoSensorCaptureViewHolderFactory.WIDGET_EXTENSION)
+                .let {
+                  if (it == null) false else it.value.toString() == FingernailsOpenPhotoSensorCaptureViewHolderFactory.WIDGET_TYPE
                 }
             },
             QuestionnaireFragment.QuestionnaireItemViewHolderFactoryMatcher(

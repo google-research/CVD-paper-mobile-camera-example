@@ -1,4 +1,4 @@
-package com.google.android.sensory.example.data
+package com.google.android.sensory.example.fhir_data
 
 import android.content.Context
 import androidx.work.WorkerParameters

@@ -4,8 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:ignore="contentDescription"
-    tools:context=".PpgCompleteFragment">
+    tools:ignore="contentDescription">
 
   <androidx.constraintlayout.widget.ConstraintLayout
       android:layout_width="0dp"
@@ -14,34 +13,72 @@
       app:layout_constraintEnd_toEndOf="@id/right_margin_guideline"
       app:layout_constraintStart_toStartOf="@id/left_margin_guideline"
       app:layout_constraintTop_toTopOf="@id/top_margin_guideline">
-    <Button
-        android:id="@+id/btn_next"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="278dp"
-        android:text="@string/next"
-        android:backgroundTint="@android:color/holo_blue_light"
+
+    <ImageView
+        android:id="@+id/iv_conjunctiva"
+        android:layout_width="244dp"
+        android:layout_height="272dp"
+        android:layout_marginTop="9dp"
+        android:src="@drawable/conjunctiva"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/ppg_complete" />
-    <Button
-        android:id="@+id/btn_replace_video"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="24dp"
-        android:text="@string/replace_ppg_video"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/btn_next" />
+        app:layout_constraintTop_toBottomOf="@id/tv_photo_conjunctiva_title" />
+
     <TextView
-        android:id="@+id/ppg_complete"
+        android:id="@+id/tv_photo_conjunctiva_title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/ppg_video_complete"
+        android:layout_marginTop="8dp"
+        android:gravity="center_horizontal"
+        android:text="@string/step_photo_conjunctiva"
         android:textAppearance="@style/title_style"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tv_step4" />
+
+    <TextView
+        android:id="@+id/tv_step4"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:gravity="center_horizontal"
+        android:text="@string/step4"
+        android:textAppearance="@style/text_style"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/tv_step4_instruction1"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:drawablePadding="10dp"
+        android:drawableStart="@drawable/one_icon"
+        android:gravity="center_vertical"
+        android:text="@string/step4_instruction1"
+        android:textAppearance="@style/text_style"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/iv_conjunctiva" />
+
+    <TextView
+        android:id="@+id/tv_step4_instruction2"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="17dp"
+        android:drawablePadding="10dp"
+        android:drawableStart="@drawable/two_icon"
+        android:gravity="center_vertical"
+        android:text="@string/take_photo"
+        android:textAppearance="@style/text_style"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tv_step4_instruction1" />
+
+    <include
+        layout="@layout/layout_instructions_cancel_next"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tv_step4_instruction2" />
 
   </androidx.constraintlayout.widget.ConstraintLayout>
 
@@ -50,7 +87,7 @@
       android:layout_width="wrap_content"
       android:layout_height="wrap_content"
       android:orientation="horizontal"
-      app:layout_constraintGuide_percent="0.1" />
+      app:layout_constraintGuide_percent="0.02" />
 
   <androidx.constraintlayout.widget.Guideline
       android:id="@+id/left_margin_guideline"
@@ -71,5 +108,6 @@
       android:layout_width="wrap_content"
       android:layout_height="wrap_content"
       android:orientation="horizontal"
-      app:layout_constraintGuide_percent="0.9" />
+      app:layout_constraintGuide_percent="0.98" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>

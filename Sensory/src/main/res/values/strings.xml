@@ -1,5 +1,6 @@
 <resources>
   <string name="app_name">Sensory</string>
+  <string name="anemia_screening">Anemia Screening</string>
   <string name="data_collection_app">Mobile Sensors Study Workflow App</string>
   <string name="steps_summary">There are 3 steps</string>
   <string name="step_record_video_ppg">Record video of PPG</string>

@@ -25,14 +25,30 @@ internal abstract class ResourceInfoDao {
     """
       SELECT *
       FROM ResourceInfoEntity
+      WHERE participantId = :participantId
+    """
+  )
+  abstract suspend fun listResourceInfoEntitiesForParticipant(participantId: String): List<ResourceInfoEntity>
+
+  @Transaction
+  open suspend fun listResourceInfoForParticipant(participantId: String): List<ResourceInfo> {
+    return listResourceInfoEntitiesForParticipant(participantId).map {
+      it.toResourceInfo()
+    }
+  }
+
+  @Query(
+    """
+      SELECT *
+      FROM ResourceInfoEntity
       WHERE captureId = :captureId
     """
   )
-  abstract suspend fun listResourceInfoEntities(captureId: String): List<ResourceInfoEntity>
+  abstract suspend fun listResourceInfoEntitiesInCapture(captureId: String): List<ResourceInfoEntity>
 
   @Transaction
-  open suspend fun listResourceInfo(captureId: String): List<ResourceInfo> {
-    return listResourceInfoEntities(captureId).map {
+  open suspend fun listResourceInfoInCapture(captureId: String): List<ResourceInfo> {
+    return listResourceInfoEntitiesInCapture(captureId).map {
       it.toResourceInfo()
     }
   }
@@ -65,9 +81,11 @@ internal fun ResourceInfoEntity.toResourceInfo() =
   ResourceInfo(
     resourceInfoId = resourceInfoId,
     captureId = captureId,
+    participantId = participantId,
     captureType = captureType,
+    title = title,
     fileType = fileType,
-    fileURI = fileURI,
+    resourceFolderPath = resourceFolderPath,
     uploadURL = uploadURL,
     status = status
   )
@@ -77,9 +95,11 @@ internal fun ResourceInfo.toResourceInfoEntity() =
     id = 0,
     resourceInfoId = resourceInfoId,
     captureId = captureId,
+    participantId = participantId,
     captureType = captureType,
+    title = title,
     fileType = fileType,
-    fileURI = fileURI,
+    resourceFolderPath = resourceFolderPath,
     uploadURL = uploadURL,
     status = status
   )

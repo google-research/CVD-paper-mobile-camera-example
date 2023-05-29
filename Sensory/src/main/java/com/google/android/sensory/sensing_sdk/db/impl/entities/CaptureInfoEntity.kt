@@ -13,7 +13,7 @@ import com.google.android.sensory.sensing_sdk.model.CaptureType
 )
 internal data class CaptureInfoEntity(
   @PrimaryKey (autoGenerate = true) val id: Long,
-  val folderId: String,
+  val participantId: String,
   val captureType: CaptureType,
   val captureFolder: String,
   val captureId: String

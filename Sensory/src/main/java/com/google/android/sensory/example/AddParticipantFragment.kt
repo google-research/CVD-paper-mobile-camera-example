@@ -1,5 +1,6 @@
 package com.google.android.sensory.example
 
+import android.content.Context
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuInflater
@@ -7,7 +8,6 @@ import android.view.MenuItem
 import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.os.bundleOf
 import androidx.core.view.MenuProvider
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.commit
@@ -16,8 +16,7 @@ import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.fragment.findNavController
 import com.google.android.fhir.datacapture.QuestionnaireFragment
 import com.google.android.sensory.R
-import com.google.android.sensory.example.data.AnemiaScreenerFragment
-import com.google.android.sensory.sensing_sdk.capture.model.CaptureSettings
+import com.google.android.sensory.sensing_sdk.capture.CaptureSettings
 import com.google.android.sensory.sensing_sdk.model.CaptureType
 import com.google.android.sensory.sensing_sdk.model.SensorType
 import org.hl7.fhir.r4.model.QuestionnaireResponse
@@ -100,6 +99,8 @@ class AddParticipantFragment : Fragment(R.layout.fragment_add_participant) {
         Toast.makeText(requireContext(), "Inputs are missing.", Toast.LENGTH_SHORT).show()
         return@observe
       }
+      val sharedPrefs = requireActivity().getSharedPreferences(SensingApplication.SHARED_PREFS_KEY, Context.MODE_PRIVATE)
+      sharedPrefs.edit().putString(SensingApplication.CURRENT_PATIENT_ID, it.id).apply()
       Toast.makeText(requireContext(), "Patient is saved.", Toast.LENGTH_SHORT).show()
       findNavController().navigate(
         AddParticipantFragmentDirections.actionAddParticipantFragmentToAnemiaScreenerFragment(it.idElement.idPart))
