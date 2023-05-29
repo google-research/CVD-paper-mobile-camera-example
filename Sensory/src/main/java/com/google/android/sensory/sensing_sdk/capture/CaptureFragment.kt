@@ -1,3 +1,19 @@
+/*
+ * Copyright 2022 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.google.android.sensory.sensing_sdk.capture
 
 import android.annotation.SuppressLint
@@ -46,19 +62,19 @@ import java.util.TimerTask
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 
-
-/** God-like fragment dealing with all sensors: For now only camera with capture types being VIDEO_PPG and IMAGE.
- * This is done by programmatically inflating the layout based on the captureType given.
- * Stores captureId in result.
- * Reason why all views are managed by this fragment is for a given capture type, multiple sensors may be required.
- * TODO: This is too customised and we will need to make it configurable. Configurability options:-
+/**
+ * God-like fragment dealing with all sensors: For now only camera with capture types being
+ * VIDEO_PPG and IMAGE. This is done by programmatically inflating the layout based on the
+ * captureType given. Stores captureId in result. Reason why all views are managed by this fragment
+ * is for a given capture type, multiple sensors may be required. TODO: This is too customised and
+ * we will need to make it configurable. Configurability options:-
  * 1. CaptureRequestOptions could be a part of [captureInfo.captureSettings]
  * 2. WriteJpegFutureSubscriber could be any generic subscriber
  * 3. Video timer should not be hardcoded
  * 4. Other camera settings like DEFAULT_BACK_CAMERA or something else
  * 5. TSVWriter can be configurable
  * 6. File suppliers should be more generic ==>> DONE
- * */
+ */
 @SuppressLint("UnsafeOptInUsageError")
 class CaptureFragment(
   private val captureInfo: CaptureInfo,
@@ -87,31 +103,33 @@ class CaptureFragment(
     when (captureInfo.captureType) {
       CaptureType.VIDEO_PPG -> {
         preview = Preview.Builder().build()
-        camera = Camera2InteropSensor.builder()
-          .setContext(requireContext())
-          .setBoundLifecycle(this)
-          .setCameraXSensorBuilder(
-            CameraXSensorV2.builder()
-              .setCameraSelector(CameraSelector.DEFAULT_BACK_CAMERA)
-              .addUseCase(preview)
-          )
-          .build()
+        camera =
+          Camera2InteropSensor.builder()
+            .setContext(requireContext())
+            .setBoundLifecycle(this)
+            .setCameraXSensorBuilder(
+              CameraXSensorV2.builder()
+                .setCameraSelector(CameraSelector.DEFAULT_BACK_CAMERA)
+                .addUseCase(preview)
+            )
+            .build()
         recordingGate = FlowGate.createClosed()
         showOverheatDialog()
       }
-
       CaptureType.IMAGE -> {
-        // Following camera initialization is same as above but it will depend on settings in CaptureInfo and hence not clubbed.
+        // Following camera initialization is same as above but it will depend on settings in
+        // CaptureInfo and hence not clubbed.
         preview = Preview.Builder().build()
-        camera = Camera2InteropSensor.builder()
-          .setContext(requireContext())
-          .setBoundLifecycle(this)
-          .setCameraXSensorBuilder(
-            CameraXSensorV2.builder()
-              .setCameraSelector(CameraSelector.DEFAULT_BACK_CAMERA)
-              .addUseCase(preview)
-          )
-          .build()
+        camera =
+          Camera2InteropSensor.builder()
+            .setContext(requireContext())
+            .setBoundLifecycle(this)
+            .setCameraXSensorBuilder(
+              CameraXSensorV2.builder()
+                .setCameraSelector(CameraSelector.DEFAULT_BACK_CAMERA)
+                .addUseCase(preview)
+            )
+            .build()
       }
     }
   }
@@ -136,7 +154,6 @@ class CaptureFragment(
         toggleFlashFab = view.findViewById(R.id.toggle_flash_fab)
         recordTimer = view.findViewById(R.id.record_timer)
       }
-
       CaptureType.IMAGE -> {
         previewView = view.findViewById(R.id.preview_view)
         toggleFlashFab = view.findViewById(R.id.toggle_flash_fab)
@@ -153,40 +170,34 @@ class CaptureFragment(
         // Start the camera and preview
         preview!!.setSurfaceProvider(previewView.surfaceProvider)
         camera!!
-          .lifecycle
-          .addObserver(
+          .lifecycle.addObserver(
             object : DefaultLifecycleObserver {
               override fun onCreate(owner: LifecycleOwner) {
                 camera!!.cameraXSensor.cameraControl!!.enableTorch(true)
                 camera!!.camera2Control!!.captureRequestOptions =
                   captureViewModel.getCaptureRequestOptions(false)
               }
-            })
+            }
+          )
         recordTimer.text = "00 : 30"
         initializeTimer()
-        recordFab.setOnClickListener {
-          processRecord()
-        }
-        toggleFlashFab.setOnClickListener {
-          CaptureUtil.toggleFlash(camera!!, toggleFlashFab)
-        }
+        recordFab.setOnClickListener { processRecord() }
+        toggleFlashFab.setOnClickListener { CaptureUtil.toggleFlash(camera!!, toggleFlashFab) }
       }
-
       CaptureType.IMAGE -> {
         preview!!.setSurfaceProvider(previewView.surfaceProvider)
-        camera!!.lifecycle
-          .addObserver(
+        camera!!
+          .lifecycle.addObserver(
             object : DefaultLifecycleObserver {
               override fun onCreate(owner: LifecycleOwner) {
                 camera!!.cameraXSensor.cameraControl!!.enableTorch(true)
                 camera!!.camera2Control!!.captureRequestOptions =
                   CaptureRequestOptions.Builder().build()
               }
-            })
+            }
+          )
         btnTakePhoto.setOnClickListener { capturePhoto() }
-        toggleFlashFab.setOnClickListener {
-          CaptureUtil.toggleFlash(camera!!, toggleFlashFab)
-        }
+        toggleFlashFab.setOnClickListener { CaptureUtil.toggleFlash(camera!!, toggleFlashFab) }
       }
     }
   }
@@ -207,10 +218,7 @@ class CaptureFragment(
         LOCK_AFTER_MS.toLong()
       )
       // Get stream of images while recording
-      val recordingImages =
-        recordingGate.passThrough(
-          camera!!.dataPublisher()
-        )
+      val recordingImages = recordingGate.passThrough(camera!!.dataPublisher())
 
       // Compatibility layer between camerax ImageProxy and camera2 Image
       SharedImageProxy.asImagePublisher(recordingImages) // Write from stream to disk as JPEGs
@@ -220,10 +228,7 @@ class CaptureFragment(
             .setTotalFrames(Long.MAX_VALUE)
             .build()
         )
-      val captureResultStream =
-        recordingGate.passThrough(
-          camera!!.captureResultPublisher()
-        )
+      val captureResultStream = recordingGate.passThrough(camera!!.captureResultPublisher())
       val cameraMetadataSaver =
         StreamToTsvSubscriber.builder<CaptureResult>()
           .setTsvWriter(TSV_WRITER)
@@ -255,31 +260,33 @@ class CaptureFragment(
     builder
       .setTitle(R.string.overheat_dialog_title)
       .setMessage(R.string.overheat_dialog_message)
-      .setPositiveButton(
-        R.string.overheat_ok_to_proceed
-      ) { dialog, which -> isPhoneSafeToUse = true }
+      .setPositiveButton(R.string.overheat_ok_to_proceed) { dialog, which ->
+        isPhoneSafeToUse = true
+      }
       .setCancelable(false)
     val dialog = builder.create()
     dialog.show()
   }
 
   private fun initializeTimer() {
-    countDownTimer = object : CountDownTimer(30000, 1000) {
-      override fun onTick(millisUntilFinished: Long) {
-        val strDuration = String.format(
-          Locale.ENGLISH,
-          "%02d : %02d",
-          0L /* minutes */,
-          TimeUnit.MILLISECONDS.toSeconds(millisUntilFinished)
-        )
-        recordTimer.text = strDuration
-        if (millisUntilFinished == 0L && recordingGate.isOpen) {
-          stopRecording()
+    countDownTimer =
+      object : CountDownTimer(30000, 1000) {
+        override fun onTick(millisUntilFinished: Long) {
+          val strDuration =
+            String.format(
+              Locale.ENGLISH,
+              "%02d : %02d",
+              0L /* minutes */,
+              TimeUnit.MILLISECONDS.toSeconds(millisUntilFinished)
+            )
+          recordTimer.text = strDuration
+          if (millisUntilFinished == 0L && recordingGate.isOpen) {
+            stopRecording()
+          }
         }
-      }
 
-      override fun onFinish() {}
-    }
+        override fun onFinish() {}
+      }
   }
 
   // Safe to ignore CameraControl futures
@@ -344,30 +351,31 @@ class CaptureFragment(
     const val CAPTURED = "captured"
     const val TAG = "CAPTURE_FRAGMENT"
     const val CAPTURE_ID = "capture_id"
-    private val TSV_WRITER = Camera2TsvWriters.captureResultBuilder()
-      .addFrameNumberColumn()
-      .addColumn(CaptureResult.SENSOR_TIMESTAMP)
-      .addColumn(CaptureResult.SENSOR_FRAME_DURATION)
-      .addColumn(CaptureResult.FLASH_MODE)
-      .addColumn(CaptureResult.FLASH_STATE)
-      .addColumn(CaptureResult.SENSOR_EXPOSURE_TIME)
-      .addColumn(CaptureResult.CONTROL_POST_RAW_SENSITIVITY_BOOST)
-      .addColumn(CaptureResult.CONTROL_AE_MODE)
-      .addColumn(CaptureResult.CONTROL_AE_LOCK)
-      .addColumn(CaptureResult.CONTROL_AE_ANTIBANDING_MODE)
-      .addColumn(CaptureResult.CONTROL_AE_STATE)
-      .addColumn(CaptureResult.CONTROL_AE_EXPOSURE_COMPENSATION)
-      .addColumn(CaptureResult.SENSOR_SENSITIVITY)
-      .addRangeColumn(CaptureResult.CONTROL_AE_TARGET_FPS_RANGE)
-      .addColumn(CaptureResult.CONTROL_AWB_MODE)
-      .addColumn(CaptureResult.CONTROL_AWB_STATE)
-      .addColumn(CaptureResult.COLOR_CORRECTION_MODE)
-      .addRggbChannelVectorColumn(CaptureResult.COLOR_CORRECTION_GAINS)
-      .addColumn(CaptureResult.CONTROL_AF_MODE)
-      .addColumn(CaptureResult.CONTROL_EFFECT_MODE)
-      .addColumn(CaptureResult.NOISE_REDUCTION_MODE)
-      .addColumn(CaptureResult.SHADING_MODE)
-      .addColumn(CaptureResult.TONEMAP_MODE)
-      .build()
+    private val TSV_WRITER =
+      Camera2TsvWriters.captureResultBuilder()
+        .addFrameNumberColumn()
+        .addColumn(CaptureResult.SENSOR_TIMESTAMP)
+        .addColumn(CaptureResult.SENSOR_FRAME_DURATION)
+        .addColumn(CaptureResult.FLASH_MODE)
+        .addColumn(CaptureResult.FLASH_STATE)
+        .addColumn(CaptureResult.SENSOR_EXPOSURE_TIME)
+        .addColumn(CaptureResult.CONTROL_POST_RAW_SENSITIVITY_BOOST)
+        .addColumn(CaptureResult.CONTROL_AE_MODE)
+        .addColumn(CaptureResult.CONTROL_AE_LOCK)
+        .addColumn(CaptureResult.CONTROL_AE_ANTIBANDING_MODE)
+        .addColumn(CaptureResult.CONTROL_AE_STATE)
+        .addColumn(CaptureResult.CONTROL_AE_EXPOSURE_COMPENSATION)
+        .addColumn(CaptureResult.SENSOR_SENSITIVITY)
+        .addRangeColumn(CaptureResult.CONTROL_AE_TARGET_FPS_RANGE)
+        .addColumn(CaptureResult.CONTROL_AWB_MODE)
+        .addColumn(CaptureResult.CONTROL_AWB_STATE)
+        .addColumn(CaptureResult.COLOR_CORRECTION_MODE)
+        .addRggbChannelVectorColumn(CaptureResult.COLOR_CORRECTION_GAINS)
+        .addColumn(CaptureResult.CONTROL_AF_MODE)
+        .addColumn(CaptureResult.CONTROL_EFFECT_MODE)
+        .addColumn(CaptureResult.NOISE_REDUCTION_MODE)
+        .addColumn(CaptureResult.SHADING_MODE)
+        .addColumn(CaptureResult.TONEMAP_MODE)
+        .build()
   }
 }

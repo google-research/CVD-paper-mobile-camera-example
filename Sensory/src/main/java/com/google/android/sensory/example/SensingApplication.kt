@@ -1,3 +1,19 @@
+/*
+ * Copyright 2022 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.google.android.sensory.example
 
 import android.app.Application
@@ -32,12 +48,8 @@ class SensingApplication : Application(), DataCaptureConfig.Provider {
 
   private fun constructSensingEngine(): SensingEngine {
     SensingEngineProvider.init(uploadConfiguration)
-    return SensingEngineProvider.getOrCreateSensingEngine(
-      applicationContext,
-      false
-    )
+    return SensingEngineProvider.getOrCreateSensingEngine(applicationContext, false)
   }
-
 
   private fun constructUploadConfiguration(): UploadConfiguration {
     val properties = Properties().apply { load(applicationContext.assets.open("local.properties")) }
@@ -63,53 +75,71 @@ class SensingApplication : Application(), DataCaptureConfig.Provider {
   }
 
   override fun getDataCaptureConfig(): DataCaptureConfig {
-    return DataCaptureConfig(questionnaireItemViewHolderFactoryMatchersProviderFactory = { tag ->
-      CUSTOM_VIEW_HOLDER_FACTORY_TAG
-      object : QuestionnaireFragment.QuestionnaireItemViewHolderFactoryMatchersProvider() {
+    return DataCaptureConfig(
+      questionnaireItemViewHolderFactoryMatchersProviderFactory = { tag ->
+        CUSTOM_VIEW_HOLDER_FACTORY_TAG
+        object : QuestionnaireFragment.QuestionnaireItemViewHolderFactoryMatchersProvider() {
 
-        override fun get(): List<QuestionnaireFragment.QuestionnaireItemViewHolderFactoryMatcher> {
-          return listOf(
-            QuestionnaireFragment.QuestionnaireItemViewHolderFactoryMatcher(
-              FingernailsClosedPhotoSensorCaptureViewHolderFactory
-            ) { questionnaireItem ->
-              questionnaireItem.getExtensionByUrl(
-                FingernailsClosedPhotoSensorCaptureViewHolderFactory.WIDGET_EXTENSION
-              )
-                .let {
-                  if (it == null) false else it.value.toString() == FingernailsClosedPhotoSensorCaptureViewHolderFactory.WIDGET_TYPE
-                }
-            },
-            QuestionnaireFragment.QuestionnaireItemViewHolderFactoryMatcher(
-              FingernailsOpenPhotoSensorCaptureViewHolderFactory
-            ) { questionnaireItem ->
-              questionnaireItem.getExtensionByUrl(FingernailsOpenPhotoSensorCaptureViewHolderFactory.WIDGET_EXTENSION)
-                .let {
-                  if (it == null) false else it.value.toString() == FingernailsOpenPhotoSensorCaptureViewHolderFactory.WIDGET_TYPE
-                }
-            },
-            QuestionnaireFragment.QuestionnaireItemViewHolderFactoryMatcher(
-              ConjunctivaPhotoSensorCaptureViewHolderFactory
-            ) { questionnaireItem ->
-              questionnaireItem.getExtensionByUrl(ConjunctivaPhotoSensorCaptureViewHolderFactory.WIDGET_EXTENSION)
-                .let {
-                  if (it == null) false else it.value.toString() == ConjunctivaPhotoSensorCaptureViewHolderFactory.WIDGET_TYPE
-                }
-            },
-            QuestionnaireFragment.QuestionnaireItemViewHolderFactoryMatcher(
-              PPGSensorCaptureViewHolderFactory
-            ) {
-                questionnaireItem,
-              ->
-              questionnaireItem.getExtensionByUrl(PPGSensorCaptureViewHolderFactory.WIDGET_EXTENSION)
-                .let {
-                  if (it == null) false
-                  else it.value.toString() == PPGSensorCaptureViewHolderFactory.WIDGET_TYPE
-                }
-            }
-          )
+          override fun get():
+            List<QuestionnaireFragment.QuestionnaireItemViewHolderFactoryMatcher> {
+            return listOf(
+              QuestionnaireFragment.QuestionnaireItemViewHolderFactoryMatcher(
+                FingernailsClosedPhotoSensorCaptureViewHolderFactory
+              ) { questionnaireItem ->
+                questionnaireItem
+                  .getExtensionByUrl(
+                    FingernailsClosedPhotoSensorCaptureViewHolderFactory.WIDGET_EXTENSION
+                  )
+                  .let {
+                    if (it == null) false
+                    else
+                      it.value.toString() ==
+                        FingernailsClosedPhotoSensorCaptureViewHolderFactory.WIDGET_TYPE
+                  }
+              },
+              QuestionnaireFragment.QuestionnaireItemViewHolderFactoryMatcher(
+                FingernailsOpenPhotoSensorCaptureViewHolderFactory
+              ) { questionnaireItem ->
+                questionnaireItem
+                  .getExtensionByUrl(
+                    FingernailsOpenPhotoSensorCaptureViewHolderFactory.WIDGET_EXTENSION
+                  )
+                  .let {
+                    if (it == null) false
+                    else
+                      it.value.toString() ==
+                        FingernailsOpenPhotoSensorCaptureViewHolderFactory.WIDGET_TYPE
+                  }
+              },
+              QuestionnaireFragment.QuestionnaireItemViewHolderFactoryMatcher(
+                ConjunctivaPhotoSensorCaptureViewHolderFactory
+              ) { questionnaireItem ->
+                questionnaireItem
+                  .getExtensionByUrl(
+                    ConjunctivaPhotoSensorCaptureViewHolderFactory.WIDGET_EXTENSION
+                  )
+                  .let {
+                    if (it == null) false
+                    else
+                      it.value.toString() ==
+                        ConjunctivaPhotoSensorCaptureViewHolderFactory.WIDGET_TYPE
+                  }
+              },
+              QuestionnaireFragment.QuestionnaireItemViewHolderFactoryMatcher(
+                PPGSensorCaptureViewHolderFactory
+              ) { questionnaireItem,
+                ->
+                questionnaireItem
+                  .getExtensionByUrl(PPGSensorCaptureViewHolderFactory.WIDGET_EXTENSION)
+                  .let {
+                    if (it == null) false
+                    else it.value.toString() == PPGSensorCaptureViewHolderFactory.WIDGET_TYPE
+                  }
+              }
+            )
+          }
         }
-
       }
-    })
+    )
   }
 }

@@ -1,3 +1,19 @@
+/*
+ * Copyright 2022 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.google.android.sensory.sensing_sdk.capture
 
 import android.app.Application
@@ -23,26 +39,27 @@ class CaptureViewModel(application: Application) : AndroidViewModel(application)
     val optionsBuilder =
       CaptureRequestOptions.Builder() // Disable white balancing so that we can control it manually.
         .setCaptureRequestOption(
-          CaptureRequest.CONTROL_AWB_MODE, CaptureRequest.CONTROL_AWB_MODE_OFF
+          CaptureRequest.CONTROL_AWB_MODE,
+          CaptureRequest.CONTROL_AWB_MODE_OFF
         ) // Set an identity correction matrix for color correction.
         .setCaptureRequestOption(
           CaptureRequest.COLOR_CORRECTION_MODE,
           CaptureRequest.COLOR_CORRECTION_MODE_TRANSFORM_MATRIX
         )
         .setCaptureRequestOption(
-          CaptureRequest.COLOR_CORRECTION_TRANSFORM, ColorSpaceTransform(elements)
+          CaptureRequest.COLOR_CORRECTION_TRANSFORM,
+          ColorSpaceTransform(elements)
         ) // Set the individual channel gains.
         .setCaptureRequestOption(
           CaptureRequest.COLOR_CORRECTION_GAINS,
           RggbChannelVector(redGain, greenGain, greenGain, blueGain)
         ) // Set the manual gamma value.
         .setCaptureRequestOption(
-          CaptureRequest.TONEMAP_MODE, CaptureRequest.TONEMAP_MODE_GAMMA_VALUE
+          CaptureRequest.TONEMAP_MODE,
+          CaptureRequest.TONEMAP_MODE_GAMMA_VALUE
         )
         .setCaptureRequestOption(CaptureRequest.TONEMAP_GAMMA, gamma)
-        .setCaptureRequestOption(
-          CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON
-        )
+        .setCaptureRequestOption(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON)
         .setCaptureRequestOption(CaptureRequest.CONTROL_AE_LOCK, lockExposure)
     return optionsBuilder.build()
   }

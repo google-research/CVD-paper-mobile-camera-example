@@ -1,3 +1,19 @@
+/*
+ * Copyright 2022 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.google.fitbit.research.sensing.common.libraries.flow;
 
 import com.google.errorprone.annotations.CheckReturnValue;
@@ -13,21 +29,19 @@ import org.reactivestreams.Subscription;
  * and multicasts the results to all {@link Subscriber}s with pending requests. {@code onComplete}
  * and {@code onError} signals are forwarded directly to all Subscribers with no change.
  *
- * <p>Transformations should be lightweight. Long-running operations in the transformation can
- * block further upstream signals from being processed.
+ * <p>Transformations should be lightweight. Long-running operations in the transformation can block
+ * further upstream signals from being processed.
  *
- * <p>Requests are handled lazily. DirectProcessor does not make any requests to its upstream
- * {@link Publisher} until required by a downstream Subscriber.
+ * <p>Requests are handled lazily. DirectProcessor does not make any requests to its upstream {@link
+ * Publisher} until required by a downstream Subscriber.
  */
-@CheckReturnValue 
+@CheckReturnValue
 public abstract class DirectProcessor<T, R> implements Processor<T, R> {
 
   private final Object lock = new Object();
   private final DeferredSubscription incoming = new DeferredSubscription();
-  @Nullable
-  private Distributor<R> distributor = new Distributor<>(incoming);
-  @Nullable
-  private Publisher<R> terminalPublisher;
+  @Nullable private Distributor<R> distributor = new Distributor<>(incoming);
+  @Nullable private Publisher<R> terminalPublisher;
 
   public static <I, O> DirectProcessor<I, O> transformPublisher(
       Publisher<I> publisher, Function<I, O> transform) {
@@ -46,8 +60,8 @@ public abstract class DirectProcessor<T, R> implements Processor<T, R> {
   }
 
   /**
-   * Transforms inputs from {@link #onNext} before sending them downstream. Throwing a
-   * {@link DirectProcessorException} will signal {@link #onError} and terminate this processor.
+   * Transforms inputs from {@link #onNext} before sending them downstream. Throwing a {@link
+   * DirectProcessorException} will signal {@link #onError} and terminate this processor.
    */
   public abstract R process(T input) throws DirectProcessorException;
 
@@ -102,9 +116,7 @@ public abstract class DirectProcessor<T, R> implements Processor<T, R> {
     }
   }
 
-  /**
-   * Thrown when an error is encountered during {@link #process}.
-   */
+  /** Thrown when an error is encountered during {@link #process}. */
   public static final class DirectProcessorException extends Exception {
 
     public DirectProcessorException(String message) {

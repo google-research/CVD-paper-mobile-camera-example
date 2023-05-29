@@ -1,3 +1,19 @@
+/*
+ * Copyright 2022 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.google.fitbit.research.sensing.common.libraries.flow;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -22,8 +38,8 @@ import org.reactivestreams.Subscription;
  * will stop receiving signals from the old Publisher and begin receiving signals from the new
  * Publisher.
  *
- * <p>If an upstream Publisher signals termination with {@code onComplete} or {@code onError}, or
- * if {@link #setException} or {@link #setComplete} are called, then subscriptions will remain
+ * <p>If an upstream Publisher signals termination with {@code onComplete} or {@code onError}, or if
+ * {@link #setException} or {@link #setComplete} are called, then subscriptions will remain
  * terminated even if the terminated Publisher is replaced.
  */
 public final class SwappablePublisher<T> implements CloseablePublisher<T> {
@@ -32,8 +48,7 @@ public final class SwappablePublisher<T> implements CloseablePublisher<T> {
       Collections.synchronizedSet(new HashSet<>());
   private DeferredPublisher<T> upstreamPublisher = new DeferredPublisher<>();
 
-  private SwappablePublisher() {
-  }
+  private SwappablePublisher() {}
 
   public static <T> SwappablePublisher<T> create() {
     return new SwappablePublisher<T>();
@@ -87,9 +102,7 @@ public final class SwappablePublisher<T> implements CloseablePublisher<T> {
     setPublisher(FailedPublisher.create(t));
   }
 
-  /**
-   * Equivalent to {@link #setComplete}.
-   */
+  /** Equivalent to {@link #setComplete}. */
   @Override
   public void close() {
     setComplete();

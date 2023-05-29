@@ -1,3 +1,19 @@
+/*
+ * Copyright 2022 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.google.fitbit.research.sensing.common.libraries.sensors;
 
 import android.content.Context;
@@ -26,8 +42,8 @@ public interface MobileSensorV2<T> extends LifecycleOwner {
   }
 
   /**
-   * Returns this sensor's lifecycle, which roughly follows the lifecycle bound in
-   * {@link Builder#setBoundLifecycle}.
+   * Returns this sensor's lifecycle, which roughly follows the lifecycle bound in {@link
+   * Builder#setBoundLifecycle}.
    *
    * <p>This lifecycle can be observed to see the sensor's current state:
    *
@@ -46,8 +62,8 @@ public interface MobileSensorV2<T> extends LifecycleOwner {
   Lifecycle getLifecycle();
 
   /**
-   * Publisher for this sensor's primary data stream. Signals {@code onNext} while
-   * {@link #getLifecycle} is between {@code onStart} and {@code onStop}.
+   * Publisher for this sensor's primary data stream. Signals {@code onNext} while {@link
+   * #getLifecycle} is between {@code onStart} and {@code onStop}.
    *
    * <p>There are multiple ways to subscribe to this stream:
    *
@@ -56,9 +72,9 @@ public interface MobileSensorV2<T> extends LifecycleOwner {
    *       continues to send data as long as the sensor is active, only signalling {@code
    *       onComplete} when the sensor is destroyed.
    *   <li>{@code dataPublisher().untilStop().subscribe()} will result in a subscription that
-   *       signals {@code onComplete} the next time the sensor stops. This can only happen when
-   *       the bound lifecycle also moves to {@code onStop}. This is useful for creating
-   *       subscriptions that should end when the app is moved to the background.
+   *       signals {@code onComplete} the next time the sensor stops. This can only happen when the
+   *       bound lifecycle also moves to {@code onStop}. This is useful for creating subscriptions
+   *       that should end when the app is moved to the background.
    * </ul>
    *
    * <p>Note that after the current {@link LifecyclePublisher#untilStop()} stops, Subscribers will
@@ -67,9 +83,7 @@ public interface MobileSensorV2<T> extends LifecycleOwner {
    */
   LifecyclePublisher<T> dataPublisher();
 
-  /**
-   * Standard builder interface for MobileSensor instances.
-   */
+  /** Standard builder interface for MobileSensor instances. */
   public interface Builder<T> {
 
     @CanIgnoreReturnValue
@@ -82,8 +96,8 @@ public interface MobileSensorV2<T> extends LifecycleOwner {
      * cases, this should be an {@link androidx.lifecycle.LifecycleService}.
      *
      * <p>The sensor will be allocated in {@code onCreate}, runs only between {@code onStart} and
-     * {@code onStop}, and will be released in {@code onDestroy}. See
-     * {@link MobileSensorV2#getLifecycle} for more details.
+     * {@code onStop}, and will be released in {@code onDestroy}. See {@link
+     * MobileSensorV2#getLifecycle} for more details.
      */
     @CanIgnoreReturnValue
     public Builder<T> setBoundLifecycle(LifecycleOwner lifecycle);

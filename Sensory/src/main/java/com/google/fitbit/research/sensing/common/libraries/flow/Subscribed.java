@@ -1,3 +1,19 @@
+/*
+ * Copyright 2022 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.google.fitbit.research.sensing.common.libraries.flow;
 
 import static java.lang.Math.max;
@@ -28,9 +44,7 @@ public class Subscribed<S> {
     return subscriber.isPresent() ? requests.get() : 0;
   }
 
-  /**
-   * Returns the {@link Subscriber} if the subscription is still active.
-   */
+  /** Returns the {@link Subscriber} if the subscription is still active. */
   @Nullable
   Subscriber<? super S> getSubscriber() {
     return subscriber.orElse(null);
@@ -49,9 +63,7 @@ public class Subscribed<S> {
     }
   }
 
-  /**
-   * Terminates the subscription.
-   */
+  /** Terminates the subscription. */
   public void cancel() {
     synchronized (this) {
       subscriber = Optional.empty();
@@ -89,9 +101,7 @@ public class Subscribed<S> {
     return false;
   }
 
-  /**
-   * Signals {@link Subscriber#onError} and marks this subscription as terminated.
-   */
+  /** Signals {@link Subscriber#onError} and marks this subscription as terminated. */
   public void error(Throwable t) {
     synchronized (this) {
       Optional<Subscriber<? super S>> current = subscriber;
@@ -100,9 +110,7 @@ public class Subscribed<S> {
     }
   }
 
-  /**
-   * Signals {@link Subscriber#onComplete} and marks this subscription as terminated.
-   */
+  /** Signals {@link Subscriber#onComplete} and marks this subscription as terminated. */
   public void complete() {
     synchronized (this) {
       Optional<Subscriber<? super S>> current = subscriber;

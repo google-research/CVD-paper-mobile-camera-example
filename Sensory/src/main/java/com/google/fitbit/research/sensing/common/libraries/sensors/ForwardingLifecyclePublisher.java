@@ -1,3 +1,19 @@
+/*
+ * Copyright 2022 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.google.fitbit.research.sensing.common.libraries.sensors;
 
 import androidx.annotation.MainThread;
@@ -9,8 +25,8 @@ import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 
 /**
- * Simple {@link LifecyclePublisher} implementation that forwards signals from an existing
- * {@link Publisher}.
+ * Simple {@link LifecyclePublisher} implementation that forwards signals from an existing {@link
+ * Publisher}.
  *
  * <p>Should be added to one, and only one, {@link androidx.lifecycle.Lifecycle#addObserver}.
  */
@@ -22,16 +38,13 @@ public final class ForwardingLifecyclePublisher<T>
   private final Publisher<T> whileCreatedPublisher = whileCreatedGate.passThrough(deferred);
   private final FlowGate whileStartedGate = FlowGate.createClosed();
 
-  ForwardingLifecyclePublisher() {
-  }
+  ForwardingLifecyclePublisher() {}
 
   public static <T> ForwardingLifecyclePublisher<T> create() {
     return new ForwardingLifecyclePublisher<>();
   }
 
-  /**
-   * Creates and {@link #set}s a new ForwardingLifecyclePublisher.
-   */
+  /** Creates and {@link #set}s a new ForwardingLifecyclePublisher. */
   public static <T> ForwardingLifecyclePublisher<T> create(Publisher<T> publisher) {
     ForwardingLifecyclePublisher<T> forwarding = new ForwardingLifecyclePublisher<>();
     forwarding.set(publisher);

@@ -1,129 +1,143 @@
-<?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<?xml version="1.0" encoding="utf-8" ?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:ignore="contentDescription">
+    tools:ignore="contentDescription"
+>
 
   <androidx.constraintlayout.widget.ConstraintLayout
-      android:layout_width="0dp"
-      android:layout_height="0dp"
-      app:layout_constraintBottom_toBottomOf="@id/bottom_margin_guideline"
-      app:layout_constraintEnd_toEndOf="@id/right_margin_guideline"
-      app:layout_constraintStart_toStartOf="@id/left_margin_guideline"
-      app:layout_constraintTop_toTopOf="@id/top_margin_guideline">
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintBottom_toBottomOf="@id/bottom_margin_guideline"
+        app:layout_constraintEnd_toEndOf="@id/right_margin_guideline"
+        app:layout_constraintStart_toStartOf="@id/left_margin_guideline"
+        app:layout_constraintTop_toTopOf="@id/top_margin_guideline"
+    >
 
     <Button
-        android:id="@+id/btn_start_new_participant"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:backgroundTint="@android:color/holo_blue_light"
-        android:text="@string/start_new_participant"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tv_photo_conjunctiva" />
+            android:id="@+id/btn_start_new_participant"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:backgroundTint="@android:color/holo_blue_light"
+            android:text="@string/start_new_participant"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/tv_photo_conjunctiva"
+        />
 
     <TextView
-        android:id="@+id/tv_steps_summary"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="21dp"
-        android:gravity="center_horizontal"
-        android:text="@string/steps_summary"
-        android:textAppearance="@style/text_style"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tv_path_app" />
+            android:id="@+id/tv_steps_summary"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="21dp"
+            android:gravity="center_horizontal"
+            android:text="@string/steps_summary"
+            android:textAppearance="@style/text_style"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/tv_path_app"
+        />
 
     <TextView
-        android:id="@+id/tv_record_video"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="53dp"
-        android:drawablePadding="10dp"
-        android:drawableStart="@drawable/ppg_icon"
-        android:text="@string/step_record_video_ppg"
-        android:textAppearance="@style/text_style"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tv_steps_summary" />
+            android:id="@+id/tv_record_video"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="53dp"
+            android:drawablePadding="10dp"
+            android:drawableStart="@drawable/ppg_icon"
+            android:text="@string/step_record_video_ppg"
+            android:textAppearance="@style/text_style"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/tv_steps_summary"
+        />
 
     <TextView
-        android:id="@+id/tv_photo_fingernails"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="28dp"
-        android:drawablePadding="10dp"
-        android:drawableStart="@drawable/fingernails_icon"
-        android:text="@string/step_photo_fingernails"
-        android:textAppearance="@style/text_style"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tv_record_video" />
+            android:id="@+id/tv_photo_fingernails"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="28dp"
+            android:drawablePadding="10dp"
+            android:drawableStart="@drawable/fingernails_icon"
+            android:text="@string/step_photo_fingernails"
+            android:textAppearance="@style/text_style"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/tv_record_video"
+        />
 
     <TextView
-        android:id="@+id/tv_photo_conjunctiva"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="28dp"
-        android:drawablePadding="10dp"
-        android:drawableStart="@drawable/conjunctiva_icon"
-        android:text="@string/step_photo_conjunctiva"
-        android:textAppearance="@style/text_style"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tv_photo_fingernails" />
+            android:id="@+id/tv_photo_conjunctiva"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="28dp"
+            android:drawablePadding="10dp"
+            android:drawableStart="@drawable/conjunctiva_icon"
+            android:text="@string/step_photo_conjunctiva"
+            android:textAppearance="@style/text_style"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/tv_photo_fingernails"
+        />
 
     <TextView
-        android:id="@+id/tv_path_app"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:gravity="center_horizontal"
-        android:text="@string/data_collection_app"
-        android:textAppearance="@style/title_style"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+            android:id="@+id/tv_path_app"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center_horizontal"
+            android:text="@string/data_collection_app"
+            android:textAppearance="@style/title_style"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+        />
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/fab"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_margin="16dp"
-        android:layout_gravity="end|bottom"
-        android:contentDescription="Sync"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+            android:id="@+id/fab"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="16dp"
+            android:layout_gravity="end|bottom"
+            android:contentDescription="Sync"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+        />
 
   </androidx.constraintlayout.widget.ConstraintLayout>
 
   <androidx.constraintlayout.widget.Guideline
-      android:id="@+id/top_margin_guideline"
-      android:layout_width="wrap_content"
-      android:layout_height="wrap_content"
-      android:orientation="horizontal"
-      app:layout_constraintGuide_percent="0.1" />
+        android:id="@+id/top_margin_guideline"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent="0.1"
+    />
 
   <androidx.constraintlayout.widget.Guideline
-      android:id="@+id/left_margin_guideline"
-      android:layout_width="wrap_content"
-      android:layout_height="wrap_content"
-      android:orientation="vertical"
-      app:layout_constraintGuide_percent="0.1" />
+        android:id="@+id/left_margin_guideline"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintGuide_percent="0.1"
+    />
 
   <androidx.constraintlayout.widget.Guideline
-      android:id="@+id/right_margin_guideline"
-      android:layout_width="wrap_content"
-      android:layout_height="wrap_content"
-      android:orientation="vertical"
-      app:layout_constraintGuide_percent="0.9" />
+        android:id="@+id/right_margin_guideline"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintGuide_percent="0.9"
+    />
 
   <androidx.constraintlayout.widget.Guideline
-      android:id="@+id/bottom_margin_guideline"
-      android:layout_width="wrap_content"
-      android:layout_height="wrap_content"
-      android:orientation="horizontal"
-      app:layout_constraintGuide_percent="0.9" />
+        android:id="@+id/bottom_margin_guideline"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent="0.9"
+    />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

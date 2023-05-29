@@ -1,3 +1,19 @@
+/*
+ * Copyright 2022 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.google.fitbit.research.sensing.common.libraries.camera;
 
 import android.hardware.camera2.CameraMetadata;
@@ -19,20 +35,15 @@ import java.io.File;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executor;
 
-/**
- * Helper methods for common camera operations.
- */
+/** Helper methods for common camera operations. */
 @ExperimentalCamera2Interop
 public final class Camera2InteropActions {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
-  private Camera2InteropActions() {
-  }
+  private Camera2InteropActions() {}
 
-  /**
-   * Locks/unlocks autoexposure and white balance.
-   */
+  /** Locks/unlocks autoexposure and white balance. */
   @MainThread
   public static ListenableFuture<Void> setAeAwbLocked(Camera2InteropSensor camera, boolean lock) {
     if (camera.isStarted()) {
@@ -47,18 +58,16 @@ public final class Camera2InteropActions {
     return Futures.immediateVoidFuture();
   }
 
-  /**
-   * Resolves when autoexposure and auto white balance converge.
-   */
+  /** Resolves when autoexposure and auto white balance converge. */
   public static ListenableFuture<Void> waitForAeAwbConverged(Camera2InteropSensor camera) {
     return Futures.transform(
         FlowFutures.<TotalCaptureResult>whenConditionOrComplete(
             camera.captureResultPublisher().untilStop(),
             capture ->
                 capture.get(CaptureResult.CONTROL_AE_STATE)
-                    == CameraMetadata.CONTROL_AE_STATE_CONVERGED
+                        == CameraMetadata.CONTROL_AE_STATE_CONVERGED
                     && capture.get(CaptureResult.CONTROL_AWB_STATE)
-                    == CameraMetadata.CONTROL_AWB_STATE_CONVERGED),
+                        == CameraMetadata.CONTROL_AWB_STATE_CONVERGED),
         unused -> null,
         MoreExecutors.directExecutor());
   }

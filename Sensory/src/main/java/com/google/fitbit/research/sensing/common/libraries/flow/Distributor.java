@@ -1,3 +1,19 @@
+/*
+ * Copyright 2022 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.google.fitbit.research.sensing.common.libraries.flow;
 
 import static java.lang.Math.max;
@@ -15,7 +31,7 @@ import org.reactivestreams.Subscription;
  * children Subscription receives requests. If there are multiple children, then requests can be
  * parallelized; one request to the parent will satisfy a single request across all children.
  */
-@CheckReturnValue 
+@CheckReturnValue
 public final class Distributor<T> {
 
   private final Subscription parent;
@@ -26,9 +42,7 @@ public final class Distributor<T> {
     this.parent = parent;
   }
 
-  /**
-   * Creates a child Subscription, to be passed to {@link Subscriber#onSubscribe}.
-   */
+  /** Creates a child Subscription, to be passed to {@link Subscriber#onSubscribe}. */
   public Subscription createSubscription(Subscriber<? super T> subscriber) {
     synchronized (children) {
       Subscribed<T> subscribed = new Subscribed<T>(subscriber);
@@ -54,9 +68,7 @@ public final class Distributor<T> {
     }
   }
 
-  /**
-   * Signals all child subscriptions with {@code onNext}.
-   */
+  /** Signals all child subscriptions with {@code onNext}. */
   public void next(T t) {
     synchronized (children) {
       activeRequests = max(0, activeRequests - 1);
@@ -64,9 +76,7 @@ public final class Distributor<T> {
     }
   }
 
-  /**
-   * Signals all child subscriptions with {@code onError}.
-   */
+  /** Signals all child subscriptions with {@code onError}. */
   public void error(Throwable t) {
     synchronized (children) {
       children.error(t);
@@ -74,8 +84,8 @@ public final class Distributor<T> {
   }
 
   /**
-   * Signals all Subscribers with {@code onComplete} and cancels all associated
-   * {@link Subscriptions}.
+   * Signals all Subscribers with {@code onComplete} and cancels all associated {@link
+   * Subscriptions}.
    */
   public void complete() {
     synchronized (children) {

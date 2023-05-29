@@ -1,3 +1,19 @@
+/*
+ * Copyright 2022 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.google.android.sensory.example.fhir_data
 
 import android.content.Context
@@ -44,14 +60,18 @@ object PPGSensorCaptureViewHolderFactory :
       private lateinit var sensingEngine: SensingEngine
 
       override fun init(itemView: View) {
-        itemView.findViewById<Button>(com.google.android.fhir.datacapture.R.id.helpButton).visibility =
-          View.GONE
-        itemView.findViewById<MaterialCardView>(com.google.android.fhir.datacapture.R.id.helpCardView).visibility =
-          View.GONE
-        itemView.findViewById<TextView>(com.google.android.fhir.datacapture.R.id.helpText).visibility =
-          View.GONE
-        itemView.findViewById<Button>(com.google.android.fhir.datacapture.R.id.file_delete).visibility =
-          View.GONE
+        itemView
+          .findViewById<Button>(com.google.android.fhir.datacapture.R.id.helpButton)
+          .visibility = View.GONE
+        itemView
+          .findViewById<MaterialCardView>(com.google.android.fhir.datacapture.R.id.helpCardView)
+          .visibility = View.GONE
+        itemView
+          .findViewById<TextView>(com.google.android.fhir.datacapture.R.id.helpText)
+          .visibility = View.GONE
+        itemView
+          .findViewById<Button>(com.google.android.fhir.datacapture.R.id.file_delete)
+          .visibility = View.GONE
         takePhotoButton = itemView.findViewById(com.google.android.fhir.datacapture.R.id.take_photo)
         takePhotoButton.text = "Capture PPG"
         filePreview = itemView.findViewById(com.google.android.fhir.datacapture.R.id.file_preview)
@@ -66,10 +86,7 @@ object PPGSensorCaptureViewHolderFactory :
         displayOrClearInitialPreview()
         displayCapturePpgButton(questionnaireViewItem.questionnaireItem)
         takePhotoButton.setOnClickListener { view ->
-          onCapturePpgButtonClicked(
-            view,
-            questionnaireViewItem
-          )
+          onCapturePpgButtonClicked(view, questionnaireViewItem)
         }
       }
 
@@ -77,7 +94,9 @@ object PPGSensorCaptureViewHolderFactory :
         takePhotoButton.isEnabled = !isReadOnly
       }
 
-      private fun displayCapturePpgButton(questionnaireItem: Questionnaire.QuestionnaireItemComponent) {
+      private fun displayCapturePpgButton(
+        questionnaireItem: Questionnaire.QuestionnaireItemComponent
+      ) {
         takePhotoButton.visibility = View.VISIBLE
       }
 
@@ -115,12 +134,14 @@ object PPGSensorCaptureViewHolderFactory :
             return@setFragmentResultListener
           }
           val captureId = result.getString(CaptureFragment.CAPTURE_ID)
-          val answer = QuestionnaireResponse.QuestionnaireResponseItemAnswerComponent().apply {
-            value = Coding().apply {
-              code = captureId
-              system = CaptureType.VIDEO_PPG.toString()
+          val answer =
+            QuestionnaireResponse.QuestionnaireResponseItemAnswerComponent().apply {
+              value =
+                Coding().apply {
+                  code = captureId
+                  system = CaptureType.VIDEO_PPG.toString()
+                }
             }
-          }
           questionnaireViewItem.setAnswer(answer)
         }
 
@@ -135,31 +156,39 @@ object PPGSensorCaptureViewHolderFactory :
             return@setFragmentResultListener
           }
           /** [TODO] Need to get patientId anyhow! */
-
-          val participantId = context
-            .getSharedPreferences(SensingApplication.SHARED_PREFS_KEY, Context.MODE_PRIVATE)
-            .getString(SensingApplication.CURRENT_PATIENT_ID, null)!!
+          val participantId =
+            context
+              .getSharedPreferences(SensingApplication.SHARED_PREFS_KEY, Context.MODE_PRIVATE)
+              .getString(SensingApplication.CURRENT_PATIENT_ID, null)!!
           val captureId = questionnaireViewItem.answers.firstOrNull()?.valueCoding?.code
-          val captureFragment = sensingEngine.captureFragment(
-            participantId = participantId,
-            captureType = CaptureType.VIDEO_PPG,
-            captureSettings = CaptureSettings(
-              fileTypeMap = mapOf(SensorType.CAMERA to "jpeg"),
-              metaDataTypeMap = mapOf(SensorType.CAMERA to "tsv"),
-              title = "PPG_Signal"
-            ),
-            captureId = captureId
-          )
-          context.supportFragmentManager.beginTransaction()
+          val captureFragment =
+            sensingEngine.captureFragment(
+              participantId = participantId,
+              captureType = CaptureType.VIDEO_PPG,
+              captureSettings =
+                CaptureSettings(
+                  fileTypeMap = mapOf(SensorType.CAMERA to "jpeg"),
+                  metaDataTypeMap = mapOf(SensorType.CAMERA to "tsv"),
+                  title = "PPG_Signal"
+                ),
+              captureId = captureId
+            )
+          context.supportFragmentManager
+            .beginTransaction()
             .replace(R.id.nav_host_fragment, captureFragment)
             .setReorderingAllowed(true)
             .addToBackStack(null)
             .commit()
         }
-        context.supportFragmentManager.beginTransaction()
-          .replace(R.id.nav_host_fragment, InstructionsFragment().apply {
-            arguments = bundleOf(InstructionsFragment.LAYOUT to R.layout.fragment_ppg_instructions)
-          })
+        context.supportFragmentManager
+          .beginTransaction()
+          .replace(
+            R.id.nav_host_fragment,
+            InstructionsFragment().apply {
+              arguments =
+                bundleOf(InstructionsFragment.LAYOUT to R.layout.fragment_ppg_instructions)
+            }
+          )
           .setReorderingAllowed(true)
           .addToBackStack(null)
           .commit()
@@ -176,10 +205,8 @@ object PPGSensorCaptureViewHolderFactory :
         Glide.with(context).clear(fileIcon)
         fileTitle.text = ""
       }
-
     }
 
   const val WIDGET_EXTENSION = "http://external-api-call/sensing-backbone"
   const val WIDGET_TYPE = "ppg-capture"
-
 }

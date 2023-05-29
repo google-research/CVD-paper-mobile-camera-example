@@ -1,3 +1,19 @@
+/*
+ * Copyright 2022 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.google.fitbit.research.sensing.common.libraries.camera;
 
 import android.annotation.SuppressLint;
@@ -31,10 +47,8 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import javax.annotation.Nullable;
 
-/**
- * Implementation of {@link MobileSensorV2} that publishes camera frames from CameraX.
- */
-@CheckReturnValue 
+/** Implementation of {@link MobileSensorV2} that publishes camera frames from CameraX. */
+@CheckReturnValue
 public final class CameraXSensorV2 implements MobileSensorV2<SharedImageProxy> {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
@@ -48,8 +62,7 @@ public final class CameraXSensorV2 implements MobileSensorV2<SharedImageProxy> {
   private final ImageProxyPublisher imageProxyPublisher;
 
   private UseCase[] boundUseCases = NO_USE_CASES;
-  @Nullable
-  private Camera camera;
+  @Nullable private Camera camera;
   private final DefaultLifecycleObserver lifecycleObserver =
       new DefaultLifecycleObserver() {
         @Override
@@ -219,9 +232,7 @@ public final class CameraXSensorV2 implements MobileSensorV2<SharedImageProxy> {
     return null;
   }
 
-  /**
-   * Builder for new {@link CameraXSensorV2} instances.
-   */
+  /** Builder for new {@link CameraXSensorV2} instances. */
   @AutoBuilder(ofClass = CameraXSensorV2.class)
   public abstract static class Builder implements MobileSensorV2.Builder<SharedImageProxy> {
 
@@ -245,8 +256,8 @@ public final class CameraXSensorV2 implements MobileSensorV2<SharedImageProxy> {
      * Adds a {@link UseCase} to the camera.
      *
      * <p>{@link ImageAnalysis} instances should not be added via {@code addUseCase}. The {@code
-     * ImageAnalysis} instance used by {@code CameraXSensorV2} can be configured using
-     * {@link #setImageAnalysisBuilder}.
+     * ImageAnalysis} instance used by {@code CameraXSensorV2} can be configured using {@link
+     * #setImageAnalysisBuilder}.
      *
      * @throws IllegalArgumentException if the UseCase is an ImageAnalysis instance.
      */

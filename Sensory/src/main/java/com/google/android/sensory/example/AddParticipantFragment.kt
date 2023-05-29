@@ -1,3 +1,19 @@
+/*
+ * Copyright 2022 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.google.android.sensory.example
 
 import android.content.Context
@@ -18,8 +34,10 @@ import com.google.android.fhir.datacapture.QuestionnaireFragment
 import com.google.android.sensory.R
 import org.hl7.fhir.r4.model.QuestionnaireResponse
 
-/** A fragment class to show patient registration screen using SDC's [QuestionnaireFragment].
- * A participant is internally handled as a Fhir Patient. */
+/**
+ * A fragment class to show patient registration screen using SDC's [QuestionnaireFragment]. A
+ * participant is internally handled as a Fhir Patient.
+ */
 class AddParticipantFragment : Fragment(R.layout.fragment_add_participant) {
 
   private val viewModel: AddParticipantViewModel by viewModels()
@@ -36,28 +54,28 @@ class AddParticipantFragment : Fragment(R.layout.fragment_add_participant) {
   }
 
   private fun setupMenu() {
-    (requireActivity() as MainActivity).addMenuProvider(object : MenuProvider {
-      override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
-        menuInflater.inflate(R.menu.add_patient_fragment_menu, menu)
-      }
-
-      override fun onMenuItemSelected(menuItem: MenuItem): Boolean {
-        return when (menuItem.itemId) {
-          R.id.action_add_patient_submit -> {
-            onSubmitAction()
-            true
-          }
-
-          android.R.id.home -> {
-            NavHostFragment.findNavController(this@AddParticipantFragment).navigateUp()
-            true
-          }
-
-          else -> true
+    (requireActivity() as MainActivity).addMenuProvider(
+      object : MenuProvider {
+        override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
+          menuInflater.inflate(R.menu.add_patient_fragment_menu, menu)
         }
-      }
 
-    }, viewLifecycleOwner)
+        override fun onMenuItemSelected(menuItem: MenuItem): Boolean {
+          return when (menuItem.itemId) {
+            R.id.action_add_patient_submit -> {
+              onSubmitAction()
+              true
+            }
+            android.R.id.home -> {
+              NavHostFragment.findNavController(this@AddParticipantFragment).navigateUp()
+              true
+            }
+            else -> true
+          }
+        }
+      },
+      viewLifecycleOwner
+    )
   }
 
   private fun setUpActionBar() {
@@ -68,8 +86,7 @@ class AddParticipantFragment : Fragment(R.layout.fragment_add_participant) {
   }
 
   private fun updateArguments() {
-    requireArguments()
-      .putString(QUESTIONNAIRE_FILE_PATH_KEY, "new-participant-registration.json")
+    requireArguments().putString(QUESTIONNAIRE_FILE_PATH_KEY, "new-participant-registration.json")
   }
 
   private fun addQuestionnaireFragment() {
@@ -98,15 +115,17 @@ class AddParticipantFragment : Fragment(R.layout.fragment_add_participant) {
         Toast.makeText(requireContext(), "Inputs are missing.", Toast.LENGTH_SHORT).show()
         return@observe
       }
-      val sharedPrefs = requireActivity().getSharedPreferences(
-        SensingApplication.SHARED_PREFS_KEY,
-        Context.MODE_PRIVATE
-      )
+      val sharedPrefs =
+        requireActivity()
+          .getSharedPreferences(SensingApplication.SHARED_PREFS_KEY, Context.MODE_PRIVATE)
       sharedPrefs.edit().putString(SensingApplication.CURRENT_PATIENT_ID, it.id).apply()
       Toast.makeText(requireContext(), "Patient is saved.", Toast.LENGTH_SHORT).show()
-      findNavController().navigate(
-        AddParticipantFragmentDirections.actionAddParticipantFragmentToAnemiaScreenerFragment(it.idElement.idPart)
-      )
+      findNavController()
+        .navigate(
+          AddParticipantFragmentDirections.actionAddParticipantFragmentToAnemiaScreenerFragment(
+            it.idElement.idPart
+          )
+        )
     }
   }
 

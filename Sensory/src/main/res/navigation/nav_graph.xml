@@ -1,33 +1,38 @@
-<?xml version="1.0" encoding="utf-8"?>
-<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+<?xml version="1.0" encoding="utf-8" ?>
+<navigation
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/nav_graph"
-    app:startDestination="@id/homeFragment">
+    app:startDestination="@id/homeFragment"
+>
 
   <fragment
-      android:id="@+id/homeFragment"
-      android:name="com.google.android.sensory.example.HomeFragment"
-      android:label="HomeFragment">
+        android:id="@+id/homeFragment"
+        android:name="com.google.android.sensory.example.HomeFragment"
+        android:label="HomeFragment"
+    >
     <action
-        android:id="@+id/action_homeFragment_to_addParticipantFragment"
-        app:destination="@id/addParticipantFragment" />
+            android:id="@+id/action_homeFragment_to_addParticipantFragment"
+            app:destination="@id/addParticipantFragment"
+        />
   </fragment>
 
   <fragment
-      android:id="@+id/addParticipantFragment"
-      android:name="com.google.android.sensory.example.AddParticipantFragment"
-      android:label="AddParticipantFragment">
+        android:id="@+id/addParticipantFragment"
+        android:name="com.google.android.sensory.example.AddParticipantFragment"
+        android:label="AddParticipantFragment"
+    >
     <action
-        android:id="@+id/action_addParticipantFragment_to_anemiaScreenerFragment"
-        app:destination="@id/anemiaScreenerFragment"
-        app:popUpTo="@id/homeFragment" />
+            android:id="@+id/action_addParticipantFragment_to_anemiaScreenerFragment"
+            app:destination="@id/anemiaScreenerFragment"
+            app:popUpTo="@id/homeFragment"
+        />
   </fragment>
   <fragment
-      android:id="@+id/anemiaScreenerFragment"
-      android:name="com.google.android.sensory.example.AnemiaScreenerFragment"
-      android:label="AnemiaScreenerFragment">
-    <argument
-        android:name="patient_id"
-        app:argType="string" />
+        android:id="@+id/anemiaScreenerFragment"
+        android:name="com.google.android.sensory.example.AnemiaScreenerFragment"
+        android:label="AnemiaScreenerFragment"
+    >
+    <argument android:name="patient_id" app:argType="string" />
   </fragment>
 </navigation>

@@ -1,3 +1,19 @@
+/*
+ * Copyright 2022 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.google.android.sensory.sensing_sdk.impl
 
 import android.content.Context
@@ -28,8 +44,11 @@ import java.util.zip.ZipOutputStream
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.runBlocking
 
-/** context should be a FragmentActivity
- * @param context AppCompatActivity context to access fragmentManager to launch fragments, to access files and resources in the application context.*/
+/**
+ * context should be a FragmentActivity
+ * @param context AppCompatActivity context to access fragmentManager to launch fragments, to access
+ * files and resources in the application context.
+ */
 @ExperimentalCamera2Interop
 internal class SensingEngineImpl(
   private val database: Database,
@@ -44,20 +63,22 @@ internal class SensingEngineImpl(
     captureSettings: CaptureSettings,
     captureId: String?,
   ): CaptureFragment {
-    val captureInfo = CaptureInfo(
-      participantId = participantId,
-      captureType = captureType,
-      captureFolder = "Sensory/Participant_${participantId}/${captureSettings.title}",
-      /** Set captureId if null*/
-      captureId = captureId ?: UUID.randomUUID().toString(),
-      captureSettings = captureSettings
-    )
+    val captureInfo =
+      CaptureInfo(
+        participantId = participantId,
+        captureType = captureType,
+        captureFolder = "Sensory/Participant_$participantId/${captureSettings.title}",
+        /** Set captureId if null */
+        captureId = captureId ?: UUID.randomUUID().toString(),
+        captureSettings = captureSettings
+      )
     if (captureId != null) {
       // delete everything in folder associated with this captureId to re-capture
-      val file = File(
-        Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
-        captureInfo.captureFolder
-      )
+      val file =
+        File(
+          Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
+          captureInfo.captureFolder
+        )
       file.deleteRecursively()
     }
     return captureManager.createCaptureFragment(
@@ -66,45 +87,51 @@ internal class SensingEngineImpl(
     )
   }
 
-  /** Responsible for creating resource records for captured data and completing upload setup.
-   * Limitation: All captured data and metadata are stored in the same folder and zipped for uploading.
+  /**
+   * Responsible for creating resource records for captured data and completing upload setup.
+   * Limitation: All captured data and metadata are stored in the same folder and zipped for
+   * uploading.
    * 1. add [CaptureInfo] to the database
    * 2. read map for a capture type, for each sensor type:-
    * 3. create resourceinfo for it
    * 4. save in database
    * 5. zip the [captureInfo.captureFolder]/[sensorType] folder
    * 6. create uploadrequest for it
-   * 7. save in database
-   * ResourceInfo stores relative URI of actual file for the resource captured.
-   * UploadRequest stores location to the zipped file to be uploaded.
-   * [TODO] Later this API could be exposed if application developers want to use the upload mechanism of this SDK.
-   * [TODO] Support uploading of any mime type.
-   * [TODO] We need to avoid runBlocking as it can run on the main thread.*/
+   * 7. save in database ResourceInfo stores relative URI of actual file for the resource captured.
+   * UploadRequest stores location to the zipped file to be uploaded. [TODO] Later this API could be
+   * exposed if application developers want to use the upload mechanism of this SDK. [TODO] Support
+   * uploading of any mime type. [TODO] We need to avoid runBlocking as it can run on the main
+   * thread.
+   */
   private fun onCaptureComplete(captureInfo: CaptureInfo): String {
     runBlocking {
       database.addCaptureInfo(captureInfo)
       CaptureManager.sensorsInvolved(captureInfo.captureType).forEach {
         val resourceFolderRelativePath = getResourceFolderRelativePath(it, captureInfo)
         val uploadRelativeUrl = "/$resourceFolderRelativePath.zip"
-        val resourceInfo = ResourceInfo(
-          resourceInfoId = UUID.randomUUID().toString(),
-          captureId = captureInfo.captureId,
-          participantId = captureInfo.participantId,
-          captureType = captureInfo.captureType,
-          title = captureInfo.captureSettings.title,
-          fileType = resourceInfoFileType(it, captureInfo),
-          resourceFolderPath = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).absolutePath + "/$resourceFolderRelativePath",
-          uploadURL = uploadConfiguration.getBlobStorageAccessURL() + uploadRelativeUrl,
-          status = RequestStatus.PENDING
-        )
+        val resourceInfo =
+          ResourceInfo(
+            resourceInfoId = UUID.randomUUID().toString(),
+            captureId = captureInfo.captureId,
+            participantId = captureInfo.participantId,
+            captureType = captureInfo.captureType,
+            title = captureInfo.captureSettings.title,
+            fileType = resourceInfoFileType(it, captureInfo),
+            resourceFolderPath =
+              Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+                .absolutePath + "/$resourceFolderRelativePath",
+            uploadURL = uploadConfiguration.getBlobStorageAccessURL() + uploadRelativeUrl,
+            status = RequestStatus.PENDING
+          )
         database.addResourceInfo(resourceInfo)
-        /** Zipping logic from: https://stackoverflow.com/a/63828765*/
-        /** CaptureManager stores files here*/
+        /** Zipping logic from: https://stackoverflow.com/a/63828765 */
+        /** CaptureManager stores files here */
         // Folder location: Downloads/Sensory/Participant_<participantId>/<captureType>/<sensorType>
-        val resourceFolder = File(
-          Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
-          resourceFolderRelativePath
-        )
+        val resourceFolder =
+          File(
+            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
+            resourceFolderRelativePath
+          )
         val outputZipFile = resourceFolder.absolutePath + ".zip"
         val zipOutputStream = ZipOutputStream(BufferedOutputStream(FileOutputStream(outputZipFile)))
         zipOutputStream.use { zos ->
@@ -118,18 +145,19 @@ internal class SensingEngineImpl(
             }
           }
         }
-        val uploadRequest = UploadRequest(
-          requestUuid = UUID.randomUUID(),
-          resourceInfoId = resourceInfo.resourceInfoId,
-          zipFile = outputZipFile,
-          fileSize = File(outputZipFile).length(),
-          uploadURL = uploadRelativeUrl,
-          lastUpdatedTime = Date.from(Instant.now()),
-          bytesUploaded = 0L,
-          status = RequestStatus.PENDING,
-          nextPart = 1,
-          uploadId = null
-        )
+        val uploadRequest =
+          UploadRequest(
+            requestUuid = UUID.randomUUID(),
+            resourceInfoId = resourceInfo.resourceInfoId,
+            zipFile = outputZipFile,
+            fileSize = File(outputZipFile).length(),
+            uploadURL = uploadRelativeUrl,
+            lastUpdatedTime = Date.from(Instant.now()),
+            bytesUploaded = 0L,
+            status = RequestStatus.PENDING,
+            nextPart = 1,
+            uploadId = null
+          )
         database.addUploadRequest(uploadRequest)
       }
     }
@@ -149,12 +177,10 @@ internal class SensingEngineImpl(
   }
 
   /**
-   * For UploadResult.Started: ...
-   * For UploadResult.Success: ...
-   * For UploadResult.Failure: ...
+   * For UploadResult.Started: ... For UploadResult.Success: ... For UploadResult.Failure: ...
    *
    * Trying to upload only PENDING requests. Failed requests are out of scope for now.
-   * */
+   */
   override suspend fun syncUpload(upload: suspend (List<UploadRequest>) -> Flow<UploadResult>) {
     // uploadRequest.nextPart += 1
     // uploadRequest.bytesUploaded += chunkSize
@@ -173,14 +199,12 @@ internal class SensingEngineImpl(
             uploadId = result.uploadId
           }
         }
-
         is UploadResult.Success -> {
           uploadRequest.apply {
             lastUpdatedTime = result.lastUploadTime
             bytesUploaded = uploadRequest.bytesUploaded + result.bytesUploaded
           }
         }
-
         is UploadResult.Completed -> {
           assert(uploadRequest.bytesUploaded == uploadRequest.fileSize)
           uploadRequest.apply {
@@ -188,7 +212,6 @@ internal class SensingEngineImpl(
             status = RequestStatus.UPLOADED
           }
         }
-
         is UploadResult.Failure -> {
           uploadRequest.apply {
             lastUpdatedTime = uploadRequest.lastUpdatedTime
@@ -200,9 +223,7 @@ internal class SensingEngineImpl(
       // Update status of ResourceInfo only when UploadRequest.status changes
       if (requestsPreviousStatus != uploadRequest.status) {
         val resourceInfo = database.getResourceInfo(uploadRequest.resourceInfoId)!!
-        resourceInfo.apply {
-          status = uploadRequest.status
-        }
+        resourceInfo.apply { status = uploadRequest.status }
         database.updateResourceInfo(resourceInfo)
       }
     }
@@ -224,7 +245,10 @@ internal class SensingEngineImpl(
       }
     }
 
-    /** Returns folder for a specific sensor type in For both captureType we zip the stored files into a folder for uploading*/
+    /**
+     * Returns folder for a specific sensor type in For both captureType we zip the stored files
+     * into a folder for uploading
+     */
     fun getResourceFolderRelativePath(sensorType: SensorType, captureInfo: CaptureInfo): String {
       return when (captureInfo.captureType) {
         CaptureType.IMAGE -> "${captureInfo.captureFolder}/${sensorType.name}"

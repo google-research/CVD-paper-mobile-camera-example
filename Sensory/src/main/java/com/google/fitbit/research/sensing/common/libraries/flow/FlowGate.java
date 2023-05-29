@@ -1,3 +1,19 @@
+/*
+ * Copyright 2022 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.google.fitbit.research.sensing.common.libraries.flow;
 
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
@@ -32,7 +48,7 @@ import org.reactivestreams.Subscriber;
  * }
  * }</pre>
  */
-@CheckReturnValue 
+@CheckReturnValue
 public final class FlowGate {
 
   private final List<Runnable> onOpen = Collections.synchronizedList(new ArrayList<>());
@@ -50,8 +66,8 @@ public final class FlowGate {
   }
 
   /**
-   * Opens the gate. Subscriptions to {@link #passThrough} will receive signals until
-   * {@link #completeAndClose} is called.
+   * Opens the gate. Subscriptions to {@link #passThrough} will receive signals until {@link
+   * #completeAndClose} is called.
    */
   @CanIgnoreReturnValue
   public FlowGate open() {
@@ -71,10 +87,10 @@ public final class FlowGate {
   }
 
   /**
-   * Wraps a {@link Publisher} so that signals are only sent while the {@link FlowGate} is
-   * {@link #open}. If the wrapped Publisher signals {@code onNext} while the gate is closed, these
-   * signals are dropped. Termination signals ({@code onComplete} and {@code onError}) will be
-   * delayed until the gate is opened.
+   * Wraps a {@link Publisher} so that signals are only sent while the {@link FlowGate} is {@link
+   * #open}. If the wrapped Publisher signals {@code onNext} while the gate is closed, these signals
+   * are dropped. Termination signals ({@code onComplete} and {@code onError}) will be delayed until
+   * the gate is opened.
    *
    * <p>After the gate is closed by {@link #completeAndClose}, any previous subscriptions to {@link
    * #passThrough} will be permanently terminated with {@code onComplete}. Subsequent calls to
@@ -118,8 +134,8 @@ public final class FlowGate {
   }
 
   /**
-   * Closes the gate. All subscriptions to {@link #passThrough} are signalled with
-   * {@code onComplete} and terminated.
+   * Closes the gate. All subscriptions to {@link #passThrough} are signalled with {@code
+   * onComplete} and terminated.
    */
   public synchronized void completeAndClose() {
     if (opened.getAndSet(false)) {

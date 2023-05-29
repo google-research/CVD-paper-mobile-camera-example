@@ -1,3 +1,19 @@
+/*
+ * Copyright 2022 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.google.fitbit.research.sensing.common.libraries.storage;
 
 import android.annotation.SuppressLint;
@@ -40,7 +56,7 @@ import org.reactivestreams.Subscription;
  * <p>This example will constantly append data from a stream of motion sensor events to a TSV file
  * until the stream terminates.
  */
-@CheckReturnValue 
+@CheckReturnValue
 public final class StreamToTsvSubscriber<O> implements Subscriber<O> {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
@@ -54,8 +70,7 @@ public final class StreamToTsvSubscriber<O> implements Subscriber<O> {
   private final FlowSupplier<O, Writer> writerSupplier;
 
   private long events;
-  @Nullable
-  private Subscription subscription;
+  @Nullable private Subscription subscription;
   private FluentFuture<Optional<CSVPrinter>> writerFuture;
 
   StreamToTsvSubscriber(
@@ -176,9 +191,7 @@ public final class StreamToTsvSubscriber<O> implements Subscriber<O> {
             writeExecutor);
   }
 
-  /**
-   * Builder for {@link StreamToTsvSubscriber}.
-   */
+  /** Builder for {@link StreamToTsvSubscriber}. */
   @AutoBuilder(ofClass = StreamToTsvSubscriber.class)
   public abstract static class Builder<O> {
 
@@ -187,9 +200,7 @@ public final class StreamToTsvSubscriber<O> implements Subscriber<O> {
       return FilesCompat.newBufferedWriter(file);
     }
 
-    /**
-     * Defines columns for the TSV file.
-     */
+    /** Defines columns for the TSV file. */
     public abstract Builder<O> setTsvWriter(TsvWriter<O> tsvWriter);
 
     /**
@@ -199,50 +210,44 @@ public final class StreamToTsvSubscriber<O> implements Subscriber<O> {
     public abstract Builder<O> setWriteExecutor(Executor writeExecutor);
 
     /**
-     * Sets the subscriber to automatically chunk the stream into multiple files.
-     * {@code fileSupplier} should return a new, unique file each time it is called, otherwise
-     * previous files will be overwitten with later data.
+     * Sets the subscriber to automatically chunk the stream into multiple files. {@code
+     * fileSupplier} should return a new, unique file each time it is called, otherwise previous
+     * files will be overwitten with later data.
      */
     public Builder<O> setFileChunks(Callable<File> fileSupplier, long eventsPerFile) {
       return this.setWriterChunks(() -> getFileWriter(fileSupplier.call()), eventsPerFile);
     }
 
     /**
-     * Sets the subscriber to automatically chunk the stream into multiple files.
-     * {@code writeSupplier} should return a writer with a new destination each time it is called in
-     * order to properly chunk data.
+     * Sets the subscriber to automatically chunk the stream into multiple files. {@code
+     * writeSupplier} should return a writer with a new destination each time it is called in order
+     * to properly chunk data.
      */
     public Builder<O> setWriterChunks(Callable<Writer> writerSupplier, long eventsPerFile) {
       return this.setWriterSupplier(writerSupplier).setEventsPerFile(eventsPerFile);
     }
 
     /**
-     * Sets the subscriber to automatically chunk the stream into multiple files.
-     * {@code writeSupplier.get()} should return a writer with a new destination each time it is
-     * called in order to properly chunk data.
+     * Sets the subscriber to automatically chunk the stream into multiple files. {@code
+     * writeSupplier.get()} should return a writer with a new destination each time it is called in
+     * order to properly chunk data.
      */
     public Builder<O> setWriterChunks(FlowSupplier<O, Writer> writerSupplier, long eventsPerFile) {
       return this.setWriterSupplier(writerSupplier).setEventsPerFile(eventsPerFile);
     }
 
-    /**
-     * Sets the subscriber to write all data to a single File.
-     */
+    /** Sets the subscriber to write all data to a single File. */
     public Builder<O> setSingleFile(File file) {
       return this.setSingleFile(() -> file);
     }
 
-    /**
-     * Sets the subscriber to write all data to a single File.
-     */
+    /** Sets the subscriber to write all data to a single File. */
     public Builder<O> setSingleFile(Callable<File> fileSuppler) {
       return this.setWriterSupplier(() -> getFileWriter(fileSuppler.call()))
           .setEventsPerFile(Long.MAX_VALUE);
     }
 
-    /**
-     * Sets the subscriber to write all data to a single Writer.
-     */
+    /** Sets the subscriber to write all data to a single Writer. */
     public Builder<O> setSingleWriter(Writer writer) {
       return this.setWriterSupplier(() -> writer).setEventsPerFile(Long.MAX_VALUE);
     }
@@ -265,9 +270,8 @@ public final class StreamToTsvSubscriber<O> implements Subscriber<O> {
     }
 
     /**
-     * Sets the subscriber to write to a new Writer for every single event.
-     * {@code writerSupplier.get()} should return a writer with a new destination each time it is
-     * called.
+     * Sets the subscriber to write to a new Writer for every single event. {@code
+     * writerSupplier.get()} should return a writer with a new destination each time it is called.
      */
     public Builder<O> setWriterPerEvent(FlowSupplier<O, Writer> writerSupplier) {
       return this.setWriterChunks(writerSupplier, 1);
@@ -281,9 +285,7 @@ public final class StreamToTsvSubscriber<O> implements Subscriber<O> {
      */
     public abstract Builder<O> setFlushInterval(long flushInterval);
 
-    /**
-     * Set writer supplier
-     */
+    /** Set writer supplier */
     Builder<O> setWriterSupplier(Callable<Writer> writerSupplier) {
       return setWriterSupplier(FlowSupplier.<O, Writer>fromCallable(writerSupplier));
     }

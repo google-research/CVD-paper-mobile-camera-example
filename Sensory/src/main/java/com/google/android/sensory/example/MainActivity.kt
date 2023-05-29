@@ -1,5 +1,20 @@
-package com.google.android.sensory.example
+/*
+ * Copyright 2022 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
+package com.google.android.sensory.example
 
 import android.Manifest
 import android.content.DialogInterface
@@ -27,10 +42,8 @@ class MainActivity : AppCompatActivity() {
 
   private fun hasPermissions(): Boolean {
     return !Arrays.stream(REQUIRED_PERMISSIONS).anyMatch {
-      ActivityCompat.checkSelfPermission(
-        applicationContext,
-        it
-      ) != PackageManager.PERMISSION_GRANTED
+      ActivityCompat.checkSelfPermission(applicationContext, it) !=
+        PackageManager.PERMISSION_GRANTED
     }
   }
 
@@ -41,7 +54,10 @@ class MainActivity : AppCompatActivity() {
   ) {
     super.onRequestPermissionsResult(requestCode, permissions, grantResults)
     if (REQUEST_CODE_PERMISSIONS == requestCode) {
-      if (grantResults.size < REQUIRED_PERMISSIONS.size || grantResults[0] != PackageManager.PERMISSION_GRANTED || grantResults[1] != PackageManager.PERMISSION_GRANTED) {
+      if (grantResults.size < REQUIRED_PERMISSIONS.size ||
+          grantResults[0] != PackageManager.PERMISSION_GRANTED ||
+          grantResults[1] != PackageManager.PERMISSION_GRANTED
+      ) {
         if (permissionsRequestCount < MAX_PERMISSIONS_REQUESTS) {
           // Retry getting permissions.
           permissionsRequestCount++
@@ -54,7 +70,8 @@ class MainActivity : AppCompatActivity() {
             .setMessage(R.string.permission_error_dialog_message)
             .setPositiveButton(
               R.string.acknowledge,
-              DialogInterface.OnClickListener { dialog, which -> finishAndRemoveTask() })
+              DialogInterface.OnClickListener { dialog, which -> finishAndRemoveTask() }
+            )
             .setCancelable(false)
           val dialog = builder.create()
           dialog.show()
@@ -66,11 +83,12 @@ class MainActivity : AppCompatActivity() {
   companion object {
     private const val MAX_PERMISSIONS_REQUESTS = 10
     private const val REQUEST_CODE_PERMISSIONS = 100
-    private val REQUIRED_PERMISSIONS = arrayOf(
-      Manifest.permission.CAMERA,
-      Manifest.permission.WRITE_EXTERNAL_STORAGE,
-      Manifest.permission.READ_EXTERNAL_STORAGE
-    )
+    private val REQUIRED_PERMISSIONS =
+      arrayOf(
+        Manifest.permission.CAMERA,
+        Manifest.permission.WRITE_EXTERNAL_STORAGE,
+        Manifest.permission.READ_EXTERNAL_STORAGE
+      )
 
     // The following version constant should be updated whenever we ship a new version of the app.
     // The version format is composed of two parts vXsY, which stands for version X subversion Y.

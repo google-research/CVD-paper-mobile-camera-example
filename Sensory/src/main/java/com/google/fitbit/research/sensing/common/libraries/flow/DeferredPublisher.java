@@ -1,3 +1,19 @@
+/*
+ * Copyright 2022 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.google.fitbit.research.sensing.common.libraries.flow;
 
 import com.google.common.base.Preconditions;
@@ -24,8 +40,7 @@ public final class DeferredPublisher<T> implements Publisher<T> {
   private final Object lock = new Object();
   private final List<Subscriber<? super T>> deferredSubscribers =
       Collections.synchronizedList(new ArrayList<>());
-  @Nullable
-  private Publisher<T> publisher;
+  @Nullable private Publisher<T> publisher;
 
   /**
    * Creates a DeferredPublisher from a {@code ListenableFuture<Publisher>}, which can be subscribed
@@ -62,9 +77,7 @@ public final class DeferredPublisher<T> implements Publisher<T> {
     }
   }
 
-  /**
-   * Returns true if {@link #set} or {@link #setException} has been called.
-   */
+  /** Returns true if {@link #set} or {@link #setException} has been called. */
   public boolean isSet() {
     synchronized (lock) {
       return publisher != null;
@@ -94,8 +107,8 @@ public final class DeferredPublisher<T> implements Publisher<T> {
   }
 
   /**
-   * Rejects all previous and future Subscribers by signalling {@code onSubscribe} then
-   * {@code onError}.
+   * Rejects all previous and future Subscribers by signalling {@code onSubscribe} then {@code
+   * onError}.
    *
    * <p>No-op if {@link #set}, {@link #setComplete}, or {@link #setException} were previously
    * called.

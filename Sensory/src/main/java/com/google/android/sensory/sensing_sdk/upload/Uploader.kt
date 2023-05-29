@@ -1,3 +1,19 @@
+/*
+ * Copyright 2022 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.google.android.sensory.sensing_sdk.upload
 
 import com.google.android.sensory.sensing_sdk.model.UploadRequest
@@ -17,47 +33,42 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.withContext
 
-/** Processes upload requests and uploads the data referenced in chunks.
- * Ideally we would want the uploader to figure out [uploadPartSizeInBytes] based on network strength*/
+/**
+ * Processes upload requests and uploads the data referenced in chunks. Ideally we would want the
+ * uploader to figure out [uploadPartSizeInBytes] based on network strength
+ */
 class Uploader(
   private val bucketName: String,
   private val uploadPartSizeInBytes: Long,
   private val multiPartUpload: Boolean = true,
   client: MinioAsyncClient,
 ) {
-  private var minPartSizeInBytes: Long = 5242880  // 5MB
+  private var minPartSizeInBytes: Long = 5242880 // 5MB
   private val blobstoreService = BlobstoreService(client)
   suspend fun upload(uploadRequestList: List<UploadRequest>): Flow<UploadResult> = flow {
     uploadRequestList.forEach { uploadRequest ->
       if (uploadRequest.uploadId.isNullOrEmpty()) {
         val headers = HashMultimap.create<String, String>()
         headers.put("Content-Type", "application/octet-stream")
-        uploadRequest.uploadId = blobstoreService.initMultiPartUpload(
-          bucketName,
-          null,
-          uploadRequest.uploadURL,
-          headers,
-          null
-        )
+        uploadRequest.uploadId =
+          blobstoreService.initMultiPartUpload(
+            bucketName,
+            null,
+            uploadRequest.uploadURL,
+            headers,
+            null
+          )
         println("UploadID: ${uploadRequest.uploadId}")
         emit(
-          UploadResult.Started(
-            uploadRequest,
-            Date.from(Instant.now()),
-            uploadRequest.uploadId!!
-          )
+          UploadResult.Started(uploadRequest, Date.from(Instant.now()), uploadRequest.uploadId!!)
         )
       }
-      val dataStream = withContext(Dispatchers.IO) {
-        FileInputStream(File(uploadRequest.zipFile))
-      }
+      val dataStream = withContext(Dispatchers.IO) { FileInputStream(File(uploadRequest.zipFile)) }
       var chunkSize: Long
       if (!multiPartUpload) {
         chunkSize = uploadRequest.fileSize
         val bytes = ByteArray(chunkSize.toInt())
-        withContext(Dispatchers.IO) {
-          dataStream.read(bytes)
-        }
+        withContext(Dispatchers.IO) { dataStream.read(bytes) }
         uploadPart(uploadRequest, bytes, chunkSize)
         emit(mergeMultipartUpload(uploadRequest))
         println("File Uploaded and Merged")
@@ -66,17 +77,18 @@ class Uploader(
           // If the remaining bytes after the present chunk is less than minPartSizeInBytes (~5MB),
           // let the final chunk cover all remaining bytes instead of chunkSize
           chunkSize =
-            if (uploadRequest.fileSize - uploadRequest.bytesUploaded < uploadPartSizeInBytes + minPartSizeInBytes) {
+            if (uploadRequest.fileSize - uploadRequest.bytesUploaded <
+                uploadPartSizeInBytes + minPartSizeInBytes
+            ) {
               uploadRequest.fileSize - uploadRequest.bytesUploaded
             } else {
-              // chunk size is either uploadPartSizeInBytes or the remaining bytes in the file stream
+              // chunk size is either uploadPartSizeInBytes or the remaining bytes in the file
+              // stream
               // (as long as the chunk is greater than ~5MB)
               min(uploadPartSizeInBytes, uploadRequest.fileSize - uploadRequest.bytesUploaded)
             }
           val buffer = ByteArray(chunkSize.toInt())
-          withContext(Dispatchers.IO) {
-            dataStream.read(buffer)
-          }
+          withContext(Dispatchers.IO) { dataStream.read(buffer) }
           println("Uploading part ${uploadRequest.nextPart}..")
           uploadPart(uploadRequest, buffer, chunkSize)
           emit(UploadResult.Success(uploadRequest, chunkSize, Date.from(Instant.now())))
@@ -90,18 +102,30 @@ class Uploader(
 
   private fun mergeMultipartUpload(uploadRequest: UploadRequest): UploadResult {
     val parts = arrayOfNulls<Part>(1000)
-    val partResult: ListPartsResponse = blobstoreService.listMultipart(
-      bucketName, null,
-      uploadRequest.uploadURL, 1000, 0, uploadRequest.uploadId, null, null
-    )
+    val partResult: ListPartsResponse =
+      blobstoreService.listMultipart(
+        bucketName,
+        null,
+        uploadRequest.uploadURL,
+        1000,
+        0,
+        uploadRequest.uploadId,
+        null,
+        null
+      )
     var partNumber = 1
     for (part in partResult.result().partList()) {
       parts[partNumber - 1] = Part(partNumber, part.etag())
       partNumber++
     }
     blobstoreService.mergeMultipartUpload(
-      bucketName, null, uploadRequest.uploadURL, uploadRequest.uploadId, parts,
-      null, null
+      bucketName,
+      null,
+      uploadRequest.uploadURL,
+      uploadRequest.uploadId,
+      parts,
+      null,
+      null
     )
     return UploadResult.Completed(uploadRequest, Date.from(Instant.now()))
   }

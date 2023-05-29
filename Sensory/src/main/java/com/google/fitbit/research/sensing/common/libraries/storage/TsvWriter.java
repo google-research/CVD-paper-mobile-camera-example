@@ -1,3 +1,19 @@
+/*
+ * Copyright 2022 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.google.fitbit.research.sensing.common.libraries.storage;
 
 import com.google.common.collect.ImmutableList;
@@ -13,10 +29,8 @@ import java.util.stream.Collector;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 
-/**
- * Defines the schema for writing events as TSV files.
- */
-@CheckReturnValue 
+/** Defines the schema for writing events as TSV files. */
+@CheckReturnValue
 public interface TsvWriter<O> {
 
   /**
@@ -46,9 +60,7 @@ public interface TsvWriter<O> {
     return new Builder<T>();
   }
 
-  /**
-   * Returns the column names for the TSV header.
-   */
+  /** Returns the column names for the TSV header. */
   ImmutableList<String> header();
 
   /**
@@ -67,16 +79,10 @@ public interface TsvWriter<O> {
     write(this, outputs, outputFile);
   }
 
-  /**
-   * Extracts a specific column value from the event.
-   */
-  public static interface Column<O> extends Function<O, Object> {
+  /** Extracts a specific column value from the event. */
+  public static interface Column<O> extends Function<O, Object> {}
 
-  }
-
-  /**
-   * Builder for {@link TsvWriter}s that create one row per event.
-   */
+  /** Builder for {@link TsvWriter}s that create one row per event. */
   public static class Builder<T> {
 
     private static final Collector<String, ?, ImmutableList<String>> COLLECT_IMMUTABLE_STRING_LIST =
@@ -87,8 +93,7 @@ public interface TsvWriter<O> {
             ImmutableList.Builder::<String>build);
     private final ImmutableMap.Builder<String, Column<T>> columnsBuilder = ImmutableMap.builder();
 
-    protected Builder() {
-    }
+    protected Builder() {}
 
     @CanIgnoreReturnValue
     public Builder<T> addColumn(String name, Column<T> col) {

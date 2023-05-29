@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Google LLC
+ * Copyright 2022 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,18 +49,22 @@ import org.hl7.fhir.r4.utils.StructureMapUtilities
 class AnemiaScreenerViewModel(application: Application, private val state: SavedStateHandle) :
   AndroidViewModel(application) {
 
-  val questionnaireFragment = QuestionnaireFragment.builder().setQuestionnaire(questionnaire)
-    .setCustomQuestionnaireItemViewHolderFactoryMatchersProvider(SensingApplication.CUSTOM_VIEW_HOLDER_FACTORY_TAG)
-    .setShowSubmitButton(false)
-    .build()
+  val questionnaireFragment =
+    QuestionnaireFragment.builder()
+      .setQuestionnaire(questionnaire)
+      .setCustomQuestionnaireItemViewHolderFactoryMatchersProvider(
+        SensingApplication.CUSTOM_VIEW_HOLDER_FACTORY_TAG
+      )
+      .setShowSubmitButton(false)
+      .build()
   val questionnaire: String
     get() = getQuestionnaireJson()
   val isResourcesSaved = MutableLiveData<Boolean>()
 
   private val questionnaireResource: Questionnaire
     get() =
-      FhirContext.forCached(FhirVersionEnum.R4).newJsonParser().parseResource(questionnaire) as
-        Questionnaire
+      FhirContext.forCached(FhirVersionEnum.R4).newJsonParser().parseResource(questionnaire)
+        as Questionnaire
   private var questionnaireJson: String? = null
   private var fhirEngine: FhirEngine = SensingApplication.fhirEngine(application.applicationContext)
 
@@ -140,7 +144,7 @@ class AnemiaScreenerViewModel(application: Application, private val state: Saved
                   };
             };
           }
-        """.trimIndent()
+                """.trimIndent()
 
       val iParser = FhirContext.forCached(FhirVersionEnum.R4).newJsonParser()
 
@@ -151,16 +155,15 @@ class AnemiaScreenerViewModel(application: Application, private val state: Saved
         iParser.parseResource(
           QuestionnaireResponse::class.java,
           iParser.encodeResourceToString(questionnaireResponse)
-        )
-          as QuestionnaireResponse
+        ) as QuestionnaireResponse
 
       val bundle =
         ResourceMapper.extract(
           uriTestQuestionnaire,
           uriTestQuestionnaireResponse,
-          StructureMapExtractionContext(context = getApplication<Application>().applicationContext) { _, worker ->
-            StructureMapUtilities(worker).parse(mapping, "")
-          },
+          StructureMapExtractionContext(
+            context = getApplication<Application>().applicationContext
+          ) { _, worker -> StructureMapUtilities(worker).parse(mapping, "") },
         )
 
       val subjectReference = Reference("Patient/$patientId")
@@ -191,22 +194,20 @@ class AnemiaScreenerViewModel(application: Application, private val state: Saved
           resource.date = Date()
 
           // modify data based on the nature of the capture (obtained from captureId)
-          val data = Attachment().apply {
-            contentType = "application/gzip" // this is for PPG
-            url = sensingEngine.listResourceInfoInCapture(captureId!!)[0].uploadURL
-            title = "PPG data collected for 30 seconds" // this is for PPG
-            creation = Date()
-          }
+          val data =
+            Attachment().apply {
+              contentType = "application/gzip" // this is for PPG
+              url = sensingEngine.listResourceInfoInCapture(captureId!!)[0].uploadURL
+              title = "PPG data collected for 30 seconds" // this is for PPG
+              creation = Date()
+            }
 
           val dataList: MutableList<DocumentReference.DocumentReferenceContentComponent> =
-            mutableListOf(
-              DocumentReference.DocumentReferenceContentComponent(data)
-            )
+            mutableListOf(DocumentReference.DocumentReferenceContentComponent(data))
           resource.content = dataList
           resource.description = ""
           saveResourceToDatabase(resource)
         }
-
         is Observation -> {
           if (resource.hasCode()) {
             resource.id = generateUuid()
@@ -215,7 +216,6 @@ class AnemiaScreenerViewModel(application: Application, private val state: Saved
             saveResourceToDatabase(resource)
           }
         }
-
         is Condition -> {
           if (resource.hasCode()) {
             resource.id = generateUuid()
@@ -224,7 +224,6 @@ class AnemiaScreenerViewModel(application: Application, private val state: Saved
             saveResourceToDatabase(resource)
           }
         }
-
         is Encounter -> {
           resource.subject = subjectReference
           resource.id = encounterId
@@ -242,7 +241,7 @@ class AnemiaScreenerViewModel(application: Application, private val state: Saved
             return true
           }
         }
-        // TODO check other resources inputs
+      // TODO check other resources inputs
       }
     }
     return false
@@ -253,7 +252,9 @@ class AnemiaScreenerViewModel(application: Application, private val state: Saved
   }
 
   private fun getQuestionnaireJson(): String {
-    questionnaireJson?.let { return it }
+    questionnaireJson?.let {
+      return it
+    }
     questionnaireJson =
       readFileFromAssets(state[AnemiaScreenerFragment.QUESTIONNAIRE_FILE_PATH_KEY]!!)
     val questionnaire = jsonParser.parseResource(questionnaireJson) as Questionnaire

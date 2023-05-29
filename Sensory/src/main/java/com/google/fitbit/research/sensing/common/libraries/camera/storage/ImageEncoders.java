@@ -1,3 +1,19 @@
+/*
+ * Copyright 2022 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.google.fitbit.research.sensing.common.libraries.camera.storage;
 
 import static java.lang.Math.min;
@@ -16,14 +32,11 @@ import com.google.common.base.Preconditions;
 import com.google.errorprone.annotations.CheckReturnValue;
 import java.nio.ByteBuffer;
 
-/**
- * Utility methods for encoding images.
- */
-@CheckReturnValue 
+/** Utility methods for encoding images. */
+@CheckReturnValue
 public final class ImageEncoders {
 
-  private ImageEncoders() {
-  }
+  private ImageEncoders() {}
 
   /**
    * Converts an {@link Image} with format {@link ImageFormat.YUV_420_888} to a {@link YuvImage}.
@@ -114,7 +127,8 @@ public final class ImageEncoders {
     final Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
     final Allocation allocationRgb = Allocation.createFromBitmap(rs, bitmap);
 
-    // The ByteBuffer 'output' was initialized using allocateDirect() inside imageToByteBuffer, using yuvByes.array() is legitimate.
+    // The ByteBuffer 'output' was initialized using allocateDirect() inside imageToByteBuffer,
+    // using yuvByes.array() is legitimate.
     final Allocation allocationYuv =
         Allocation.createSized(rs, Element.U8(rs), yuvBytes.array().length);
     allocationYuv.copyFrom(yuvBytes.array());
@@ -133,9 +147,7 @@ public final class ImageEncoders {
     return bitmap;
   }
 
-  /**
-   * Converts an Image to a ByteBuffer.
-   */
+  /** Converts an Image to a ByteBuffer. */
   private static ByteBuffer imageToByteBuffer(final Image image) throws InvalidImageException {
     final Rect crop = image.getCropRect();
     final int width = crop.width();
@@ -186,7 +198,8 @@ public final class ImageEncoders {
 
         if (pixelStride == 1 && outputStride == 1) {
           length = widthShifted;
-          // The ByteBuffer 'output' was initialized using allocateDirect(), and the computed channelOffset and length are a required part of the image conversion.
+          // The ByteBuffer 'output' was initialized using allocateDirect(), and the computed
+          // channelOffset and length are a required part of the image conversion.
           buffer.get(output.array(), channelOffset, length);
           channelOffset += length;
         } else {
@@ -194,7 +207,8 @@ public final class ImageEncoders {
           buffer.get(rowData, 0, length);
 
           for (int col = 0; col < widthShifted; col++) {
-            //The ByteBuffer 'output' was initialized using allocateDirect(), and the computed channelOffset and length are a required part of the image conversion.
+            // The ByteBuffer 'output' was initialized using allocateDirect(), and the computed
+            // channelOffset and length are a required part of the image conversion.
             output.array()[channelOffset] = rowData[col * pixelStride];
             channelOffset += outputStride;
           }
@@ -209,9 +223,7 @@ public final class ImageEncoders {
     return output;
   }
 
-  /**
-   * Exception thrown when an image cannot be converted to a Bitmap.
-   */
+  /** Exception thrown when an image cannot be converted to a Bitmap. */
   public static final class InvalidImageException extends Exception {
 
     InvalidImageException(String msg) {

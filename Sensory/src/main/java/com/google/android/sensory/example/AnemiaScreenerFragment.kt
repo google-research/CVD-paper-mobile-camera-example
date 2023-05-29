@@ -1,3 +1,19 @@
+/*
+ * Copyright 2022 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.google.android.sensory.example
 
 import android.os.Bundle
@@ -37,28 +53,28 @@ class AnemiaScreenerFragment : Fragment(R.layout.fragment_anemia_screening) {
   }
 
   private fun setupMenu() {
-    (requireActivity() as MainActivity).addMenuProvider(object : MenuProvider {
-      override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
-        menuInflater.inflate(R.menu.anemia_screen_encounter_fragment_menu, menu)
-      }
-
-      override fun onMenuItemSelected(menuItem: MenuItem): Boolean {
-        return when (menuItem.itemId) {
-          R.id.action_add_patient_submit -> {
-            onSubmitAction()
-            true
-          }
-
-          android.R.id.home -> {
-            showCancelScreenerQuestionnaireAlertDialog()
-            true
-          }
-
-          else -> true
+    (requireActivity() as MainActivity).addMenuProvider(
+      object : MenuProvider {
+        override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
+          menuInflater.inflate(R.menu.anemia_screen_encounter_fragment_menu, menu)
         }
-      }
 
-    }, viewLifecycleOwner)
+        override fun onMenuItemSelected(menuItem: MenuItem): Boolean {
+          return when (menuItem.itemId) {
+            R.id.action_add_patient_submit -> {
+              onSubmitAction()
+              true
+            }
+            android.R.id.home -> {
+              showCancelScreenerQuestionnaireAlertDialog()
+              true
+            }
+            else -> true
+          }
+        }
+      },
+      viewLifecycleOwner
+    )
   }
 
   private fun setUpActionBar() {
