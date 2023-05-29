@@ -10,7 +10,7 @@
   ],
   "item": [
     {
-      "linkId": "sensing-capture-group",
+      "linkId": "sensing-capture-group-ppg",
       "type": "group",
       "extension": [
         {
@@ -42,6 +42,32 @@
               "valueCode": "ppg-capture"
             }
           ]
+        }
+      ]
+    },
+    {
+      "linkId": "sensing-capture-group-fingernails-open",
+      "type": "group",
+      "extension": [
+        {
+          "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-itemControl",
+          "valueCodeableConcept": {
+            "coding": [
+              {
+                "system": "http://hl7.org/fhir/questionnaire-item-control",
+                "code": "page",
+                "display": "Page"
+              }
+            ],
+            "text": "Page"
+          }
+        }
+      ],
+      "item": [
+        {
+          "linkId": "ppg-capture-header",
+          "type": "display",
+          "text": "Anaemia Study Data Capture"
         },
         {
           "linkId": "photo-capture-fingernails-open-api-call",
@@ -51,6 +77,32 @@
               "valueCode": "photo-fingernails-open-capture"
             }
           ]
+        }
+      ]
+    },
+    {
+      "linkId": "sensing-capture-group-fingernails-closed",
+      "type": "group",
+      "extension": [
+        {
+          "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-itemControl",
+          "valueCodeableConcept": {
+            "coding": [
+              {
+                "system": "http://hl7.org/fhir/questionnaire-item-control",
+                "code": "page",
+                "display": "Page"
+              }
+            ],
+            "text": "Page"
+          }
+        }
+      ],
+      "item": [
+        {
+          "linkId": "ppg-capture-header",
+          "type": "display",
+          "text": "Anaemia Study Data Capture"
         },
         {
           "linkId": "photo-capture-fingernails-closed-api-call",
@@ -60,6 +112,32 @@
               "valueCode": "photo-fingernails-closed-capture"
             }
           ]
+        }
+      ]
+    },
+    {
+      "linkId": "sensing-capture-group-conjunctiva",
+      "type": "group",
+      "extension": [
+        {
+          "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-itemControl",
+          "valueCodeableConcept": {
+            "coding": [
+              {
+                "system": "http://hl7.org/fhir/questionnaire-item-control",
+                "code": "page",
+                "display": "Page"
+              }
+            ],
+            "text": "Page"
+          }
+        }
+      ],
+      "item": [
+        {
+          "linkId": "ppg-capture-header",
+          "type": "display",
+          "text": "Anaemia Study Data Capture"
         },
         {
           "linkId": "photo-capture-conjunctiva-api-call",

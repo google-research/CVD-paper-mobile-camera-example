@@ -79,7 +79,7 @@ class AnemiaScreenerViewModel(application: Application, private val state: Saved
           map "http://example.org/fhir/StructureMap/SensorCapture" = 'SensorCapture'
           uses "http://hl7.org/fhir/StructureDefinition/QuestionnaireReponse" as source
           uses "http://hl7.org/fhir/StructureDefinition/Bundle" as target
-
+ 
           group SensorCapture(source src : QuestionnaireResponse, target bundle: Bundle) {
             src -> bundle.id = uuid() "rule_bundle_id";
             src -> bundle.type = 'collection' "rule_bundle_type";
@@ -92,9 +92,9 @@ class AnemiaScreenerViewModel(application: Application, private val state: Saved
             src -> bundle.entry as entry, entry.resource = create('DocumentReference') as photoconjunctivadocref then
               ExtractConjunctivaPhotoDocumentReference(src, photoconjunctivadocref) "rule_extract_photo_conjunctiva_document_reference";
           }
-
+ 
           group ExtractPPGDocumentReference(source src : QuestionnaireResponse, target tgt : Patient) {
-            src.item as item where(linkId = 'sensing-capture-group') then {
+            src.item as item where(linkId = 'sensing-capture-group-ppg') then {
               item.item as inner_item where (linkId = 'ppg-capture-api-call') then {
                 inner_item.answer first as ans then {
                   ans.value as coding then {
@@ -106,7 +106,7 @@ class AnemiaScreenerViewModel(application: Application, private val state: Saved
         }
           
           group ExtractFingernailsOpenPhotoDocumentReference(source src : QuestionnaireResponse, target tgt : Patient) {
-            src.item as item where(linkId = 'sensing-capture-group') then {
+            src.item as item where(linkId = 'sensing-capture-group-fingernails-open') then {
               item.item as inner_item where (linkId = 'photo-capture-fingernails-open-api-call') then {
                     inner_item.answer first as ans then {
                       ans.value as coding then {
@@ -118,7 +118,7 @@ class AnemiaScreenerViewModel(application: Application, private val state: Saved
           }
           
           group ExtractFingernailsClosedPhotoDocumentReference(source src : QuestionnaireResponse, target tgt : Patient) {
-            src.item as item where(linkId = 'sensing-capture-group') then {
+            src.item as item where(linkId = 'sensing-capture-group-fingernails-closed') then {
               item.item as inner_item where (linkId = 'photo-capture-fingernails-closed-api-call') then {
                     inner_item.answer first as ans then {
                       ans.value as coding then {
@@ -130,7 +130,7 @@ class AnemiaScreenerViewModel(application: Application, private val state: Saved
           }
           
           group ExtractConjunctivaPhotoDocumentReference(source src : QuestionnaireResponse, target tgt : Patient) {
-            src.item as item where(linkId = 'sensing-capture-group') then {
+            src.item as item where(linkId = 'sensing-capture-group-conjunctiva') then {
               item.item as inner_item where (linkId = 'photo-capture-conjunctiva-api-call') then {
                     inner_item.answer first as ans then {
                       ans.value as coding then {
