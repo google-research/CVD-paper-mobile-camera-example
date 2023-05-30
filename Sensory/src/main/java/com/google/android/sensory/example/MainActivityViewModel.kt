@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Google LLC
+ * Copyright 2023 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,8 +19,14 @@ package com.google.android.sensory.example
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.work.Constraints
+import com.google.android.fhir.sync.PeriodicSyncConfiguration
+import com.google.android.fhir.sync.RepeatInterval
+import com.google.android.fhir.sync.Sync
 import com.google.android.sensory.example.fhir_data.AppSensorDataUploadWorker
+import com.google.android.sensory.example.fhir_data.FhirSyncWorker
 import com.google.android.sensory.sensing_sdk.upload.UploadSync
+import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.launch
 
 class MainActivityViewModel(application: Application) : AndroidViewModel(application) {
@@ -29,12 +35,20 @@ class MainActivityViewModel(application: Application) : AndroidViewModel(applica
       UploadSync.enqueueUploadPeriodicWork<AppSensorDataUploadWorker>(
         application.applicationContext
       )
+      Sync.periodicSync<FhirSyncWorker>(
+        application.applicationContext,
+        PeriodicSyncConfiguration(
+          syncConstraints = Constraints.Builder().build(),
+          repeat = RepeatInterval(interval = 15, timeUnit = TimeUnit.MINUTES)
+        )
+      )
     }
   }
 
   fun triggerOneTimeSync() {
     viewModelScope.launch {
       UploadSync.enqueueUploadUniqueWork<AppSensorDataUploadWorker>(getApplication())
+      Sync.oneTimeSync<FhirSyncWorker>(getApplication())
     }
   }
 }

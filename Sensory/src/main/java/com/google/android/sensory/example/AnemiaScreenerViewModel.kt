@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Google LLC
+ * Copyright 2023 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -188,17 +188,19 @@ class AnemiaScreenerViewModel(application: Application, private val state: Saved
         is DocumentReference -> {
           val captureId =
             if (resource.type.coding.isNullOrEmpty()) "" else resource.type.coding[0].code
+          val resourceInfo = sensingEngine.listResourceInfoInCapture(captureId!!)[0]
           resource.id = generateUuid()
           resource.status = Enumerations.DocumentReferenceStatus.CURRENT
           resource.subject = subjectReference
           resource.date = Date()
 
-          // modify data based on the nature of the capture (obtained from captureId)
+          // modify data based on the nature of the capture (using resourceInfo obtained from
+          // captureId)
           val data =
             Attachment().apply {
-              contentType = "application/gzip" // this is for PPG
-              url = sensingEngine.listResourceInfoInCapture(captureId!!)[0].uploadURL
-              title = "PPG data collected for 30 seconds" // this is for PPG
+              contentType = "application/gzip" // Sensing SDK uploads only in zip for now
+              url = resourceInfo.uploadURL
+              title = resourceInfo.title
               creation = Date()
             }
 

@@ -14,24 +14,23 @@
  * limitations under the License.
  */
 
-package com.google.android.sensory.sensing_sdk.db.impl.entities
+package com.google.android.sensory.example.fhir_data
 
-import androidx.room.Entity
-import androidx.room.Index
-import androidx.room.PrimaryKey
-import com.google.android.sensory.sensing_sdk.model.CaptureType
+import com.google.android.fhir.sync.DownloadWorkManager
+import com.google.android.fhir.sync.Request
+import org.hl7.fhir.r4.model.Resource
+import org.hl7.fhir.r4.model.ResourceType
 
-@Entity(
-  indices =
-    [
-      Index(value = ["captureId"], unique = true),
-      Index(value = ["captureFolder"], unique = true),
-    ]
-)
-internal data class CaptureInfoEntity(
-  @PrimaryKey(autoGenerate = true) val id: Long,
-  val participantId: String,
-  val captureType: CaptureType,
-  val captureFolder: String,
-  val captureId: String,
-)
+class EmptyDownloadWorkManagerImpl : DownloadWorkManager {
+  override suspend fun getNextRequest(): Request? {
+    return null
+  }
+
+  override suspend fun getSummaryRequestUrls(): Map<ResourceType, String> {
+    return emptyMap()
+  }
+
+  override suspend fun processResponse(response: Resource): Collection<Resource> {
+    return emptyList()
+  }
+}

@@ -18,12 +18,19 @@ package com.google.android.sensory.example.fhir_data
 
 import android.content.Context
 import androidx.work.WorkerParameters
+import com.google.android.fhir.sync.AcceptLocalConflictResolver
+import com.google.android.fhir.sync.DownloadWorkManager
+import com.google.android.fhir.sync.FhirSyncWorker
 import com.google.android.sensory.example.SensingApplication
-import com.google.android.sensory.sensing_sdk.upload.SensorDataUploadWorker
 
-class AppSensorDataUploadWorker(appContext: Context, workerParams: WorkerParameters) :
-  SensorDataUploadWorker(appContext, workerParams) {
-  override fun getSensingEngine() = SensingApplication.sensingEngine(applicationContext)
+class FhirSyncWorker(appContext: Context, workerParams: WorkerParameters) :
+  FhirSyncWorker(appContext, workerParams) {
 
-  override fun getUploadConfiguration() = SensingApplication.uploadConfiguration(applicationContext)
+  override fun getDownloadWorkManager(): DownloadWorkManager {
+    return EmptyDownloadWorkManagerImpl()
+  }
+
+  override fun getConflictResolver() = AcceptLocalConflictResolver
+
+  override fun getFhirEngine() = SensingApplication.fhirEngine(applicationContext)
 }
