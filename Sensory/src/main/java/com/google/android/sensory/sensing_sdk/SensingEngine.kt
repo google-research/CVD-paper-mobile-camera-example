@@ -18,29 +18,34 @@ package com.google.android.sensory.sensing_sdk
 
 import android.content.Intent
 import com.google.android.sensory.sensing_sdk.capture.CaptureFragment
-import com.google.android.sensory.sensing_sdk.capture.CaptureSettings
-import com.google.android.sensory.sensing_sdk.model.CaptureType
+import com.google.android.sensory.sensing_sdk.capture.SensorCaptureResult
+import com.google.android.sensory.sensing_sdk.model.CaptureInfo
+import com.google.android.sensory.sensing_sdk.model.RequestStatus
 import com.google.android.sensory.sensing_sdk.model.ResourceInfo
 import com.google.android.sensory.sensing_sdk.model.UploadRequest
 import com.google.android.sensory.sensing_sdk.model.UploadResult
 import kotlinx.coroutines.flow.Flow
 
+/**
+ * The Sensing Engine interface that handles the local storage of captured resources. It also acts
+ * as a factory to create [CaptureFragment]. [TODO] For application developers to use the upload
+ * mechanism ONLY [onCaptureCompleteCallback] is not enough. We need to add CRUD APIs for
+ * UploadRequest also.
+ */
 interface SensingEngine {
 
   /**
    * Returns [CaptureFragment] for given captureType. This API is needed because:-
-   * 1. Unlike some global config settings (like in SDC's QuestionnaireFragment ), each capture may
-   * require different capture settings.
-   * 2. Given each API call may have different capture settings business logic should be managed by
-   * a layer above [CaptureFragment] (not even CaptureViewModel).
-   * ```
-   *    Hence we want business logic to reside outside the CaptureFragment, in our case its [SensingEngine]
-   *    Alternatively, one could use CaptureFragment directly with it accessing the SensingEngine but this looks bad design principle.
-   *    Given Fragment represents a reusable portion of your app's UI, the application developers getting this fragment becomes responsible for handling it. But assuming the capturing is a foreground activity, handling it should not be a difficult task.
-   * ```
+   * 1. Each invocation requires different capture settings and hence can't be globally configured.
+   * 2. Since SensingEngine is also responsible for updating database records, this API acts as a
+   * factory and creates a [CaptureFragment] instance in a way that [onCaptureCompleteCallback] is
+   * called once capture is completed.
    * 3. We want application developers to have more control over the UI using the returned fragment.
-   * This way we also leave other Fragments involved in capturing, like InstructionFragment, out of
-   * scope.
+   * Application developers are responsible for handling lifecycle of the fragment returned which
+   * should be straight forward since we can fairly assume that capturing via camera is a foreground
+   * 1-time activity.
+   * 4. This way we also leave other Fragments involved in capturing, like InstructionFragments, out
+   * of scope of this Sensing SDK.
    * @param participantId Used to name the capture folder (like Participant_<participantId>).
    * @param captureType type of capture like VIDEO_PPG, IMAGE, etc type of sensor data to be
    * captured
@@ -51,11 +56,25 @@ interface SensingEngine {
    * object that encapsulates captureId, captureType and captureSettings
    */
   fun captureFragment(
-    participantId: String,
-    captureType: CaptureType,
-    captureSettings: CaptureSettings,
-    captureId: String? = null,
+    captureInfo: CaptureInfo,
+    sensorCaptureResultCollector: suspend ((Flow<SensorCaptureResult>) -> Unit)
   ): CaptureFragment
+
+  /**
+   * Responsible for creating resource records for captured data and completing upload setup.
+   * Limitation: All captured data and metadata are stored in the same folder and zipped for
+   * uploading.
+   * 1. Save [CaptureInfo] in the database
+   * 2. read map for a capture type, for each sensor type:-
+   * ```
+   *      a. create [ResourceInfo] for it and save it in the database
+   *      b. emit [SensorCaptureResult.StateChange]
+   *      c. zip the [captureInfo.captureFolder]/[sensorType] folder
+   *      d. create [UploadRequest] for it and save it in the database [TODO]
+   * ```
+   * Support uploading of any mime type.
+   */
+  suspend fun onCaptureCompleteCallback(captureInfo: CaptureInfo): Flow<SensorCaptureResult>
 
   /**
    * Lists all ResourceInfo given a participantId. This will return all ResourceInfo across multiple
@@ -72,7 +91,10 @@ interface SensingEngine {
   /** To support 3P apps */
   suspend fun captureSensorData(pendingIntent: Intent)
 
-  /** Uploading local sensor data. API could change to support resumable uploads. */
+  /**
+   * [SensorDataUploadWorker] invokes this API to fetch and update [RequestStatus.PENDING] records
+   * to upload.
+   */
   suspend fun syncUpload(upload: (suspend (List<UploadRequest>) -> Flow<UploadResult>))
 
   /** Delete data stored in blobstore */

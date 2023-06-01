@@ -39,7 +39,7 @@ internal abstract class CaptureInfoDao {
           participantId = participantId,
           captureType = captureType,
           captureFolder = captureFolder,
-          captureId = captureId
+          captureId = captureId!!
         )
     }
     insertCaptureInfoEntity(entity)

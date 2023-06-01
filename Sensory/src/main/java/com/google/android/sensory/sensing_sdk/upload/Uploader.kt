@@ -54,7 +54,7 @@ class Uploader(
           blobstoreService.initMultiPartUpload(
             bucketName,
             null,
-            uploadRequest.uploadURL,
+            uploadRequest.uploadRelativeURL,
             headers,
             null
           )
@@ -106,7 +106,7 @@ class Uploader(
       blobstoreService.listMultipart(
         bucketName,
         null,
-        uploadRequest.uploadURL,
+        uploadRequest.uploadRelativeURL,
         1000,
         0,
         uploadRequest.uploadId,
@@ -121,7 +121,7 @@ class Uploader(
     blobstoreService.mergeMultipartUpload(
       bucketName,
       null,
-      uploadRequest.uploadURL,
+      uploadRequest.uploadRelativeURL,
       uploadRequest.uploadId,
       parts,
       null,
@@ -138,7 +138,7 @@ class Uploader(
     return blobstoreService.uploadFilePart(
       bucketName,
       null,
-      uploadRequest.uploadURL,
+      uploadRequest.uploadRelativeURL,
       data,
       chunkSize,
       uploadRequest.uploadId,

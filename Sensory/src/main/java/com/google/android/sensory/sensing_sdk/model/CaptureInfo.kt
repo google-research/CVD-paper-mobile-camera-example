@@ -23,7 +23,7 @@ data class CaptureInfo(
   val participantId: String,
   val captureType: CaptureType,
   val captureFolder: String,
-  val captureId: String,
+  var captureId: String? = null,
   /** This is not persisted in database for now */
   val captureSettings: CaptureSettings,
 )

@@ -26,6 +26,7 @@ import com.google.android.sensory.sensing_sdk.model.UploadRequest
 import net.sqlcipher.database.SQLiteDatabase
 import net.sqlcipher.database.SupportFactory
 
+/** Implementation of [Database]. */
 internal class DatabaseImpl(context: Context, enableEncryption: Boolean) : Database {
   val db: ResourceDatabase =
     Room.databaseBuilder(context, ResourceDatabase::class.java, ENCRYPTED_DATABASE_NAME)

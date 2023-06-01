@@ -24,24 +24,21 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
-import androidx.core.net.toUri
 import androidx.core.os.bundleOf
 import androidx.lifecycle.MutableLiveData
-import com.bumptech.glide.Glide
 import com.google.android.fhir.datacapture.tryUnwrapContext
 import com.google.android.fhir.datacapture.views.QuestionnaireViewItem
 import com.google.android.fhir.datacapture.views.factories.QuestionnaireItemViewHolderDelegate
 import com.google.android.fhir.datacapture.views.factories.QuestionnaireItemViewHolderFactory
-import com.google.android.material.card.MaterialCardView
 import com.google.android.sensory.R
 import com.google.android.sensory.example.InstructionsFragment
 import com.google.android.sensory.example.SensingApplication
 import com.google.android.sensory.sensing_sdk.SensingEngine
-import com.google.android.sensory.sensing_sdk.capture.CaptureFragment
 import com.google.android.sensory.sensing_sdk.capture.CaptureSettings
+import com.google.android.sensory.sensing_sdk.capture.SensorCaptureResult
+import com.google.android.sensory.sensing_sdk.model.CaptureInfo
 import com.google.android.sensory.sensing_sdk.model.CaptureType
 import com.google.android.sensory.sensing_sdk.model.SensorType
-import java.io.File
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -60,19 +57,10 @@ object FingernailsOpenPhotoSensorCaptureViewHolderFactory :
       private lateinit var context: AppCompatActivity
       private lateinit var sensingEngine: SensingEngine
 
+      private lateinit var photoViewHolderFactoryUtil: PhotoViewHolderFactoryUtil
+
       override fun init(itemView: View) {
-        itemView
-          .findViewById<Button>(com.google.android.fhir.datacapture.R.id.helpButton)
-          .visibility = View.GONE
-        itemView
-          .findViewById<MaterialCardView>(com.google.android.fhir.datacapture.R.id.helpCardView)
-          .visibility = View.GONE
-        itemView
-          .findViewById<TextView>(com.google.android.fhir.datacapture.R.id.helpText)
-          .visibility = View.GONE
-        itemView
-          .findViewById<Button>(com.google.android.fhir.datacapture.R.id.photo_delete)
-          .visibility = View.GONE
+        PhotoViewHolderFactoryUtil.removeUnwantedViews(itemView)
         takePhotoButton = itemView.findViewById(com.google.android.fhir.datacapture.R.id.take_photo)
         takePhotoButton.text = "Capture Fingernails Open Photo"
         photoPreview = itemView.findViewById(com.google.android.fhir.datacapture.R.id.photo_preview)
@@ -81,6 +69,9 @@ object FingernailsOpenPhotoSensorCaptureViewHolderFactory :
         photoTitle = itemView.findViewById(com.google.android.fhir.datacapture.R.id.photo_title)
         context = itemView.context.tryUnwrapContext()!!
         sensingEngine = SensingApplication.sensingEngine(context)
+
+        photoViewHolderFactoryUtil =
+          PhotoViewHolderFactoryUtil(photoPreview, photoThumbnail, photoTitle, context)
       }
 
       override fun bind(questionnaireViewItem: QuestionnaireViewItem) {
@@ -106,7 +97,7 @@ object FingernailsOpenPhotoSensorCaptureViewHolderFactory :
         // Clear preview if there is no answer to prevent showing old previews in views that have
         // been recycled.
         if (answer == null) {
-          clearPhotoPreview()
+          photoViewHolderFactoryUtil.clearPhotoPreview()
           return
         }
 
@@ -114,14 +105,16 @@ object FingernailsOpenPhotoSensorCaptureViewHolderFactory :
           val captureId = code.code
           val livePath = MutableLiveData<Uri>()
           CoroutineScope(Dispatchers.IO).launch {
+            val resourceInfo = sensingEngine.listResourceInfoInCapture(captureId)[0]
             livePath.postValue(
-              getFirstOrNullImageUri(
-                sensingEngine.listResourceInfoInCapture(captureId)[0].resourceFolderPath
+              PhotoViewHolderFactoryUtil.getFirstOrNullImageUri(
+                resourceInfo.resourceFolderPath,
+                resourceInfo.fileType
               )!!
             )
           }
           livePath.observe(context) {
-            displayPreview(attachmentTitle = "Fingernails Open", attachmentUri = it)
+            photoViewHolderFactoryUtil.displayPreview(attachmentTitle = TITLE, attachmentUri = it)
           }
         }
       }
@@ -129,27 +122,6 @@ object FingernailsOpenPhotoSensorCaptureViewHolderFactory :
       private fun onTakePhotoButtonClicked(
         view: View /*, questionnaireItem: Questionnaire.QuestionnaireItemComponent*/
       ) {
-        context.supportFragmentManager.setFragmentResultListener(
-          CaptureFragment.CAPTURE_COMPLETE,
-          context
-        ) { _, result ->
-          context.supportFragmentManager.popBackStack()
-          val captured = result.getBoolean(CaptureFragment.CAPTURED)
-          if (!captured) {
-            return@setFragmentResultListener
-          }
-          val captureId = result.getString(CaptureFragment.CAPTURE_ID)
-          val answer =
-            QuestionnaireResponse.QuestionnaireResponseItemAnswerComponent().apply {
-              value =
-                Coding().apply {
-                  code = captureId
-                  system = CaptureType.VIDEO_PPG.toString()
-                }
-            }
-          questionnaireViewItem.setAnswer(answer)
-        }
-
         context.supportFragmentManager.setFragmentResultListener(
           InstructionsFragment.INSTRUCTION_FRAGMENT_RESULT,
           context,
@@ -160,7 +132,6 @@ object FingernailsOpenPhotoSensorCaptureViewHolderFactory :
           if (!instructionsUnderstood) {
             return@setFragmentResultListener
           }
-          /** [TODO] Need to get patientId anyhow! */
           val participantId =
             context
               .getSharedPreferences(SensingApplication.SHARED_PREFS_KEY, Context.MODE_PRIVATE)
@@ -168,16 +139,34 @@ object FingernailsOpenPhotoSensorCaptureViewHolderFactory :
           val captureId = questionnaireViewItem.answers.firstOrNull()?.valueCoding?.code
           val captureFragment =
             sensingEngine.captureFragment(
-              participantId = participantId,
-              captureType = CaptureType.IMAGE,
-              captureSettings =
-                CaptureSettings(
-                  fileTypeMap = mapOf(SensorType.CAMERA to "jpeg"),
-                  metaDataTypeMap = mapOf(SensorType.CAMERA to "tsv"),
-                  title = "Fingernails Open"
-                ),
-              captureId = captureId
-            )
+              captureInfo =
+                CaptureInfo(
+                  participantId = participantId,
+                  captureType = CaptureType.IMAGE,
+                  captureFolder = "Sensory/Participant_$participantId/$TITLE",
+                  captureSettings =
+                    CaptureSettings(
+                      fileTypeMap = mapOf(SensorType.CAMERA to "jpeg"),
+                      metaDataTypeMap = mapOf(SensorType.CAMERA to "tsv"),
+                      title = TITLE,
+                    ),
+                  captureId = captureId,
+                )
+            ) { sensorCaptureResultFlow ->
+              sensorCaptureResultFlow.collect {
+                if (it is SensorCaptureResult.ResourceStoringComplete) {
+                  val answer =
+                    QuestionnaireResponse.QuestionnaireResponseItemAnswerComponent().apply {
+                      value =
+                        Coding().apply {
+                          code = it.captureId
+                          system = CaptureType.IMAGE.name
+                        }
+                    }
+                  questionnaireViewItem.setAnswer(answer)
+                }
+              }
+            }
           context.supportFragmentManager
             .beginTransaction()
             .replace(R.id.nav_host_fragment, captureFragment)
@@ -190,53 +179,16 @@ object FingernailsOpenPhotoSensorCaptureViewHolderFactory :
           .replace(
             R.id.nav_host_fragment,
             InstructionsFragment().apply {
-              arguments =
-                bundleOf(
-                  InstructionsFragment.LAYOUT to R.layout.fragment_fingernails_open_instructions
-                )
+              arguments = bundleOf(InstructionsFragment.TITLE to TITLE)
             }
           )
           .setReorderingAllowed(true)
           .addToBackStack(null)
           .commit()
       }
-
-      private fun getFirstOrNullImageUri(root: String): Uri? {
-        val file = File(root)
-        return file.listFiles()?.firstOrNull { it.extension == "jpeg" }?.toUri()
-      }
-
-      private fun displayPreview(
-        attachmentTitle: String,
-        attachmentByteArray: ByteArray? = null,
-        attachmentUri: Uri? = null,
-      ) {
-        if (attachmentByteArray != null) {
-          loadPhotoPreview(attachmentByteArray, attachmentTitle)
-        } else if (attachmentUri != null) {
-          loadPhotoPreview(attachmentUri, attachmentTitle)
-        }
-      }
-
-      private fun loadPhotoPreview(byteArray: ByteArray, title: String) {
-        photoPreview.visibility = View.VISIBLE
-        Glide.with(context).load(byteArray).into(photoThumbnail)
-        photoTitle.text = title
-      }
-
-      private fun loadPhotoPreview(uri: Uri, title: String) {
-        photoPreview.visibility = View.VISIBLE
-        Glide.with(context).load(uri).into(photoThumbnail)
-        photoTitle.text = title
-      }
-
-      private fun clearPhotoPreview() {
-        photoPreview.visibility = View.GONE
-        Glide.with(context).clear(photoThumbnail)
-        photoTitle.text = ""
-      }
     }
 
   const val WIDGET_EXTENSION = "http://external-api-call/sensing-backbone"
   const val WIDGET_TYPE = "photo-fingernails-open-capture"
+  const val TITLE = "Anemia_Fingernails_Open"
 }

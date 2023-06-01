@@ -28,10 +28,21 @@ import com.google.android.sensory.sensing_sdk.model.CaptureType
       Index(value = ["captureFolder"], unique = true),
     ]
 )
+/**
+ * Information about the capture: Which participant, type of capture, folder data being captured to,
+ * and a captureId associated with this capture record. Later we could add capture settings as well.
+ */
 internal data class CaptureInfoEntity(
   @PrimaryKey(autoGenerate = true) val id: Long,
+  /** Participant for which this capture was triggered. */
   val participantId: String,
+
+  /** Tracking capture information like the ones below. May include [CaptureSettings] later. */
   val captureType: CaptureType,
+
+  /** Unique folder for each capture. */
   val captureFolder: String,
+
+  /** Unique id for each capture. */
   val captureId: String,
 )

@@ -25,7 +25,7 @@ data class UploadRequest(
   val resourceInfoId: String,
   val zipFile: String,
   val fileSize: Long,
-  val uploadURL: String,
+  val uploadRelativeURL: String,
   var lastUpdatedTime: Date,
   var bytesUploaded: Long,
   var status: RequestStatus,

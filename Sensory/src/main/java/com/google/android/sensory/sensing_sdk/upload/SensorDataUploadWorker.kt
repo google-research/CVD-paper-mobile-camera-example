@@ -25,6 +25,7 @@ import com.google.android.sensory.sensing_sdk.model.UploadResult
 import io.minio.MinioAsyncClient
 import kotlinx.coroutines.flow.flow
 
+/** A WorkManager Worker that handles onetime and periodic requests to upload. */
 abstract class SensorDataUploadWorker(appContext: Context, workerParams: WorkerParameters) :
   CoroutineWorker(appContext, workerParams) {
   abstract fun getSensingEngine(): SensingEngine
@@ -32,8 +33,8 @@ abstract class SensorDataUploadWorker(appContext: Context, workerParams: WorkerP
   abstract fun getUploadConfiguration(): UploadConfiguration
 
   /**
-   * Ideally this should not be hardcode 6MB (6291456L) bytes as part size. Instead this should be a
-   * function of network strength. Note: Min upload part size of MinioAsyncClient is 5MB
+   * [TODO] Ideally this should not be hardcode 6MB (6291456L) bytes as part size. Instead this
+   * should be a function of network strength. Note: Min upload part size of MinioAsyncClient is 5MB
    */
   open fun getUploader(): Uploader {
     val uploadConfiguration = getUploadConfiguration()

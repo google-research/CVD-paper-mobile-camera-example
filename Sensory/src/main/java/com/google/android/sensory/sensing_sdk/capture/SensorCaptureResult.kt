@@ -14,16 +14,15 @@
  * limitations under the License.
  */
 
-package com.google.android.sensory.sensing_sdk.model
+package com.google.android.sensory.sensing_sdk.capture
 
-/** Data class equivalent to ResourceInfoEntity for usage outside database. */
-data class ResourceInfo(
-  val resourceInfoId: String,
-  val captureId: String,
-  val participantId: String,
-  val title: String,
-  val fileType: String,
-  val resourceFolderPath: String,
-  val uploadURL: String,
-  var status: RequestStatus,
-)
+sealed class SensorCaptureResult {
+
+  data class Started(val captureId: String) : SensorCaptureResult()
+
+  data class StateChange(val resourceInfoId: String) : SensorCaptureResult()
+
+  data class CaptureComplete(val captureId: String) : SensorCaptureResult()
+
+  data class ResourceStoringComplete(val captureId: String) : SensorCaptureResult()
+}

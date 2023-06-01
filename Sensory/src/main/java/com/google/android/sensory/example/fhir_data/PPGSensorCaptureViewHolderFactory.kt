@@ -31,13 +31,13 @@ import com.google.android.fhir.datacapture.tryUnwrapContext
 import com.google.android.fhir.datacapture.views.QuestionnaireViewItem
 import com.google.android.fhir.datacapture.views.factories.QuestionnaireItemViewHolderDelegate
 import com.google.android.fhir.datacapture.views.factories.QuestionnaireItemViewHolderFactory
-import com.google.android.material.card.MaterialCardView
 import com.google.android.sensory.R
 import com.google.android.sensory.example.InstructionsFragment
 import com.google.android.sensory.example.SensingApplication
 import com.google.android.sensory.sensing_sdk.SensingEngine
-import com.google.android.sensory.sensing_sdk.capture.CaptureFragment
 import com.google.android.sensory.sensing_sdk.capture.CaptureSettings
+import com.google.android.sensory.sensing_sdk.capture.SensorCaptureResult
+import com.google.android.sensory.sensing_sdk.model.CaptureInfo
 import com.google.android.sensory.sensing_sdk.model.CaptureType
 import com.google.android.sensory.sensing_sdk.model.SensorType
 import kotlinx.coroutines.CoroutineScope
@@ -60,18 +60,7 @@ object PPGSensorCaptureViewHolderFactory :
       private lateinit var sensingEngine: SensingEngine
 
       override fun init(itemView: View) {
-        itemView
-          .findViewById<Button>(com.google.android.fhir.datacapture.R.id.helpButton)
-          .visibility = View.GONE
-        itemView
-          .findViewById<MaterialCardView>(com.google.android.fhir.datacapture.R.id.helpCardView)
-          .visibility = View.GONE
-        itemView
-          .findViewById<TextView>(com.google.android.fhir.datacapture.R.id.helpText)
-          .visibility = View.GONE
-        itemView
-          .findViewById<Button>(com.google.android.fhir.datacapture.R.id.file_delete)
-          .visibility = View.GONE
+        PhotoViewHolderFactoryUtil.removeUnwantedViews(itemView)
         takePhotoButton = itemView.findViewById(com.google.android.fhir.datacapture.R.id.take_photo)
         takePhotoButton.text = "Capture PPG"
         filePreview = itemView.findViewById(com.google.android.fhir.datacapture.R.id.file_preview)
@@ -126,26 +115,6 @@ object PPGSensorCaptureViewHolderFactory :
         questionnaireViewItem: QuestionnaireViewItem,
       ) {
         context.supportFragmentManager.setFragmentResultListener(
-          CaptureFragment.CAPTURE_COMPLETE,
-          context
-        ) { _, result ->
-          val captured = result.getBoolean(CaptureFragment.CAPTURED)
-          if (!captured) {
-            return@setFragmentResultListener
-          }
-          val captureId = result.getString(CaptureFragment.CAPTURE_ID)
-          val answer =
-            QuestionnaireResponse.QuestionnaireResponseItemAnswerComponent().apply {
-              value =
-                Coding().apply {
-                  code = captureId
-                  system = CaptureType.VIDEO_PPG.toString()
-                }
-            }
-          questionnaireViewItem.setAnswer(answer)
-        }
-
-        context.supportFragmentManager.setFragmentResultListener(
           InstructionsFragment.INSTRUCTION_FRAGMENT_RESULT,
           context,
         ) { _, result ->
@@ -155,7 +124,6 @@ object PPGSensorCaptureViewHolderFactory :
           if (!instructionsUnderstood) {
             return@setFragmentResultListener
           }
-          /** [TODO] Need to get patientId anyhow! */
           val participantId =
             context
               .getSharedPreferences(SensingApplication.SHARED_PREFS_KEY, Context.MODE_PRIVATE)
@@ -163,16 +131,34 @@ object PPGSensorCaptureViewHolderFactory :
           val captureId = questionnaireViewItem.answers.firstOrNull()?.valueCoding?.code
           val captureFragment =
             sensingEngine.captureFragment(
-              participantId = participantId,
-              captureType = CaptureType.VIDEO_PPG,
-              captureSettings =
-                CaptureSettings(
-                  fileTypeMap = mapOf(SensorType.CAMERA to "jpeg"),
-                  metaDataTypeMap = mapOf(SensorType.CAMERA to "tsv"),
-                  title = "PPG_Signal"
-                ),
-              captureId = captureId
-            )
+              captureInfo =
+                CaptureInfo(
+                  participantId = participantId,
+                  captureType = CaptureType.VIDEO_PPG,
+                  captureFolder = "Sensory/Participant_$participantId/$TITLE",
+                  captureSettings =
+                    CaptureSettings(
+                      fileTypeMap = mapOf(SensorType.CAMERA to "jpeg"),
+                      metaDataTypeMap = mapOf(SensorType.CAMERA to "tsv"),
+                      title = TITLE,
+                    ),
+                  captureId = captureId,
+                )
+            ) { sensorCaptureResultFlow ->
+              sensorCaptureResultFlow.collect {
+                if (it is SensorCaptureResult.ResourceStoringComplete) {
+                  val answer =
+                    QuestionnaireResponse.QuestionnaireResponseItemAnswerComponent().apply {
+                      value =
+                        Coding().apply {
+                          code = it.captureId
+                          system = CaptureType.VIDEO_PPG.name
+                        }
+                    }
+                  questionnaireViewItem.setAnswer(answer)
+                }
+              }
+            }
           context.supportFragmentManager
             .beginTransaction()
             .replace(R.id.nav_host_fragment, captureFragment)
@@ -185,8 +171,7 @@ object PPGSensorCaptureViewHolderFactory :
           .replace(
             R.id.nav_host_fragment,
             InstructionsFragment().apply {
-              arguments =
-                bundleOf(InstructionsFragment.LAYOUT to R.layout.fragment_ppg_instructions)
+              arguments = bundleOf(InstructionsFragment.TITLE to TITLE)
             }
           )
           .setReorderingAllowed(true)
@@ -209,4 +194,5 @@ object PPGSensorCaptureViewHolderFactory :
 
   const val WIDGET_EXTENSION = "http://external-api-call/sensing-backbone"
   const val WIDGET_TYPE = "ppg-capture"
+  const val TITLE = "Anemia_PPG_Signal"
 }

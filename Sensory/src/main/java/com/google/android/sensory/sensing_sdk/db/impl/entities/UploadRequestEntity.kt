@@ -17,27 +17,59 @@
 package com.google.android.sensory.sensing_sdk.db.impl.entities
 
 import androidx.room.Entity
+import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
 import com.google.android.sensory.sensing_sdk.model.RequestStatus
 import java.time.Instant
 import java.util.UUID
 
-@Entity(indices = [Index(value = ["status"]), Index(value = ["requestUuid"], unique = true)])
+@Entity(
+  indices = [Index(value = ["status"]), Index(value = ["requestUuid"], unique = true)],
+  foreignKeys =
+    [
+      ForeignKey(
+        entity = ResourceInfoEntity::class,
+        parentColumns = ["resourceInfoId"],
+        childColumns = ["resourceInfoId"],
+        onDelete = ForeignKey.CASCADE
+      )
+    ]
+)
+/**
+ * Database Entity for book-keeping uploads. It has a reference to [resourceInfoId] which a record
+ * of this is responsible to upload. Relevantly it requires other file information.
+ */
 internal data class UploadRequestEntity(
   @PrimaryKey(autoGenerate = true) val id: Long,
+
+  /** UUID for this record. */
   val requestUuid: UUID,
+
+  /** Foreign key in [ResourceInfoEntity]: Required to update upload status of the resource. */
   val resourceInfoId: String,
+
+  /** Absolute location of the zip file to be uploaded. Uploader can upload only zip files. */
   val zipFile: String,
+
+  /** Total file size of the zip file to be uploaded in bytes. */
   val fileSize: Long,
-  val uploadURL: String,
+
+  /** Relative URL because the Uploader is configured with the HOST. */
+  val uploadRelativeURL: String,
+
+  /** Time of initialization or successful part upload or completion. */
   val lastUpdatedTime: Instant,
+
+  /** Bytes uploaded out of the [fileSize]. */
   val bytesUploaded: Long,
+
+  /** Upload status. */
   val status: RequestStatus,
+
+  /** Next file part number to be uploaded. Updated post successful previous part uploading. */
   val nextPart: Int,
-  /**
-   * Assuming this value is either null or unique. Null because this is updated from first upload
-   * response.
-   */
+
+  /** Assuming this value is either null or unique. Initialized from first upload response. */
   val uploadId: String? = null,
 )

@@ -19,7 +19,6 @@ package com.google.android.sensory.sensing_sdk.db.impl.entities
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
-import com.google.android.sensory.sensing_sdk.model.CaptureType
 import com.google.android.sensory.sensing_sdk.model.RequestStatus
 
 @Entity(
@@ -28,20 +27,35 @@ import com.google.android.sensory.sensing_sdk.model.RequestStatus
       // Index(value = ["resourceFolderPath"], unique = true),
       Index(value = ["resourceInfoId"], unique = true),
       Index(value = ["captureId"]),
-      Index(value = ["participantId"])
+      Index(value = ["participantId"]),
+      Index(value = ["title"])
     ]
 )
 /** Information about the resource collected per capture. This is not involved in uploading. */
 internal data class ResourceInfoEntity(
   @PrimaryKey(autoGenerate = true) val id: Long,
+
+  /** Unique Id of this record. */
   val resourceInfoId: String,
+
+  /** Id of the capture that created this record. */
   val captureId: String,
+
+  /** Participant for which the capture created this record. */
   val participantId: String,
-  val captureType: CaptureType,
+
+  /** Title of the capture that creates this record. */
   val title: String,
+
+  /** Resource extension */
   val fileType: String,
+
+  /** Absolute android folder location of the captured data from a sensor. */
   val resourceFolderPath: String,
-  /** uploadUrl should be known at instance creation and not changed post partial uploading. */
+
+  /** Absolute and immutable upload url. */
   val uploadURL: String,
+
+  /** Upload status. */
   val status: RequestStatus,
 )

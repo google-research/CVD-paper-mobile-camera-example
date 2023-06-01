@@ -35,7 +35,14 @@ class InstructionsFragment : DialogFragment() {
     savedInstanceState: Bundle?,
   ): View {
     // Inflate the layout for this fragment
-    val layoutId = arguments?.getInt(LAYOUT)!!
+    val layoutId =
+      when (arguments?.getString(TITLE)) {
+        "Anemia_Conjunctiva" -> R.layout.fragment_conjunctiva_instructions
+        "Anemia_Fingernails_Closed" -> R.layout.fragment_fingernails_closed_instructions
+        "Anemia_Fingernails_Open" -> R.layout.fragment_fingernails_open_instructions
+        /** Anemia_PPG_Signal */
+        else -> R.layout.fragment_ppg_instructions
+      }
     return inflater.inflate(layoutId, container, false)
   }
 
@@ -56,6 +63,6 @@ class InstructionsFragment : DialogFragment() {
   companion object {
     const val INSTRUCTION_FRAGMENT_RESULT = "INSTRUCTION_FRAGMENT_RESULT"
     const val INSTRUCTION_UNDERSTOOD = "INSTRUCTION_UNDERSTOOD"
-    const val LAYOUT = "LAYOUT"
+    const val TITLE = "LAYOUT"
   }
 }

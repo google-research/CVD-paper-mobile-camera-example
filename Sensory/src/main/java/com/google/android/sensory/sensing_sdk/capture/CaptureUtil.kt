@@ -18,6 +18,8 @@ package com.google.android.sensory.sensing_sdk.capture
 
 import androidx.camera.core.TorchState
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.google.android.sensory.sensing_sdk.model.CaptureType
+import com.google.android.sensory.sensing_sdk.model.SensorType
 import com.google.fitbit.research.sensing.common.libraries.camera.Camera2InteropSensor
 
 class CaptureUtil {
@@ -35,6 +37,13 @@ class CaptureUtil {
         // Turn on flash
         c.cameraControl.enableTorch(true)
         // toggleFlash.setImageResource(R.drawable.quantum_gm_ic_flashlight_on_vd_theme_24)
+      }
+    }
+
+    fun sensorsInvolved(captureType: CaptureType): List<SensorType> {
+      return when (captureType) {
+        CaptureType.VIDEO_PPG -> listOf(SensorType.CAMERA)
+        CaptureType.IMAGE -> listOf(SensorType.CAMERA)
       }
     }
   }
