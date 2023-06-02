@@ -60,8 +60,8 @@ import kotlinx.coroutines.launch
  * @param captureInfo All details about the capture
  * @param onCaptureCompleteCallback Callback for the Sensing SDK to update database records
  * @param captureResultCollector Callback defined by the application developers that collects
- * emitted [SensorCaptureResult] from [onCaptureCompleteCallback] TODO: This is too customised and
- * we will need to make it configurable. Configurability options:-
+ * emitted [SensorCaptureResult] from [onCaptureCompleteCallback]. TODO(mjajoo@): This is too
+ * customised and we will need to make it configurable. Configurability options:-
  * 1. CaptureRequestOptions could be a part of [captureInfo.captureSettings] instead of being
  * hardcoded in the viewModel
  * 2. WriteJpegFutureSubscriber could be any generic subscriber

@@ -117,7 +117,6 @@ class CaptureViewModel(application: Application) : AndroidViewModel(application)
     recordingGate.open()
     viewModelScope.launch {
       _captureResultFlow.emit(SensorCaptureResult.Started(captureInfo.captureId!!))
-      // recordFab!!.setImageResource(R.drawable.quantum_gm_ic_videocam_off_vd_theme_24)
       startTimer()
     }
   }

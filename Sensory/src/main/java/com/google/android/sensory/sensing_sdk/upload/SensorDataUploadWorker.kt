@@ -33,8 +33,9 @@ abstract class SensorDataUploadWorker(appContext: Context, workerParams: WorkerP
   abstract fun getUploadConfiguration(): UploadConfiguration
 
   /**
-   * [TODO] Ideally this should not be hardcode 6MB (6291456L) bytes as part size. Instead this
-   * should be a function of network strength. Note: Min upload part size of MinioAsyncClient is 5MB
+   * TODO(mjajoo@) Ideally this should not be hardcode 6MB (6291456L) bytes as part size. Instead
+   * this should be a function of network strength. Note: Min upload part size of MinioAsyncClient
+   * is 5MB
    */
   open fun getUploader(): Uploader {
     val uploadConfiguration = getUploadConfiguration()

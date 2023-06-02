@@ -28,8 +28,8 @@ import kotlinx.coroutines.flow.Flow
 
 /**
  * The Sensing Engine interface that handles the local storage of captured resources. It also acts
- * as a factory to create [CaptureFragment]. [TODO] For application developers to use the upload
- * mechanism ONLY [onCaptureCompleteCallback] is not enough. We need to add CRUD APIs for
+ * as a factory to create [CaptureFragment]. TODO(mjajoo@) For application developers to use the
+ * upload mechanism ONLY [onCaptureCompleteCallback] is not enough. We need to add CRUD APIs for
  * UploadRequest also.
  */
 interface SensingEngine {
@@ -61,12 +61,12 @@ interface SensingEngine {
    * 1. Save [CaptureInfo] in the database
    * 2. read map for a capture type, for each sensor type:-
    * ```
-   *      a. create [ResourceInfo] for it and save it in the database
-   *      b. emit [SensorCaptureResult.StateChange]
-   *      c. zip the [captureInfo.captureFolder]/[sensorType] folder
-   *      d. create [UploadRequest] for it and save it in the database [TODO]
+   *      a. create [ResourceInfo] for it and save it in the database.
+   *      b. emit [SensorCaptureResult.StateChange].
+   *      c. zip the [captureInfo.captureFolder]/[sensorType] folder.
+   *      d. create [UploadRequest] for it and save it in the database.
    * ```
-   * Support uploading of any mime type.
+   * TODO(mjajoo@) Support uploading of any mime type.
    */
   suspend fun onCaptureCompleteCallback(captureInfo: CaptureInfo): Flow<SensorCaptureResult>
 

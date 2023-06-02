@@ -243,7 +243,6 @@ class AnemiaScreenerViewModel(application: Application, private val state: Saved
             return true
           }
         }
-      // TODO check other resources inputs
       }
     }
     return false
