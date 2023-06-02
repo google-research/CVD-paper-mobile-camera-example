@@ -102,6 +102,7 @@
             android:layout_margin="16dp"
             android:layout_gravity="end|bottom"
             android:contentDescription="Sync"
+            android:src="@drawable/sync"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
         />
