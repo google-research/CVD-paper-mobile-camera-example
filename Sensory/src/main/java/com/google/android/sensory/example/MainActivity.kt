@@ -104,6 +104,7 @@ class MainActivity : AppCompatActivity() {
     @RequiresApi(api = Build.VERSION_CODES.TIRAMISU)
     private val REQUIRED_PERMISSIONS_33 =
       arrayOf(
+        Manifest.permission.CAMERA,
         Manifest.permission.READ_MEDIA_IMAGES,
         Manifest.permission.READ_MEDIA_AUDIO,
         Manifest.permission.READ_MEDIA_VIDEO
