@@ -64,6 +64,10 @@ class SensingApplication : Application(), DataCaptureConfig.Provider {
     const val SHARED_PREFS_KEY = "shared_prefs_key"
     const val CURRENT_PATIENT_ID = "patient-id"
     const val CUSTOM_VIEW_HOLDER_FACTORY_TAG = "sensor_capture"
+    // The following version constant should be updated whenever we ship a new version of the app.
+    // The version format is composed of two parts vXsY, which stands for version X subversion Y.
+    // We do not use "." in the version string to avoid confusion with file suffixes.
+    const val APP_VERSION = "v2s1"
     fun fhirEngine(context: Context) = (context.applicationContext as SensingApplication).fhirEngine
     fun sensingEngine(context: Context) =
       (context.applicationContext as SensingApplication).sensingEngine

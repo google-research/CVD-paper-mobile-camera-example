@@ -20,10 +20,14 @@ import com.google.android.sensory.sensing_sdk.model.SensorType
 
 data class CaptureSettings(
   /**
-   * The file format captured sensor data should be stored in. TODO(mjajoo@): Need to have default
-   * types for each sensor.
+   * The mimetype map for files captured via a sensor. TODO(mjajoo@): Need to have default types for
+   * each sensor.
    */
   val fileTypeMap: Map<SensorType, String>,
+  /** The mimetype map for metadata files captured via a sensor. */
   val metaDataTypeMap: Map<SensorType, String>,
-  val title: String,
+  /** The title map for naming conventions of files captured via a sensor. */
+  val titleMap: Map<SensorType, String>,
+  /** The capture title used for naming folder that stores all sensors' captured data. */
+  val captureTitle: String
 )

@@ -200,7 +200,7 @@ class AnemiaScreenerViewModel(application: Application, private val state: Saved
             Attachment().apply {
               contentType = "application/gzip" // Sensing SDK uploads only in zip for now
               url = resourceInfo.uploadURL
-              title = resourceInfo.title
+              title = resourceInfo.captureTitle
               creation = Date()
             }
 

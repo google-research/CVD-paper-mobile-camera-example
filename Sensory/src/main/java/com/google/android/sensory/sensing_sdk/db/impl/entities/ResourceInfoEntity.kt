@@ -28,7 +28,7 @@ import com.google.android.sensory.sensing_sdk.model.RequestStatus
       Index(value = ["resourceInfoId"], unique = true),
       Index(value = ["captureId"]),
       Index(value = ["participantId"]),
-      Index(value = ["title"])
+      Index(value = ["captureTitle"])
     ]
 )
 /** Information about the resource collected per capture. This is not involved in uploading. */
@@ -45,7 +45,7 @@ internal data class ResourceInfoEntity(
   val participantId: String,
 
   /** Title of the capture that creates this record. */
-  val title: String,
+  val captureTitle: String,
 
   /** Resource extension */
   val fileType: String,

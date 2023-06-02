@@ -145,7 +145,8 @@ object PhotoCaptureViewHolderFactory :
                     CaptureSettings(
                       fileTypeMap = mapOf(SensorType.CAMERA to "jpeg"),
                       metaDataTypeMap = mapOf(SensorType.CAMERA to "tsv"),
-                      title = TITLE,
+                      titleMap = mapOf(SensorType.CAMERA to SensingApplication.APP_VERSION),
+                      captureTitle = TITLE
                     ),
                   captureId = captureId,
                 )

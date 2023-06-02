@@ -21,7 +21,7 @@ data class ResourceInfo(
   val resourceInfoId: String,
   val captureId: String,
   val participantId: String,
-  val title: String,
+  val captureTitle: String,
   val fileType: String,
   val resourceFolderPath: String,
   val uploadURL: String,

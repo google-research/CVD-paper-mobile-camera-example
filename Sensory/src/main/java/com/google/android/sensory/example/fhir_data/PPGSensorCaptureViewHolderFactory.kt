@@ -60,7 +60,7 @@ object PPGSensorCaptureViewHolderFactory :
       private lateinit var context: AppCompatActivity
       private lateinit var sensingEngine: SensingEngine
 
-      private lateinit var TITLE: String
+      private lateinit var QUESTION_TITLE: String
 
       override fun init(itemView: View) {
         ViewHolderFactoryUtil.removeUnwantedViews(itemView)
@@ -76,7 +76,7 @@ object PPGSensorCaptureViewHolderFactory :
 
       override fun bind(questionnaireViewItem: QuestionnaireViewItem) {
         this.questionnaireViewItem = questionnaireViewItem
-        TITLE = questionnaireViewItem.questionnaireItem.text
+        QUESTION_TITLE = questionnaireViewItem.questionnaireItem.text
         displayOrClearInitialPreview()
         displayCapturePpgButton(questionnaireViewItem.questionnaireItem)
         takePhotoButton.setOnClickListener { view ->
@@ -107,7 +107,7 @@ object PPGSensorCaptureViewHolderFactory :
           val captureId = code.code
           val livePath = MutableLiveData<String>()
           CoroutineScope(Dispatchers.IO).launch {
-            livePath.postValue(sensingEngine.listResourceInfoInCapture(captureId)[0].title)
+            livePath.postValue(sensingEngine.listResourceInfoInCapture(captureId)[0].captureTitle)
           }
           livePath.observe(context) {
             loadFilePreview(com.google.android.fhir.datacapture.R.drawable.ic_document_file, it)
@@ -140,12 +140,13 @@ object PPGSensorCaptureViewHolderFactory :
                 CaptureInfo(
                   participantId = participantId,
                   captureType = CaptureType.VIDEO_PPG,
-                  captureFolder = "Sensory/Participant_$participantId/$TITLE",
+                  captureFolder = "Sensory/Participant_$participantId/$QUESTION_TITLE",
                   captureSettings =
                     CaptureSettings(
                       fileTypeMap = mapOf(SensorType.CAMERA to "jpeg"),
                       metaDataTypeMap = mapOf(SensorType.CAMERA to "tsv"),
-                      title = TITLE,
+                      titleMap = mapOf(SensorType.CAMERA to SensingApplication.APP_VERSION),
+                      captureTitle = QUESTION_TITLE
                     ),
                   captureId = captureId,
                 )
@@ -176,7 +177,7 @@ object PPGSensorCaptureViewHolderFactory :
           .replace(
             R.id.nav_host_fragment,
             InstructionsFragment().apply {
-              arguments = bundleOf(InstructionsFragment.TITLE to TITLE)
+              arguments = bundleOf(InstructionsFragment.TITLE to QUESTION_TITLE)
             }
           )
           .setReorderingAllowed(true)

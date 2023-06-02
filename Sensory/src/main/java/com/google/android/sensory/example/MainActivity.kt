@@ -39,7 +39,6 @@ class MainActivity : AppCompatActivity() {
       permissionsRequestCount = 0
       ActivityCompat.requestPermissions(this, getRequiredPermissions(), REQUEST_CODE_PERMISSIONS)
     }
-    // UploadSync.enqueueUploadPeriodicWork<AppSensorDataUploadWorker>(applicationContext)
   }
 
   private fun hasPermissions(): Boolean {
@@ -109,10 +108,5 @@ class MainActivity : AppCompatActivity() {
         Manifest.permission.READ_MEDIA_AUDIO,
         Manifest.permission.READ_MEDIA_VIDEO
       )
-
-    // The following version constant should be updated whenever we ship a new version of the app.
-    // The version format is composed of two parts vXsY, which stands for version X subversion Y.
-    // We do not use "." in the version string to avoid confusion with file suffixes.
-    private const val APP_VERSION = "v2s1"
   }
 }

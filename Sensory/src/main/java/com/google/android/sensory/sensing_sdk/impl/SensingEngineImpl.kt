@@ -89,7 +89,7 @@ internal class SensingEngineImpl(
           resourceInfoId = UUID.randomUUID().toString(),
           captureId = captureInfo.captureId!!,
           participantId = captureInfo.participantId,
-          title = captureInfo.captureSettings.title,
+          captureTitle = captureInfo.captureSettings.captureTitle,
           fileType = resourceInfoFileType(it, captureInfo),
           resourceFolderPath =
             Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
