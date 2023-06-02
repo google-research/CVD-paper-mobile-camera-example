@@ -100,11 +100,6 @@ internal class SensingEngineImpl(
       database.addResourceInfo(resourceInfo)
       emit(SensorCaptureResult.StateChange(resourceInfo.resourceInfoId))
       /** Zipping logic from: https://stackoverflow.com/a/63828765 */
-      /** Zipping logic from: https://stackoverflow.com/a/63828765 */
-      /**
-       * [CaptureFragment] stores files in:
-       * Downloads/Sensory/Participant_<participantId>/<captureType>/<sensorType>
-       */
       /**
        * [CaptureFragment] stores files in:
        * Downloads/Sensory/Participant_<participantId>/<captureType>/<sensorType>
@@ -191,13 +186,17 @@ internal class SensingEngineImpl(
         }
       }
       database.updateUploadRequest(uploadRequest)
-      // Update status of ResourceInfo only when UploadRequest.status changes
+      /** Update status of ResourceInfo only when UploadRequest.status changes */
       if (requestsPreviousStatus != uploadRequest.status) {
         val resourceInfo = database.getResourceInfo(uploadRequest.resourceInfoId)!!
         resourceInfo.apply { status = uploadRequest.status }
         database.updateResourceInfo(resourceInfo)
       }
     }
+  }
+
+  override suspend fun getUploadRequest(resourceInfoId: String): UploadRequest? {
+    TODO("Not yet implemented")
   }
 
   override suspend fun deleteSensorData(uploadURL: String) {
@@ -209,17 +208,14 @@ internal class SensingEngineImpl(
   }
 
   companion object {
-    /** File format is configured in captureSettings. */
+    /** File format for any sensor is taken from [captureSettings.fileTypeMap]. */
     private fun resourceInfoFileType(sensorType: SensorType, captureInfo: CaptureInfo): String {
       return when (sensorType) {
         SensorType.CAMERA -> captureInfo.captureSettings.fileTypeMap[sensorType]!!
       }
     }
 
-    /**
-     * Returns folder for a specific sensor type in For both captureType we zip the stored files
-     * into a folder for uploading
-     */
+    /** Returns relative folder for a specific sensor type. */
     fun getResourceFolderRelativePath(sensorType: SensorType, captureInfo: CaptureInfo): String {
       return when (captureInfo.captureType) {
         CaptureType.IMAGE -> "${captureInfo.captureFolder}/${sensorType.name}"

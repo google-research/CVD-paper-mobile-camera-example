@@ -11,7 +11,6 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginBottom="50dp"
-        android:layout_marginStart="50dp"
         android:backgroundTint="@android:color/holo_blue_light"
         android:elevation="2dp"
         android:gravity="center"
@@ -26,22 +25,15 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
     />
-
-  <androidx.constraintlayout.widget.Guideline
-        android:id="@+id/vertical_centerline"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        app:layout_constraintGuide_percent=".50"
-    />
   <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/toggle_flash_fab"
-        style="?attr/floatingActionButtonPrimaryStyle"
+        android:layout_marginBottom="50dp"
+        android:layout_marginEnd="20dp"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_margin="16dp"
         android:layout_gravity="bottom|end"
         app:layout_constraintBottom_toBottomOf="parent"
+        app:srcCompat="@drawable/flashlight_on"
         app:layout_constraintEnd_toEndOf="parent"
     />
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -21,7 +21,7 @@ import com.google.android.sensory.sensing_sdk.model.RequestStatus
 import com.google.android.sensory.sensing_sdk.model.ResourceInfo
 import com.google.android.sensory.sensing_sdk.model.UploadRequest
 
-/** The interface for the sensor resources captured. */
+/** The interface for the sensor resources database. */
 internal interface Database {
   suspend fun addCaptureInfo(captureInfo: CaptureInfo): String
   suspend fun addResourceInfo(resourceInfo: ResourceInfo): String

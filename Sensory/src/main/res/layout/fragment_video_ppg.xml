@@ -9,28 +9,40 @@
     tools:ignore="contentDescription"
 >
 
-  <TextView
-        android:id="@+id/tv_recording_instruction"
-        android:layout_width="0dp"
+  <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_margin="10dp"
-        android:maxLines="2"
-        android:text="@string/video_recording_instruction"
-        android:textAppearance="@style/text_style"
-        app:layout_constraintEnd_toStartOf="@id/record_timer"
-        app:layout_constraintStart_toStartOf="@id/left_margin_guideline"
+        android:layout_marginTop="15dp"
+        android:orientation="horizontal"
+        android:id="@+id/timer_container"
+        app:layout_constraintStart_toStartOf="parent"
+        android:padding="5dp"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-    />
+    >
+    <TextView
+            android:id="@+id/tv_recording_instruction"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:maxLines="2"
+            android:layout_gravity="center_vertical"
+            android:text="@string/video_recording_instruction"
+            android:textAppearance="@style/text_style"
+        />
 
-  <TextView
-        android:id="@+id/record_timer"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_margin="10dp"
-        android:textAppearance="@style/text_style"
-        app:layout_constraintEnd_toEndOf="@id/right_margin_guideline"
-        app:layout_constraintTop_toTopOf="parent"
-    />
+    <View
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+        />
+    <TextView
+            android:id="@+id/record_timer"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical"
+            android:textAppearance="@style/text_style"
+        />
+  </LinearLayout>
 
   <androidx.camera.view.PreviewView
         android:id="@+id/preview_view"
@@ -38,39 +50,7 @@
         android:layout_height="0dp"
         android:layout_marginTop="10dp"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/record_timer"
-    />
-
-  <androidx.constraintlayout.widget.Guideline
-        android:id="@+id/top_margin_guideline"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        app:layout_constraintGuide_percent="0.02"
-    />
-
-  <androidx.constraintlayout.widget.Guideline
-        android:id="@+id/left_margin_guideline"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        app:layout_constraintGuide_percent="0.02"
-    />
-
-  <androidx.constraintlayout.widget.Guideline
-        android:id="@+id/right_margin_guideline"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        app:layout_constraintGuide_percent="0.98"
-    />
-
-  <androidx.constraintlayout.widget.Guideline
-        android:id="@+id/bottom_margin_guideline"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        app:layout_constraintGuide_percent="0.98"
+        app:layout_constraintTop_toBottomOf="@id/timer_container"
     />
 
   <com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -78,11 +58,12 @@
         style="?attr/floatingActionButtonPrimaryStyle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_margin="16dp"
+        android:layout_margin="50dp"
         android:layout_gravity="bottom|center_horizontal"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
+        app:srcCompat="@drawable/videocam_on"
     />
 
   <com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -90,9 +71,11 @@
         style="?attr/floatingActionButtonPrimaryStyle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_margin="16dp"
+        android:layout_marginBottom="50dp"
+        android:layout_marginEnd="20dp"
         android:layout_gravity="bottom|end"
         app:layout_constraintBottom_toBottomOf="parent"
+        app:srcCompat="@drawable/flashlight_on"
         app:layout_constraintEnd_toEndOf="parent"
     />
 </androidx.constraintlayout.widget.ConstraintLayout>

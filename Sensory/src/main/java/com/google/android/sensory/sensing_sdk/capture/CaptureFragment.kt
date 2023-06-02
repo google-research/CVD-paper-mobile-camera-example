@@ -103,7 +103,7 @@ class CaptureFragment(
     savedInstanceState: Bundle?,
   ): View? {
     /** *** To fit full screen */
-    requireActivity().window.decorView.fitsSystemWindows = true
+    requireActivity().window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_FULLSCREEN
     (requireActivity() as AppCompatActivity).supportActionBar?.hide()
     /** *** To fit full screen */
     /** For a different [CaptureType] sensors may be initialized differently. */
@@ -166,7 +166,9 @@ class CaptureFragment(
           )
         recordTimer.text = "00 : 30"
         recordFab.setOnClickListener { captureViewModel.processRecord(camera!!) }
-        toggleFlashFab.setOnClickListener { CaptureUtil.toggleFlash(camera!!, toggleFlashFab) }
+        toggleFlashFab.setOnClickListener {
+          CaptureUtil.toggleFlashWithView(camera!!, toggleFlashFab)
+        }
       }
       CaptureType.IMAGE -> {
         previewView = view.findViewById(R.id.preview_view)
@@ -186,7 +188,9 @@ class CaptureFragment(
         btnTakePhoto.setOnClickListener {
           captureViewModel.capturePhoto(camera!!, requireContext())
         }
-        toggleFlashFab.setOnClickListener { CaptureUtil.toggleFlash(camera!!, toggleFlashFab) }
+        toggleFlashFab.setOnClickListener {
+          CaptureUtil.toggleFlashWithView(camera!!, toggleFlashFab)
+        }
       }
     }
   }
@@ -241,6 +245,9 @@ class CaptureFragment(
     }
     lifecycleScope.launch {
       captureViewModel.captureResultFlow.collect {
+        if (it is SensorCaptureResult.Started) {
+          recordFab.setImageResource(R.drawable.videocam_off)
+        }
         if (it is SensorCaptureResult.CaptureComplete) {
           finishCapturing()
         }
@@ -249,7 +256,6 @@ class CaptureFragment(
   }
 
   private fun stopRecording() {
-    // recordFab!!.setImageResource(R.drawable.quantum_gm_ic_videocam_vd_theme_24)
     finishCapturing()
   }
 
@@ -283,7 +289,7 @@ class CaptureFragment(
       setFragmentResult(CAPTURE_FRAGMENT_TAG, bundleOf(CAPTURED to false))
     }
     /** *** To remove full screen */
-    requireActivity().window.decorView.fitsSystemWindows = false
+    requireActivity().window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_VISIBLE
     (requireActivity() as AppCompatActivity).supportActionBar?.show()
     /** *** To remove full screen */
     super.onDetach()

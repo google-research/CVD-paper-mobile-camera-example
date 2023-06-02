@@ -52,6 +52,7 @@ object PPGSensorCaptureViewHolderFactory :
   override fun getQuestionnaireItemViewHolderDelegate() =
     object : QuestionnaireItemViewHolderDelegate {
       override lateinit var questionnaireViewItem: QuestionnaireViewItem
+      private lateinit var question: TextView
       private lateinit var takePhotoButton: Button
       private lateinit var filePreview: ConstraintLayout
       private lateinit var fileIcon: ImageView
@@ -59,10 +60,13 @@ object PPGSensorCaptureViewHolderFactory :
       private lateinit var context: AppCompatActivity
       private lateinit var sensingEngine: SensingEngine
 
+      private lateinit var TITLE: String
+
       override fun init(itemView: View) {
-        PhotoViewHolderFactoryUtil.removeUnwantedViews(itemView)
+        ViewHolderFactoryUtil.removeUnwantedViews(itemView)
+        question = itemView.findViewById(com.google.android.fhir.datacapture.R.id.question)
         takePhotoButton = itemView.findViewById(com.google.android.fhir.datacapture.R.id.take_photo)
-        takePhotoButton.text = "Capture PPG"
+        takePhotoButton.text = CAPTURE_TEXT
         filePreview = itemView.findViewById(com.google.android.fhir.datacapture.R.id.file_preview)
         fileIcon = itemView.findViewById(com.google.android.fhir.datacapture.R.id.file_icon)
         fileTitle = itemView.findViewById(com.google.android.fhir.datacapture.R.id.file_title)
@@ -72,6 +76,7 @@ object PPGSensorCaptureViewHolderFactory :
 
       override fun bind(questionnaireViewItem: QuestionnaireViewItem) {
         this.questionnaireViewItem = questionnaireViewItem
+        TITLE = questionnaireViewItem.questionnaireItem.text
         displayOrClearInitialPreview()
         displayCapturePpgButton(questionnaireViewItem.questionnaireItem)
         takePhotoButton.setOnClickListener { view ->
@@ -194,5 +199,5 @@ object PPGSensorCaptureViewHolderFactory :
 
   const val WIDGET_EXTENSION = "http://external-api-call/sensing-backbone"
   const val WIDGET_TYPE = "ppg-capture"
-  const val TITLE = "Anemia_PPG_Signal"
+  const val CAPTURE_TEXT = "Capture Video"
 }

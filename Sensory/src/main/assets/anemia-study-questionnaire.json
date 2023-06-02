@@ -34,8 +34,13 @@
           "text": "Anaemia Study Data Capture"
         },
         {
+          "linkId": "ppg-capture-question",
+          "type": "display",
+          "text": "Capture PPG Video"
+        },
+        {
+          "text": "Anemia_PPG_Signals",
           "linkId": "ppg-capture-api-call",
-          "text": "test",
           "extension": [
             {
               "url": "http://external-api-call/sensing-backbone",
@@ -70,11 +75,17 @@
           "text": "Anaemia Study Data Capture"
         },
         {
+          "linkId": "ppg-capture-question",
+          "type": "display",
+          "text": "Capture Open Fingernails Image"
+        },
+        {
+          "text": "Anemia_Fingernails_Open",
           "linkId": "photo-capture-fingernails-open-api-call",
           "extension": [
             {
               "url": "http://external-api-call/sensing-backbone",
-              "valueCode": "photo-fingernails-open-capture"
+              "valueCode": "photo-capture"
             }
           ]
         }
@@ -105,11 +116,17 @@
           "text": "Anaemia Study Data Capture"
         },
         {
+          "linkId": "ppg-capture-question",
+          "type": "display",
+          "text": "Capture Closed Fingernails Image"
+        },
+        {
+          "text": "Anemia_Fingernails_Closed",
           "linkId": "photo-capture-fingernails-closed-api-call",
           "extension": [
             {
               "url": "http://external-api-call/sensing-backbone",
-              "valueCode": "photo-fingernails-closed-capture"
+              "valueCode": "photo-capture"
             }
           ]
         }
@@ -140,11 +157,17 @@
           "text": "Anaemia Study Data Capture"
         },
         {
+          "linkId": "ppg-capture-question",
+          "type": "display",
+          "text": "Capture Conjunctiva Image"
+        },
+        {
+          "text": "Anemia_Conjunctiva",
           "linkId": "photo-capture-conjunctiva-api-call",
           "extension": [
             {
               "url": "http://external-api-call/sensing-backbone",
-              "valueCode": "photo-conjunctiva-capture"
+              "valueCode": "photo-capture"
             }
           ]
         }

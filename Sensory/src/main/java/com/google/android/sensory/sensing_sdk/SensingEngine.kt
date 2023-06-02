@@ -36,24 +36,18 @@ interface SensingEngine {
 
   /**
    * Returns [CaptureFragment] for given captureType. This API is needed because:-
-   * 1. Each invocation requires different capture settings and hence can't be globally configured.
+   * 1. Each invocation requires different [CaptureInfo] and hence can't be globally configured.
    * 2. Since SensingEngine is also responsible for updating database records, this API acts as a
-   * factory and creates a [CaptureFragment] instance in a way that [onCaptureCompleteCallback] is
-   * called once capture is completed.
+   * factory that constructs a [CaptureFragment] instance in a way that [onCaptureCompleteCallback]
+   * is called once capture is completed.
    * 3. We want application developers to have more control over the UI using the returned fragment.
    * Application developers are responsible for handling lifecycle of the fragment returned which
    * should be straight forward since we can fairly assume that capturing via camera is a foreground
    * 1-time activity.
    * 4. This way we also leave other Fragments involved in capturing, like InstructionFragments, out
    * of scope of this Sensing SDK.
-   * @param participantId Used to name the capture folder (like Participant_<participantId>).
-   * @param captureType type of capture like VIDEO_PPG, IMAGE, etc type of sensor data to be
-   * captured
-   * @param captureSettings sensor capture settings
-   * @param captureId Id for each captureSenorData API call. This is provided back to the invoker
-   * within [FragmentResult]. If this is non-null then the folder associated with this captureId is
-   * deleted and all resources are re-captured. [TODO] The API could change to accept [CaptureInfo]
-   * object that encapsulates captureId, captureType and captureSettings
+   * @param captureInfo All capture information including participantId, captureSettings, etc.
+   * @param sensorCaptureResultCollector Application callback to collect [SensorCaptureResult]
    */
   fun captureFragment(
     captureInfo: CaptureInfo,
@@ -92,10 +86,17 @@ interface SensingEngine {
   suspend fun captureSensorData(pendingIntent: Intent)
 
   /**
-   * [SensorDataUploadWorker] invokes this API to fetch and update [RequestStatus.PENDING] records
-   * to upload.
+   * [SensorDataUploadWorker] invokes this API to fetch [RequestStatus.PENDING] records to upload
+   * and then update thos records on collecting [UploadResult]s. Additionally, it also deletes
+   * captured files and folders after successful upload.
    */
   suspend fun syncUpload(upload: (suspend (List<UploadRequest>) -> Flow<UploadResult>))
+
+  /**
+   * Get [UploadRequest] corresponding to the [ResourceInfo] given [ResourceInfo.resourceInfoId].
+   * Application developers can use this API to monitor not just upload status but also progress.
+   */
+  suspend fun getUploadRequest(resourceInfoId: String): UploadRequest?
 
   /** Delete data stored in blobstore */
   suspend fun deleteSensorData(uploadURL: String)

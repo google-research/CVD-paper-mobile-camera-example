@@ -22,10 +22,8 @@ import com.google.android.fhir.FhirEngine
 import com.google.android.fhir.FhirEngineProvider
 import com.google.android.fhir.datacapture.DataCaptureConfig
 import com.google.android.fhir.datacapture.QuestionnaireFragment
-import com.google.android.sensory.example.fhir_data.ConjunctivaPhotoSensorCaptureViewHolderFactory
-import com.google.android.sensory.example.fhir_data.FingernailsClosedPhotoSensorCaptureViewHolderFactory
-import com.google.android.sensory.example.fhir_data.FingernailsOpenPhotoSensorCaptureViewHolderFactory
 import com.google.android.sensory.example.fhir_data.PPGSensorCaptureViewHolderFactory
+import com.google.android.sensory.example.fhir_data.PhotoCaptureViewHolderFactory
 import com.google.android.sensory.sensing_sdk.SensingEngine
 import com.google.android.sensory.sensing_sdk.SensingEngineProvider
 import com.google.android.sensory.sensing_sdk.UploadConfiguration
@@ -84,45 +82,13 @@ class SensingApplication : Application(), DataCaptureConfig.Provider {
             List<QuestionnaireFragment.QuestionnaireItemViewHolderFactoryMatcher> {
             return listOf(
               QuestionnaireFragment.QuestionnaireItemViewHolderFactoryMatcher(
-                FingernailsClosedPhotoSensorCaptureViewHolderFactory
+                PhotoCaptureViewHolderFactory
               ) { questionnaireItem ->
                 questionnaireItem
-                  .getExtensionByUrl(
-                    FingernailsClosedPhotoSensorCaptureViewHolderFactory.WIDGET_EXTENSION
-                  )
+                  .getExtensionByUrl(PhotoCaptureViewHolderFactory.WIDGET_EXTENSION)
                   .let {
                     if (it == null) false
-                    else
-                      it.value.toString() ==
-                        FingernailsClosedPhotoSensorCaptureViewHolderFactory.WIDGET_TYPE
-                  }
-              },
-              QuestionnaireFragment.QuestionnaireItemViewHolderFactoryMatcher(
-                FingernailsOpenPhotoSensorCaptureViewHolderFactory
-              ) { questionnaireItem ->
-                questionnaireItem
-                  .getExtensionByUrl(
-                    FingernailsOpenPhotoSensorCaptureViewHolderFactory.WIDGET_EXTENSION
-                  )
-                  .let {
-                    if (it == null) false
-                    else
-                      it.value.toString() ==
-                        FingernailsOpenPhotoSensorCaptureViewHolderFactory.WIDGET_TYPE
-                  }
-              },
-              QuestionnaireFragment.QuestionnaireItemViewHolderFactoryMatcher(
-                ConjunctivaPhotoSensorCaptureViewHolderFactory
-              ) { questionnaireItem ->
-                questionnaireItem
-                  .getExtensionByUrl(
-                    ConjunctivaPhotoSensorCaptureViewHolderFactory.WIDGET_EXTENSION
-                  )
-                  .let {
-                    if (it == null) false
-                    else
-                      it.value.toString() ==
-                        ConjunctivaPhotoSensorCaptureViewHolderFactory.WIDGET_TYPE
+                    else it.value.toString() == PhotoCaptureViewHolderFactory.WIDGET_TYPE
                   }
               },
               QuestionnaireFragment.QuestionnaireItemViewHolderFactoryMatcher(

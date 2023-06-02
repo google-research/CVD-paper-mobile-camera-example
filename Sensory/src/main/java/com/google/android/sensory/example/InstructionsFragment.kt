@@ -18,10 +18,14 @@ package com.google.android.sensory.example
 
 import android.os.Bundle
 import android.view.LayoutInflater
+import android.view.Menu
+import android.view.MenuInflater
+import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import androidx.core.os.bundleOf
+import androidx.core.view.MenuProvider
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.setFragmentResult
 import com.google.android.sensory.R
@@ -48,16 +52,38 @@ class InstructionsFragment : DialogFragment() {
 
   override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
     super.onViewCreated(view, savedInstanceState)
+    setupMenu()
     btnCancel = view.findViewById(R.id.btn_cancel)
     btnNext = view.findViewById(R.id.btn_next)
-    btnCancel.setOnClickListener {
-      setFragmentResult(INSTRUCTION_FRAGMENT_RESULT, bundleOf(INSTRUCTION_UNDERSTOOD to false))
-      dismiss()
-    }
+    btnCancel.setOnClickListener { onInstructionCancel() }
     btnNext.setOnClickListener {
       setFragmentResult(INSTRUCTION_FRAGMENT_RESULT, bundleOf(INSTRUCTION_UNDERSTOOD to true))
       dismiss()
     }
+  }
+
+  private fun setupMenu() {
+    (requireActivity() as MainActivity).addMenuProvider(
+      object : MenuProvider {
+        override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {}
+
+        override fun onMenuItemSelected(menuItem: MenuItem): Boolean {
+          return when (menuItem.itemId) {
+            android.R.id.home -> {
+              onInstructionCancel()
+              true
+            }
+            else -> true
+          }
+        }
+      },
+      viewLifecycleOwner
+    )
+  }
+
+  private fun onInstructionCancel() {
+    setFragmentResult(INSTRUCTION_FRAGMENT_RESULT, bundleOf(INSTRUCTION_UNDERSTOOD to false))
+    dismiss()
   }
 
   companion object {

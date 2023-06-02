@@ -24,7 +24,6 @@
         name="video_recording_instruction"
     >Place their fingertip over the entire back camera</string>
   <string name="recording_ppg">Recording PPG</string>
-  <string name="error_dialog_title">Couldn\'t get a stable reading</string>
   <string
         name="error_dialog_message"
     >Make sure you hold steady during measurement</string>

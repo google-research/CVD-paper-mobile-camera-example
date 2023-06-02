@@ -36,7 +36,6 @@
             android:gravity="center_horizontal"
             android:text="@string/step_photo_conjunctiva"
             android:textAppearance="@style/title_style"
-            app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/tv_step4"
         />
@@ -45,10 +44,8 @@
             android:id="@+id/tv_step4"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:gravity="center_horizontal"
             android:text="@string/step4"
             android:textAppearance="@style/text_style"
-            app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
         />
