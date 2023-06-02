@@ -191,6 +191,8 @@ internal class SensingEngineImpl(
         val resourceInfo = database.getResourceInfo(uploadRequest.resourceInfoId)!!
         resourceInfo.apply { status = uploadRequest.status }
         database.updateResourceInfo(resourceInfo)
+        /** Delete the zipped file as its no longer required. */
+        File(uploadRequest.zipFile).delete()
       }
     }
   }
