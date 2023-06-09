@@ -35,6 +35,7 @@ import com.google.android.sensory.R
 import com.google.android.sensory.example.InstructionsFragment
 import com.google.android.sensory.example.SensingApplication
 import com.google.android.sensory.sensing_sdk.SensingEngine
+import com.google.android.sensory.sensing_sdk.capture.CaptureFragment
 import com.google.android.sensory.sensing_sdk.capture.CaptureSettings
 import com.google.android.sensory.sensing_sdk.capture.SensorCaptureResult
 import com.google.android.sensory.sensing_sdk.model.CaptureInfo
@@ -52,7 +53,6 @@ object PPGSensorCaptureViewHolderFactory :
   override fun getQuestionnaireItemViewHolderDelegate() =
     object : QuestionnaireItemViewHolderDelegate {
       override lateinit var questionnaireViewItem: QuestionnaireViewItem
-      private lateinit var question: TextView
       private lateinit var takePhotoButton: Button
       private lateinit var filePreview: ConstraintLayout
       private lateinit var fileIcon: ImageView
@@ -64,7 +64,6 @@ object PPGSensorCaptureViewHolderFactory :
 
       override fun init(itemView: View) {
         ViewHolderFactoryUtil.removeUnwantedViews(itemView)
-        question = itemView.findViewById(com.google.android.fhir.datacapture.R.id.question)
         takePhotoButton = itemView.findViewById(com.google.android.fhir.datacapture.R.id.take_photo)
         takePhotoButton.text = CAPTURE_TEXT
         filePreview = itemView.findViewById(com.google.android.fhir.datacapture.R.id.file_preview)
@@ -135,8 +134,8 @@ object PPGSensorCaptureViewHolderFactory :
               .getString(SensingApplication.CURRENT_PATIENT_ID, null)!!
           val captureId = questionnaireViewItem.answers.firstOrNull()?.valueCoding?.code
           val captureFragment =
-            sensingEngine.captureFragment(
-              captureInfo =
+            CaptureFragment().apply {
+              setCaptureInfo(
                 CaptureInfo(
                   participantId = participantId,
                   captureType = CaptureType.VIDEO_PPG,
@@ -150,18 +149,20 @@ object PPGSensorCaptureViewHolderFactory :
                     ),
                   captureId = captureId,
                 )
-            ) { sensorCaptureResultFlow ->
-              sensorCaptureResultFlow.collect {
-                if (it is SensorCaptureResult.ResourceStoringComplete) {
-                  val answer =
-                    QuestionnaireResponse.QuestionnaireResponseItemAnswerComponent().apply {
-                      value =
-                        Coding().apply {
-                          code = it.captureId
-                          system = CaptureType.VIDEO_PPG.name
-                        }
-                    }
-                  questionnaireViewItem.setAnswer(answer)
+              )
+              setSensorCaptureResultCollector { sensorCaptureResultFlow ->
+                sensorCaptureResultFlow.collect {
+                  if (it is SensorCaptureResult.ResourceStoringComplete) {
+                    val answer =
+                      QuestionnaireResponse.QuestionnaireResponseItemAnswerComponent().apply {
+                        value =
+                          Coding().apply {
+                            code = it.captureId
+                            system = CaptureType.VIDEO_PPG.name
+                          }
+                      }
+                    questionnaireViewItem.setAnswer(answer)
+                  }
                 }
               }
             }

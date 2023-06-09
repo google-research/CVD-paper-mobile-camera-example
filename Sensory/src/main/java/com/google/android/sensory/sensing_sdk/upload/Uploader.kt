@@ -16,35 +16,38 @@
 
 package com.google.android.sensory.sensing_sdk.upload
 
+import com.google.android.sensory.sensing_sdk.ServerConfiguration
 import com.google.android.sensory.sensing_sdk.model.UploadRequest
 import com.google.android.sensory.sensing_sdk.model.UploadResult
 import com.google.common.collect.HashMultimap
 import io.minio.ListPartsResponse
-import io.minio.MinioAsyncClient
 import io.minio.UploadPartResponse
 import io.minio.messages.Part
 import java.io.File
 import java.io.FileInputStream
 import java.time.Instant
 import java.util.Date
-import kotlin.math.min
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.withContext
+import timber.log.Timber
 
 /**
  * Processes upload requests and uploads the data referenced in chunks. Ideally we would want the
  * uploader to figure out [uploadPartSizeInBytes] based on network strength
  */
 class Uploader(
-  private val bucketName: String,
-  private val uploadPartSizeInBytes: Long,
-  private val multiPartUpload: Boolean = true,
-  client: MinioAsyncClient,
+  private val serverConfiguration: ServerConfiguration,
+  private val blobstoreService: BlobstoreService
 ) {
-  private var minPartSizeInBytes: Long = 5242880 // 5MB
-  private val blobstoreService = BlobstoreService(client)
+  /**
+   * TODO(mjajoo@) Ideally this should not be hardcode 6MB (6291456L) bytes as part size. Instead
+   * this should be a function of network strength. Note: Min upload part size of MinioAsyncClient
+   * is 5MB
+   */
+  private val uploadPartSizeInBytes = 6291456L
+  private var minPartSizeInBytes = 5242880L // 5MB
   suspend fun upload(uploadRequestList: List<UploadRequest>): Flow<UploadResult> = flow {
     uploadRequestList.forEach { uploadRequest ->
       if (uploadRequest.uploadId.isNullOrEmpty()) {
@@ -52,51 +55,39 @@ class Uploader(
         headers.put("Content-Type", "application/octet-stream")
         uploadRequest.uploadId =
           blobstoreService.initMultiPartUpload(
-            bucketName,
+            serverConfiguration.bucketName,
             null,
             uploadRequest.uploadRelativeURL,
             headers,
             null
           )
-        println("UploadID: ${uploadRequest.uploadId}")
+        Timber.d("UploadID: ${uploadRequest.uploadId}")
         emit(
           UploadResult.Started(uploadRequest, Date.from(Instant.now()), uploadRequest.uploadId!!)
         )
       }
       val dataStream = withContext(Dispatchers.IO) { FileInputStream(File(uploadRequest.zipFile)) }
-      var chunkSize: Long
-      if (!multiPartUpload) {
-        chunkSize = uploadRequest.fileSize
-        val bytes = ByteArray(chunkSize.toInt())
-        withContext(Dispatchers.IO) { dataStream.read(bytes) }
-        uploadPart(uploadRequest, bytes, chunkSize)
-        emit(mergeMultipartUpload(uploadRequest))
-        println("File Uploaded and Merged")
-      } else {
-        while (uploadRequest.bytesUploaded < uploadRequest.fileSize) {
-          // If the remaining bytes after the present chunk is less than minPartSizeInBytes (~5MB),
-          // let the final chunk cover all remaining bytes instead of chunkSize
-          chunkSize =
-            if (uploadRequest.fileSize - uploadRequest.bytesUploaded <
-                uploadPartSizeInBytes + minPartSizeInBytes
-            ) {
-              uploadRequest.fileSize - uploadRequest.bytesUploaded
-            } else {
-              // chunk size is either uploadPartSizeInBytes or the remaining bytes in the file
-              // stream
-              // (as long as the chunk is greater than ~5MB)
-              min(uploadPartSizeInBytes, uploadRequest.fileSize - uploadRequest.bytesUploaded)
-            }
-          val buffer = ByteArray(chunkSize.toInt())
-          withContext(Dispatchers.IO) { dataStream.read(buffer) }
-          println("Uploading part ${uploadRequest.nextPart}..")
-          uploadPart(uploadRequest, buffer, chunkSize)
-          emit(UploadResult.Success(uploadRequest, chunkSize, Date.from(Instant.now())))
-        }
-        println("Uploaded all parts. Merging all requests...")
-        emit(mergeMultipartUpload(uploadRequest))
-        println("Upload Merged")
+      // https://stackoverflow.com/a/28804975
+      dataStream.channel.position(uploadRequest.fileOffset)
+      var bytesUploaded = uploadRequest.fileOffset
+      // Upload until last part
+      while (!uploadRequest.isMultiPart &&
+        uploadRequest.fileSize - bytesUploaded >= uploadPartSizeInBytes + minPartSizeInBytes) {
+        val chunkSize = uploadPartSizeInBytes
+        val buffer = ByteArray(chunkSize.toInt())
+        withContext(Dispatchers.IO) { dataStream.read(buffer) }
+        Timber.d("Uploading part ${uploadRequest.nextPart}..")
+        uploadPart(uploadRequest, buffer, chunkSize)
+        bytesUploaded += chunkSize
+        emit(UploadResult.Success(uploadRequest, chunkSize, Date.from(Instant.now())))
       }
+      val chunkSize = uploadRequest.fileSize - bytesUploaded
+      val buffer = ByteArray(chunkSize.toInt())
+      withContext(Dispatchers.IO) { dataStream.read(buffer) }
+      uploadPart(uploadRequest, buffer, chunkSize)
+      emit(UploadResult.Success(uploadRequest, chunkSize, Date.from(Instant.now())))
+      emit(mergeMultipartUpload(uploadRequest))
+      Timber.d("File Uploaded and Merged")
     }
   }
 
@@ -104,7 +95,7 @@ class Uploader(
     val parts = arrayOfNulls<Part>(1000)
     val partResult: ListPartsResponse =
       blobstoreService.listMultipart(
-        bucketName,
+        serverConfiguration.bucketName,
         null,
         uploadRequest.uploadRelativeURL,
         1000,
@@ -119,7 +110,7 @@ class Uploader(
       partNumber++
     }
     blobstoreService.mergeMultipartUpload(
-      bucketName,
+      serverConfiguration.bucketName,
       null,
       uploadRequest.uploadRelativeURL,
       uploadRequest.uploadId,
@@ -136,7 +127,7 @@ class Uploader(
     chunkSize: Long,
   ): UploadPartResponse? {
     return blobstoreService.uploadFilePart(
-      bucketName,
+      serverConfiguration.bucketName,
       null,
       uploadRequest.uploadRelativeURL,
       data,

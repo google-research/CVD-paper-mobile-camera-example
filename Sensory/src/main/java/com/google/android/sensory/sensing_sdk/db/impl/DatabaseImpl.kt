@@ -18,6 +18,7 @@ package com.google.android.sensory.sensing_sdk.db.impl
 
 import android.content.Context
 import androidx.room.Room
+import com.google.android.sensory.sensing_sdk.DatabaseErrorStrategy
 import com.google.android.sensory.sensing_sdk.db.Database
 import com.google.android.sensory.sensing_sdk.model.CaptureInfo
 import com.google.android.sensory.sensing_sdk.model.RequestStatus
@@ -27,11 +28,11 @@ import net.sqlcipher.database.SQLiteDatabase
 import net.sqlcipher.database.SupportFactory
 
 /** Implementation of [Database]. */
-internal class DatabaseImpl(context: Context, enableEncryption: Boolean) : Database {
+internal class DatabaseImpl(context: Context, databaseConfig: DatabaseConfig) : Database {
   val db: ResourceDatabase =
     Room.databaseBuilder(context, ResourceDatabase::class.java, ENCRYPTED_DATABASE_NAME)
       .apply {
-        if (enableEncryption) {
+        if (databaseConfig.enableEncryption) {
           openHelperFactory(SupportFactory(SQLiteDatabase.getBytes("PassPhrase".toCharArray())))
         }
       }
@@ -81,3 +82,8 @@ internal class DatabaseImpl(context: Context, enableEncryption: Boolean) : Datab
     const val ENCRYPTED_DATABASE_NAME = "sensor_resources_encrypted.db"
   }
 }
+
+data class DatabaseConfig(
+  val enableEncryption: Boolean,
+  val databaseErrorStrategy: DatabaseErrorStrategy
+)

@@ -30,6 +30,7 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
+import com.google.android.sensory.sensing_sdk.SensingEngineProvider
 import com.google.android.sensory.sensing_sdk.model.CaptureInfo
 import com.google.android.sensory.sensing_sdk.model.SensorType
 import com.google.common.util.concurrent.FutureCallback
@@ -42,6 +43,7 @@ import com.google.fitbit.research.sensing.common.libraries.camera.storage.WriteJ
 import com.google.fitbit.research.sensing.common.libraries.flow.FlowGate
 import com.google.fitbit.research.sensing.common.libraries.storage.StreamToTsvSubscriber
 import java.io.File
+import java.util.UUID
 import java.util.concurrent.Executors
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -59,8 +61,6 @@ import kotlinx.coroutines.launch
 @ExperimentalCamera2Interop
 class CaptureViewModel(application: Application) : AndroidViewModel(application) {
   lateinit var captureInfo: CaptureInfo
-  private lateinit var onCaptureCompleteCallback:
-    suspend ((CaptureInfo) -> Flow<SensorCaptureResult>)
 
   private val _captureResultFlow = MutableSharedFlow<SensorCaptureResult>()
   val captureResultFlow: Flow<SensorCaptureResult>
@@ -74,11 +74,20 @@ class CaptureViewModel(application: Application) : AndroidViewModel(application)
 
   fun setupCaptureResultFlow(
     captureInfo: CaptureInfo,
-    onCaptureComplete: suspend ((CaptureInfo) -> Flow<SensorCaptureResult>),
     captureResultCollector: suspend ((Flow<SensorCaptureResult>) -> Unit)
   ) {
+    if (captureInfo.captureId != null) {
+      // delete everything in folder associated with this captureId to re-capture
+      val file =
+        File(
+          Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
+          captureInfo.captureFolder
+        )
+      file.deleteRecursively()
+    } else {
+      captureInfo.apply { captureId = UUID.randomUUID().toString() }
+    }
     this.captureInfo = captureInfo
-    this.onCaptureCompleteCallback = onCaptureComplete
     GlobalScope.launch { captureResultCollector(captureResultFlow) }
   }
   fun processRecord(camera: Camera2InteropSensor) {
@@ -220,16 +229,17 @@ class CaptureViewModel(application: Application) : AndroidViewModel(application)
   }
 
   /**
-   * This essentially invokes the [SensingEngine.onCaptureCompleteCallback] which emits
-   * [SensorCaptureResult] upon saving resources to database. Happens in [CoroutineScope] and not
-   * [viewModelScope] because the fragment and its viewModel can get destroyed before resources are
-   * saved into the database. Emitted [SensorCaptureResult] are collected here arnd re-emitted to
-   * the [_captureResultFlow] which in turn is collected by the application developers via
-   * [captureResultCollector]
+   * This invokes [SensingEngine.onCaptureCompleteCallback] which emits [SensorCaptureResult] upon
+   * saving resources to database. Happens in [CoroutineScope] and not [viewModelScope] because the
+   * fragment and its viewModel can get destroyed before resources are saved into the database.
+   * Emitted [SensorCaptureResult] are collected here arnd re-emitted to the [_captureResultFlow]
+   * which in turn is collected by the application developers via [captureResultCollector]
    */
   fun captureComplete() {
     CoroutineScope(context = Dispatchers.IO).launch {
-      onCaptureCompleteCallback(captureInfo).collect { _captureResultFlow.emit(it) }
+      SensingEngineProvider.getOrCreateSensingEngine(getApplication())
+        .onCaptureCompleteCallback(captureInfo)
+        .collect { _captureResultFlow.emit(it) }
     }
   }
 

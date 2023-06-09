@@ -23,11 +23,6 @@ import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequest
 import androidx.work.PeriodicWorkRequest
 import androidx.work.WorkManager
-import com.google.android.sensory.sensing_sdk.MAX_RETRIES_ALLOWED
-import com.google.android.sensory.sensing_sdk.PeriodicSyncConfiguration
-import com.google.android.sensory.sensing_sdk.RetryConfiguration
-import com.google.android.sensory.sensing_sdk.defaultPeriodicSyncConfiguration
-import com.google.android.sensory.sensing_sdk.defaultRetryConfiguration
 
 object UploadSync {
   inline fun <reified W : SensorDataUploadWorker> enqueueUploadUniqueWork(
@@ -36,7 +31,7 @@ object UploadSync {
   ) {
     WorkManager.getInstance(context)
       .enqueueUniqueWork(
-        W::class.java.name,
+        "Unique_" + W::class.java.name,
         ExistingWorkPolicy.KEEP,
         createOneTimeWorkRequest(retryConfiguration, W::class.java)
       )
@@ -67,7 +62,7 @@ object UploadSync {
   ) {
     WorkManager.getInstance(context)
       .enqueueUniquePeriodicWork(
-        W::class.java.name,
+        "Periodic_" + W::class.java.name,
         ExistingPeriodicWorkPolicy.KEEP,
         createPeriodicWorkRequest(periodicSyncConfiguration, W::class.java)
       )

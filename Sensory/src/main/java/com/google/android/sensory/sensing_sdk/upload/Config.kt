@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.google.android.sensory.sensing_sdk
+package com.google.android.sensory.sensing_sdk.upload
 
 import androidx.work.BackoffPolicy
 import androidx.work.Constraints
@@ -88,13 +88,3 @@ data class BackoffCriteria(
   /** The time unit for [backoffDelay] */
   val timeUnit: TimeUnit,
 )
-
-data class UploadConfiguration(
-  val HOST: String,
-  val ACCESS_HOST: String,
-  val bucketName: String,
-  val user: String,
-  val password: String,
-) {
-  fun getBlobStorageAccessURL() = "$ACCESS_HOST/$bucketName"
-}

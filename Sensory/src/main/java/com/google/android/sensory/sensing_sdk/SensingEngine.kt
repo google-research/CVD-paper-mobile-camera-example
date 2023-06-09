@@ -17,7 +17,6 @@
 package com.google.android.sensory.sensing_sdk
 
 import android.content.Intent
-import com.google.android.sensory.sensing_sdk.capture.CaptureFragment
 import com.google.android.sensory.sensing_sdk.capture.SensorCaptureResult
 import com.google.android.sensory.sensing_sdk.model.CaptureInfo
 import com.google.android.sensory.sensing_sdk.model.RequestStatus
@@ -27,37 +26,16 @@ import com.google.android.sensory.sensing_sdk.model.UploadResult
 import kotlinx.coroutines.flow.Flow
 
 /**
- * The Sensing Engine interface that handles the local storage of captured resources. It also acts
- * as a factory to create [CaptureFragment]. TODO(mjajoo@) For application developers to use the
- * upload mechanism ONLY [onCaptureCompleteCallback] is not enough. We need to add CRUD APIs for
- * UploadRequest also.
+ * The Sensing Engine interface that handles the local storage of captured resources. TODO(mjajoo@)
+ * For application developers to use the upload mechanism ONLY CRUD APIs for UploadRequest will need
+ * to be added.
  */
 interface SensingEngine {
 
   /**
-   * Returns [CaptureFragment] for given captureType. This API is needed because:-
-   * 1. Each invocation requires different [CaptureInfo] and hence can't be globally configured.
-   * 2. Since SensingEngine is also responsible for updating database records, this API acts as a
-   * factory that constructs a [CaptureFragment] instance in a way that [onCaptureCompleteCallback]
-   * is called once capture is completed.
-   * 3. We want application developers to have more control over the UI using the returned fragment.
-   * Application developers are responsible for handling lifecycle of the fragment returned which
-   * should be straight forward since we can fairly assume that capturing via camera is a foreground
-   * 1-time activity.
-   * 4. This way we also leave other Fragments involved in capturing, like InstructionFragments, out
-   * of scope of this Sensing SDK.
-   * @param captureInfo All capture information including participantId, captureSettings, etc.
-   * @param sensorCaptureResultCollector Application callback to collect [SensorCaptureResult]
-   */
-  fun captureFragment(
-    captureInfo: CaptureInfo,
-    sensorCaptureResultCollector: suspend ((Flow<SensorCaptureResult>) -> Unit)
-  ): CaptureFragment
-
-  /**
-   * Responsible for creating resource records for captured data and completing upload setup.
-   * Limitation: All captured data and metadata are stored in the same folder and zipped for
-   * uploading.
+   * Responsible for creating resource records for captured data and completing upload setup. This
+   * API is triggerd by [CaptureViewModel] after completion of capturing. Limitation: All captured
+   * data and metadata are stored in the same folder and zipped for uploading.
    * 1. Save [CaptureInfo] in the database
    * 2. read map for a capture type, for each sensor type:-
    * ```

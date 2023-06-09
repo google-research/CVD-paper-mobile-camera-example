@@ -27,8 +27,10 @@ import com.google.android.sensory.example.fhir_data.AppSensorDataUploadWorker
 import com.google.android.sensory.example.fhir_data.FhirSyncWorker
 import com.google.android.sensory.sensing_sdk.upload.UploadSync
 import java.util.concurrent.TimeUnit
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class MainActivityViewModel(application: Application) : AndroidViewModel(application) {
   init {
     viewModelScope.launch {

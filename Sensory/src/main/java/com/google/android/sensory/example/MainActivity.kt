@@ -21,7 +21,6 @@ import android.content.DialogInterface
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
-import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
@@ -37,12 +36,12 @@ class MainActivity : AppCompatActivity() {
     // Request permissions.
     if (!hasPermissions()) {
       permissionsRequestCount = 0
-      ActivityCompat.requestPermissions(this, getRequiredPermissions(), REQUEST_CODE_PERMISSIONS)
+      ActivityCompat.requestPermissions(this, REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS)
     }
   }
 
   private fun hasPermissions(): Boolean {
-    return !Arrays.stream(getRequiredPermissions()).anyMatch {
+    return !Arrays.stream(REQUIRED_PERMISSIONS).anyMatch {
       ActivityCompat.checkSelfPermission(applicationContext, it) !=
         PackageManager.PERMISSION_GRANTED
     }
@@ -55,18 +54,14 @@ class MainActivity : AppCompatActivity() {
   ) {
     super.onRequestPermissionsResult(requestCode, permissions, grantResults)
     if (REQUEST_CODE_PERMISSIONS == requestCode) {
-      if (grantResults.size < getRequiredPermissions().size ||
+      if (grantResults.size < REQUIRED_PERMISSIONS.size ||
           grantResults[0] != PackageManager.PERMISSION_GRANTED ||
           grantResults[1] != PackageManager.PERMISSION_GRANTED
       ) {
         if (permissionsRequestCount < MAX_PERMISSIONS_REQUESTS) {
           // Retry getting permissions.
           permissionsRequestCount++
-          ActivityCompat.requestPermissions(
-            this,
-            getRequiredPermissions(),
-            REQUEST_CODE_PERMISSIONS
-          )
+          ActivityCompat.requestPermissions(this, REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS)
         } else {
           // Too many attempts, alert and quit.
           val builder = AlertDialog.Builder(this)
@@ -85,29 +80,22 @@ class MainActivity : AppCompatActivity() {
     }
   }
 
-  private fun getRequiredPermissions(): Array<String> {
-    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-      REQUIRED_PERMISSIONS_33
-    } else REQUIRED_PERMISSIONS
-  }
-
   companion object {
     private const val MAX_PERMISSIONS_REQUESTS = 10
     private const val REQUEST_CODE_PERMISSIONS = 100
     private val REQUIRED_PERMISSIONS =
-      arrayOf(
-        Manifest.permission.CAMERA,
-        Manifest.permission.WRITE_EXTERNAL_STORAGE,
-        Manifest.permission.READ_EXTERNAL_STORAGE
-      )
-
-    @RequiresApi(api = Build.VERSION_CODES.TIRAMISU)
-    private val REQUIRED_PERMISSIONS_33 =
-      arrayOf(
-        Manifest.permission.CAMERA,
-        Manifest.permission.READ_MEDIA_IMAGES,
-        Manifest.permission.READ_MEDIA_AUDIO,
-        Manifest.permission.READ_MEDIA_VIDEO
-      )
+      if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU)
+        arrayOf(
+          Manifest.permission.CAMERA,
+          Manifest.permission.WRITE_EXTERNAL_STORAGE,
+          Manifest.permission.READ_EXTERNAL_STORAGE
+        )
+      else
+        arrayOf(
+          Manifest.permission.CAMERA,
+          Manifest.permission.READ_MEDIA_IMAGES,
+          Manifest.permission.READ_MEDIA_AUDIO,
+          Manifest.permission.READ_MEDIA_VIDEO
+        )
   }
 }

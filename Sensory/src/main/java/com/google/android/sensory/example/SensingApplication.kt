@@ -24,16 +24,18 @@ import com.google.android.fhir.datacapture.DataCaptureConfig
 import com.google.android.fhir.datacapture.QuestionnaireFragment
 import com.google.android.sensory.example.fhir_data.PPGSensorCaptureViewHolderFactory
 import com.google.android.sensory.example.fhir_data.PhotoCaptureViewHolderFactory
+import com.google.android.sensory.sensing_sdk.Authenticator
 import com.google.android.sensory.sensing_sdk.SensingEngine
+import com.google.android.sensory.sensing_sdk.SensingEngineConfiguration
 import com.google.android.sensory.sensing_sdk.SensingEngineProvider
-import com.google.android.sensory.sensing_sdk.UploadConfiguration
+import com.google.android.sensory.sensing_sdk.ServerConfiguration
 import java.util.Properties
 
 class SensingApplication : Application(), DataCaptureConfig.Provider {
   private val fhirEngine by lazy { constructFhirEngine() }
   private var dataCaptureConfig: DataCaptureConfig? = null
   private val sensingEngine by lazy { constructSensingEngine() }
-  private val uploadConfiguration by lazy { constructUploadConfiguration() }
+  private val sensingEngineConfiguration by lazy { constructSensingEngineConfiguration() }
 
   override fun onCreate() {
     super.onCreate()
@@ -45,18 +47,26 @@ class SensingApplication : Application(), DataCaptureConfig.Provider {
   }
 
   private fun constructSensingEngine(): SensingEngine {
-    SensingEngineProvider.init(uploadConfiguration)
-    return SensingEngineProvider.getOrCreateSensingEngine(applicationContext, false)
+    SensingEngineProvider.init(sensingEngineConfiguration)
+    return SensingEngineProvider.getOrCreateSensingEngine(applicationContext)
   }
 
-  private fun constructUploadConfiguration(): UploadConfiguration {
+  private fun constructSensingEngineConfiguration(): SensingEngineConfiguration {
     val properties = Properties().apply { load(applicationContext.assets.open("local.properties")) }
-    return UploadConfiguration(
-      HOST = properties.getProperty("HOST"),
-      ACCESS_HOST = properties.getProperty("ACCESS_HOST"),
-      bucketName = properties.getProperty("BUCKET_NAME"),
-      user = properties.getProperty("USER"),
-      password = properties.getProperty("PASSWORD")
+    return SensingEngineConfiguration(
+      enableEncryptionIfSupported = false,
+      serverConfiguration =
+        ServerConfiguration(
+          baseUrl = properties.getProperty("BASE_URL"),
+          baseAccessUrl = properties.getProperty("BASE_ACCESS_URL"),
+          bucketName = properties.getProperty("BUCKET_NAME"),
+          authenticator =
+            object : Authenticator {
+              override fun getUserName() = properties.getProperty("USER")
+
+              override fun getPassword() = properties.getProperty("PASSWORD")
+            }
+        )
     )
   }
 
@@ -73,7 +83,8 @@ class SensingApplication : Application(), DataCaptureConfig.Provider {
       (context.applicationContext as SensingApplication).sensingEngine
 
     fun uploadConfiguration(context: Context) =
-      (context.applicationContext as SensingApplication).uploadConfiguration
+      (context.applicationContext as SensingApplication)
+        .sensingEngineConfiguration.serverConfiguration
   }
 
   override fun getDataCaptureConfig(): DataCaptureConfig {

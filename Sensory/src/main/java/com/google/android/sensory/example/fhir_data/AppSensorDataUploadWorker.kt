@@ -25,5 +25,5 @@ class AppSensorDataUploadWorker(appContext: Context, workerParams: WorkerParamet
   SensorDataUploadWorker(appContext, workerParams) {
   override fun getSensingEngine() = SensingApplication.sensingEngine(applicationContext)
 
-  override fun getUploadConfiguration() = SensingApplication.uploadConfiguration(applicationContext)
+  override fun getServerConfiguration() = SensingApplication.uploadConfiguration(applicationContext)
 }

@@ -35,6 +35,7 @@ import com.google.android.sensory.R
 import com.google.android.sensory.example.InstructionsFragment
 import com.google.android.sensory.example.SensingApplication
 import com.google.android.sensory.sensing_sdk.SensingEngine
+import com.google.android.sensory.sensing_sdk.capture.CaptureFragment
 import com.google.android.sensory.sensing_sdk.capture.CaptureSettings
 import com.google.android.sensory.sensing_sdk.capture.SensorCaptureResult
 import com.google.android.sensory.sensing_sdk.model.CaptureInfo
@@ -51,14 +52,13 @@ object PhotoCaptureViewHolderFactory :
   override fun getQuestionnaireItemViewHolderDelegate() =
     object : QuestionnaireItemViewHolderDelegate {
       override lateinit var questionnaireViewItem: QuestionnaireViewItem
-      private lateinit var question: TextView
       private lateinit var takePhotoButton: Button
       private lateinit var photoPreview: ConstraintLayout
       private lateinit var photoThumbnail: ImageView
       private lateinit var photoTitle: TextView
       private lateinit var context: AppCompatActivity
       private lateinit var sensingEngine: SensingEngine
-      private lateinit var TITLE: String
+      private lateinit var QUESTION_TITLE: String
 
       override fun init(itemView: View) {
         ViewHolderFactoryUtil.removeUnwantedViews(itemView)
@@ -74,7 +74,7 @@ object PhotoCaptureViewHolderFactory :
 
       override fun bind(questionnaireViewItem: QuestionnaireViewItem) {
         this.questionnaireViewItem = questionnaireViewItem
-        TITLE = questionnaireViewItem.questionnaireItem.text
+        QUESTION_TITLE = questionnaireViewItem.questionnaireItem.text
         displayOrClearInitialPreview()
         displayTakePhotoButton(/*questionnaireItem*/ )
         takePhotoButton.setOnClickListener { view -> onTakePhotoButtonClicked(view) }
@@ -112,7 +112,9 @@ object PhotoCaptureViewHolderFactory :
               )!!
             )
           }
-          livePath.observe(context) { displayPreview(attachmentTitle = TITLE, attachmentUri = it) }
+          livePath.observe(context) {
+            displayPreview(attachmentTitle = QUESTION_TITLE, attachmentUri = it)
+          }
         }
       }
 
@@ -135,33 +137,35 @@ object PhotoCaptureViewHolderFactory :
               .getString(SensingApplication.CURRENT_PATIENT_ID, null)!!
           val captureId = questionnaireViewItem.answers.firstOrNull()?.valueCoding?.code
           val captureFragment =
-            sensingEngine.captureFragment(
-              captureInfo =
+            CaptureFragment().apply {
+              setCaptureInfo(
                 CaptureInfo(
                   participantId = participantId,
                   captureType = CaptureType.IMAGE,
-                  captureFolder = "Sensory/Participant_$participantId/$TITLE",
+                  captureFolder = "Sensory/Participant_$participantId/$QUESTION_TITLE",
                   captureSettings =
                     CaptureSettings(
                       fileTypeMap = mapOf(SensorType.CAMERA to "jpeg"),
                       metaDataTypeMap = mapOf(SensorType.CAMERA to "tsv"),
                       titleMap = mapOf(SensorType.CAMERA to SensingApplication.APP_VERSION),
-                      captureTitle = TITLE
+                      captureTitle = QUESTION_TITLE
                     ),
                   captureId = captureId,
                 )
-            ) { sensorCaptureResultFlow ->
-              sensorCaptureResultFlow.collect {
-                if (it is SensorCaptureResult.ResourceStoringComplete) {
-                  val answer =
-                    QuestionnaireResponse.QuestionnaireResponseItemAnswerComponent().apply {
-                      value =
-                        Coding().apply {
-                          code = it.captureId
-                          system = CaptureType.IMAGE.name
-                        }
-                    }
-                  questionnaireViewItem.setAnswer(answer)
+              )
+              setSensorCaptureResultCollector { sensorCaptureResultFlow ->
+                sensorCaptureResultFlow.collect {
+                  if (it is SensorCaptureResult.ResourceStoringComplete) {
+                    val answer =
+                      QuestionnaireResponse.QuestionnaireResponseItemAnswerComponent().apply {
+                        value =
+                          Coding().apply {
+                            code = it.captureId
+                            system = CaptureType.IMAGE.name
+                          }
+                      }
+                    questionnaireViewItem.setAnswer(answer)
+                  }
                 }
               }
             }
@@ -177,7 +181,7 @@ object PhotoCaptureViewHolderFactory :
           .replace(
             R.id.nav_host_fragment,
             InstructionsFragment().apply {
-              arguments = bundleOf(InstructionsFragment.TITLE to TITLE)
+              arguments = bundleOf(InstructionsFragment.TITLE to QUESTION_TITLE)
             }
           )
           .setReorderingAllowed(true)

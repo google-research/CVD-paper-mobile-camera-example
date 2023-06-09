@@ -21,7 +21,7 @@ import android.content.Intent
 import android.os.Environment
 import androidx.camera.camera2.interop.ExperimentalCamera2Interop
 import com.google.android.sensory.sensing_sdk.SensingEngine
-import com.google.android.sensory.sensing_sdk.UploadConfiguration
+import com.google.android.sensory.sensing_sdk.ServerConfiguration
 import com.google.android.sensory.sensing_sdk.capture.CaptureFragment
 import com.google.android.sensory.sensing_sdk.capture.CaptureUtil
 import com.google.android.sensory.sensing_sdk.capture.SensorCaptureResult
@@ -48,36 +48,14 @@ import kotlinx.coroutines.flow.flow
  * @param database Interface to interact with room database.
  * @param context [Context] to access fragmentManager, to launch fragments, to access files and
  * resources in the application context.
- * @param uploadConfiguration Upload configurations like HOST, USER, etc.
+ * @param serverConfiguration
  */
 @ExperimentalCamera2Interop
 internal class SensingEngineImpl(
   private val database: Database,
   private val context: Context,
-  private val uploadConfiguration: UploadConfiguration,
+  private val serverConfiguration: ServerConfiguration,
 ) : SensingEngine {
-
-  override fun captureFragment(
-    captureInfo: CaptureInfo,
-    sensorCaptureResultCollector: suspend ((Flow<SensorCaptureResult>) -> Unit)
-  ): CaptureFragment {
-    if (captureInfo.captureId != null) {
-      // delete everything in folder associated with this captureId to re-capture
-      val file =
-        File(
-          Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
-          captureInfo.captureFolder
-        )
-      file.deleteRecursively()
-    } else {
-      captureInfo.apply { captureId = UUID.randomUUID().toString() }
-    }
-    return CaptureFragment(
-      captureInfo = captureInfo,
-      onCaptureCompleteCallback = this::onCaptureCompleteCallback,
-      captureResultCollector = sensorCaptureResultCollector
-    )
-  }
 
   override suspend fun onCaptureCompleteCallback(captureInfo: CaptureInfo) = flow {
     database.addCaptureInfo(captureInfo)
@@ -94,7 +72,7 @@ internal class SensingEngineImpl(
           resourceFolderPath =
             Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
               .absolutePath + "/$resourceFolderRelativePath",
-          uploadURL = uploadConfiguration.getBlobStorageAccessURL() + uploadRelativeUrl,
+          uploadURL = serverConfiguration.getBucketUrl() + uploadRelativeUrl,
           status = RequestStatus.PENDING
         )
       database.addResourceInfo(resourceInfo)
@@ -128,12 +106,13 @@ internal class SensingEngineImpl(
           resourceInfoId = resourceInfo.resourceInfoId,
           zipFile = outputZipFile,
           fileSize = File(outputZipFile).length(),
+          fileOffset = 0L,
           uploadRelativeURL = uploadRelativeUrl,
-          lastUpdatedTime = Date.from(Instant.now()),
-          bytesUploaded = 0L,
-          status = RequestStatus.PENDING,
+          isMultiPart = serverConfiguration.networkConfiguration.isMultiPart,
           nextPart = 1,
-          uploadId = null
+          uploadId = null,
+          status = RequestStatus.PENDING,
+          lastUpdatedTime = Date.from(Instant.now())
         )
       database.addUploadRequest(uploadRequest)
     }
@@ -160,7 +139,7 @@ internal class SensingEngineImpl(
         is UploadResult.Started -> {
           uploadRequest.apply {
             lastUpdatedTime = result.startTime
-            bytesUploaded = 0
+            fileOffset = 0
             status = RequestStatus.UPLOADING
             uploadId = result.uploadId
           }
@@ -168,15 +147,17 @@ internal class SensingEngineImpl(
         is UploadResult.Success -> {
           uploadRequest.apply {
             lastUpdatedTime = result.lastUploadTime
-            bytesUploaded = uploadRequest.bytesUploaded + result.bytesUploaded
+            fileOffset = uploadRequest.fileOffset + result.bytesUploaded
           }
         }
         is UploadResult.Completed -> {
-          assert(uploadRequest.bytesUploaded == uploadRequest.fileSize)
+          assert(uploadRequest.fileOffset == uploadRequest.fileSize)
           uploadRequest.apply {
             lastUpdatedTime = result.completeTime
             status = RequestStatus.UPLOADED
           }
+          /** Delete the zipped file as its no longer required. */
+          File(uploadRequest.zipFile).delete()
         }
         is UploadResult.Failure -> {
           uploadRequest.apply {
@@ -191,8 +172,6 @@ internal class SensingEngineImpl(
         val resourceInfo = database.getResourceInfo(uploadRequest.resourceInfoId)!!
         resourceInfo.apply { status = uploadRequest.status }
         database.updateResourceInfo(resourceInfo)
-        /** Delete the zipped file as its no longer required. */
-        File(uploadRequest.zipFile).delete()
       }
     }
   }

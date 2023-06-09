@@ -65,12 +65,13 @@ internal fun UploadRequestEntity.toUploadRequest() =
     resourceInfoId = resourceInfoId,
     zipFile = zipFile,
     fileSize = fileSize,
+    fileOffset = fileOffset,
     uploadRelativeURL = uploadRelativeURL,
-    lastUpdatedTime = Date.from(lastUpdatedTime),
-    bytesUploaded = bytesUploaded,
-    status = status,
+    isMultiPart = isMultiPart,
     nextPart = nextPart,
-    uploadId = uploadId
+    uploadId = uploadId,
+    status = status,
+    lastUpdatedTime = Date.from(lastUpdatedTime)
   )
 
 internal fun UploadRequest.toUploadRequestEntity() =
@@ -80,10 +81,11 @@ internal fun UploadRequest.toUploadRequestEntity() =
     resourceInfoId = resourceInfoId,
     zipFile = zipFile,
     fileSize = fileSize,
+    fileOffset = fileOffset,
     uploadRelativeURL = uploadRelativeURL,
-    lastUpdatedTime = lastUpdatedTime.toInstant(),
-    bytesUploaded = bytesUploaded,
-    status = status,
+    isMultiPart = isMultiPart,
     nextPart = nextPart,
-    uploadId = uploadId
+    uploadId = uploadId,
+    status = status,
+    lastUpdatedTime = lastUpdatedTime.toInstant()
   )

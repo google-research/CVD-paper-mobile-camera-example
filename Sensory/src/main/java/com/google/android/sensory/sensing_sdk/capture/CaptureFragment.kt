@@ -52,16 +52,13 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 
 /**
- * God-like fragment dealing with all sensors: For now only camera with capture types being
+ * Fragment that deals with all sensors: For now only camera with capture types being
  * [CaptureType.VIDEO_PPG] and [CaptureType.IMAGE]. The UI is programmatically inflated based on the
  * captureType given. Reason why all [CaptureType]s are managed by this fragment is for a given
  * capture type, multiple sensors may be required. Business logic like subscribing, emitting flows
- * of [SensorCaptureResult], timers, livedata handling are done in [CaptureViewModel]
- * @param captureInfo All details about the capture
- * @param onCaptureCompleteCallback Callback for the Sensing SDK to update database records
- * @param captureResultCollector Callback defined by the application developers that collects
- * emitted [SensorCaptureResult] from [onCaptureCompleteCallback]. TODO(mjajoo@): This is too
- * customised and we will need to make it configurable. Configurability options:-
+ * of [SensorCaptureResult], timers, livedata handling are done in [CaptureViewModel].
+ * TODO(mjajoo@): This is too customised and we will need to make it configurable. Configurability
+ * options:-
  * 1. CaptureRequestOptions could be a part of [captureInfo.captureSettings] instead of being
  * hardcoded in the viewModel
  * 2. WriteJpegFutureSubscriber could be any generic subscriber
@@ -71,13 +68,11 @@ import kotlinx.coroutines.launch
  * 6. File suppliers should be more generic ==>> DONE
  */
 @SuppressLint("UnsafeOptInUsageError")
-class CaptureFragment(
-  private val captureInfo: CaptureInfo,
-  private val onCaptureCompleteCallback: suspend ((CaptureInfo) -> Flow<SensorCaptureResult>),
-  private val captureResultCollector: suspend ((Flow<SensorCaptureResult>) -> Unit)
-) : Fragment() {
+class CaptureFragment : Fragment() {
 
   private val captureViewModel by viewModels<CaptureViewModel>()
+  private lateinit var sensorCaptureResultCollector: suspend ((Flow<SensorCaptureResult>) -> Unit)
+  private var captureInfo: CaptureInfo? = null
 
   private var camera: Camera2InteropSensor? = null
 
@@ -88,12 +83,27 @@ class CaptureFragment(
   private lateinit var recordTimer: TextView
   private lateinit var btnTakePhoto: Button
 
+  /**
+   * Callback defined by the application developers that collects emitted [SensorCaptureResult] from
+   * [SensingEngine::onCaptureCompleteCallback].
+   */
+  fun setSensorCaptureResultCollector(
+    sensorCaptureResultCollector: suspend ((Flow<SensorCaptureResult>) -> Unit)
+  ) {
+    this.sensorCaptureResultCollector = sensorCaptureResultCollector
+  }
+
+  /** All details about the capture. Not passing via arguments as it requires API >= 33. */
+  fun setCaptureInfo(captureInfo: CaptureInfo) {
+    this.captureInfo = captureInfo
+  }
+
+  @SuppressLint("UseRequireInsteadOfGet")
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
     captureViewModel.setupCaptureResultFlow(
-      captureInfo = captureInfo,
-      onCaptureComplete = onCaptureCompleteCallback,
-      captureResultCollector = captureResultCollector
+      captureInfo = captureInfo!!,
+      captureResultCollector = sensorCaptureResultCollector
     )
   }
 
@@ -107,7 +117,7 @@ class CaptureFragment(
     (requireActivity() as AppCompatActivity).supportActionBar?.hide()
     /** *** To fit full screen */
     /** For a different [CaptureType] sensors may be initialized differently. */
-    when (captureInfo.captureType) {
+    when (captureViewModel.captureInfo.captureType) {
       CaptureType.VIDEO_PPG -> {
         preview = Preview.Builder().build()
         camera =
@@ -137,7 +147,7 @@ class CaptureFragment(
     }
     setupObservers()
     val layout =
-      when (captureInfo.captureType) {
+      when (captureViewModel.captureInfo.captureType) {
         CaptureType.VIDEO_PPG -> R.layout.fragment_video_ppg
         CaptureType.IMAGE -> R.layout.fragment_image
       }
@@ -146,7 +156,7 @@ class CaptureFragment(
 
   override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
     super.onViewCreated(view, savedInstanceState)
-    when (captureInfo.captureType) {
+    when (captureViewModel.captureInfo.captureType) {
       CaptureType.VIDEO_PPG -> {
         previewView = view.findViewById(R.id.preview_view)
         recordFab = view.findViewById(R.id.record_fab)
@@ -196,7 +206,7 @@ class CaptureFragment(
   }
 
   private fun setupObservers() {
-    if (captureInfo.captureType == CaptureType.VIDEO_PPG) {
+    if (captureViewModel.captureInfo.captureType == CaptureType.VIDEO_PPG) {
       captureViewModel.isPhoneSafeToUse.observe(viewLifecycleOwner) {
         if (!it) {
           showOverheatDialog()
@@ -228,7 +238,7 @@ class CaptureFragment(
       if (it == null) return@observe
       if (!it) {
         val toastText =
-          when (captureInfo.captureType) {
+          when (captureViewModel.captureInfo.captureType) {
             CaptureType.VIDEO_PPG -> "Failed to save Video"
             CaptureType.IMAGE -> "Failed to save Image"
           }
@@ -236,7 +246,7 @@ class CaptureFragment(
         return@observe
       }
       val toastText =
-        when (captureInfo.captureType) {
+        when (captureViewModel.captureInfo.captureType) {
           CaptureType.VIDEO_PPG -> "Video Saved"
           CaptureType.IMAGE -> "Image Saved"
         }

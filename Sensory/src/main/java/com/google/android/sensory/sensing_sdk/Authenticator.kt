@@ -14,22 +14,19 @@
  * limitations under the License.
  */
 
-package com.google.android.sensory.sensing_sdk.model
+package com.google.android.sensory.sensing_sdk
 
-import java.util.Date
-import java.util.UUID
+import androidx.annotation.WorkerThread
 
-/** Data class equivalent to UploadRequestEntity for usage outside database. */
-data class UploadRequest(
-  val requestUuid: UUID,
-  val resourceInfoId: String,
-  val zipFile: String,
-  val fileSize: Long,
-  var fileOffset: Long,
-  val uploadRelativeURL: String,
-  val isMultiPart: Boolean,
-  var nextPart: Int,
-  var uploadId: String? = null,
-  var status: RequestStatus,
-  var lastUpdatedTime: Date,
-)
+/**
+ * [SensingEngine] depends on the developer app to handle user's authentication. The developer
+ * application may provide the implementation during the [SensingEngine] initial setup to obtain
+ * username and password.
+ */
+interface Authenticator {
+  /** @return User name for the engine to make requests to the blob-storage on user's behalf. */
+  @WorkerThread fun getUserName(): String
+
+  /** @return Blob-storage account password for this user. */
+  @WorkerThread fun getPassword(): String
+}

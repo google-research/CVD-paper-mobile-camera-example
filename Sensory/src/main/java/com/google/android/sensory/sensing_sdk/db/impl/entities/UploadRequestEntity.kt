@@ -55,21 +55,24 @@ internal data class UploadRequestEntity(
   /** Total file size of the zip file to be uploaded in bytes. */
   val fileSize: Long,
 
+  /** Bytes uploaded out of the [fileSize]. */
+  val fileOffset: Long,
+
   /** Relative URL because the Uploader is configured with the HOST. */
   val uploadRelativeURL: String,
-
-  /** Time of initialization or successful part upload or completion. */
-  val lastUpdatedTime: Instant,
-
-  /** Bytes uploaded out of the [fileSize]. */
-  val bytesUploaded: Long,
-
-  /** Upload status. */
-  val status: RequestStatus,
 
   /** Next file part number to be uploaded. Updated post successful previous part uploading. */
   val nextPart: Int,
 
+  /** If the upload should be in multiple parts. */
+  val isMultiPart: Boolean,
+
   /** Assuming this value is either null or unique. Initialized from first upload response. */
   val uploadId: String? = null,
+
+  /** Upload status. */
+  val status: RequestStatus,
+
+  /** Time of initialization or successful part upload or completion. */
+  val lastUpdatedTime: Instant,
 )
