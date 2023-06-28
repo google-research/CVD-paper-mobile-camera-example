@@ -29,7 +29,7 @@ import com.google.android.sensory.sensing_sdk.db.impl.entities.UploadRequestEnti
 @Database(
   entities = [CaptureInfoEntity::class, ResourceInfoEntity::class, UploadRequestEntity::class],
   version = 1,
-  exportSchema = true
+  exportSchema = false
 )
 @TypeConverters(DbTypeConverters::class)
 internal abstract class ResourceDatabase : RoomDatabase() {

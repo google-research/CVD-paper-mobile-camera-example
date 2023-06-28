@@ -1,4 +1,15 @@
 <resources>
+  <!--  Sensing SDK-->
+  <string
+        name="overheat_dialog_title"
+    >Wait until the phone is not too hot before proceeding</string>
+  <string
+        name="overheat_dialog_message"
+    >Check that the camera area is no longer hot, before resuming the session.</string>
+  <string
+        name="overheat_ok_to_proceed"
+    >I have checked it is safe to proceed</string>
+  <!--  Sensing SDK-->
   <string name="app_name">Sensory</string>
   <string name="anemia_screening">Anemia Screening</string>
   <string name="data_collection_app">Mobile Sensors Study Workflow App</string>
@@ -71,15 +82,6 @@
   <string
         name="acknowledge_dialog_message"
     >This is a research mobile app developed by Google. This app is intended for research use only and is not intended for clinical use of any kind, including but not limited to diagnosis or prognosis.</string>
-  <string
-        name="overheat_dialog_title"
-    >Wait until the phone is not too hot before proceeding</string>
-  <string
-        name="overheat_dialog_message"
-    >Check that the camera area is no longer hot, before resuming the session.</string>
-  <string
-        name="overheat_ok_to_proceed"
-    >I have checked it is safe to proceed</string>
   <string
         name="permission_error_dialog_title"
     >Unable to get permissions.</string>

@@ -148,8 +148,8 @@ class CaptureFragment : Fragment() {
     setupObservers()
     val layout =
       when (captureViewModel.captureInfo.captureType) {
-        CaptureType.VIDEO_PPG -> R.layout.fragment_video_ppg
-        CaptureType.IMAGE -> R.layout.fragment_image
+        CaptureType.VIDEO_PPG -> R.layout.sensingsdk_fragment_video_ppg
+        CaptureType.IMAGE -> R.layout.sensingsdk_fragment_image
       }
     return inflater.inflate(layout, container, false)
   }
@@ -256,7 +256,7 @@ class CaptureFragment : Fragment() {
     lifecycleScope.launch {
       captureViewModel.captureResultFlow.collect {
         if (it is SensorCaptureResult.Started) {
-          recordFab.setImageResource(R.drawable.videocam_off)
+          recordFab.setImageResource(R.drawable.sensingsdk_videocam_off)
         }
         if (it is SensorCaptureResult.CaptureComplete) {
           finishCapturing()

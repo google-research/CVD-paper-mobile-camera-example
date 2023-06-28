@@ -132,7 +132,10 @@ internal class SensingEngineImpl(
   }
 
   override suspend fun syncUpload(upload: suspend (List<UploadRequest>) -> Flow<UploadResult>) {
-    upload(database.listUploadRequests(RequestStatus.PENDING)).collect { result ->
+    val uploadRequestsList =
+      database.listUploadRequests(RequestStatus.UPLOADING) +
+        database.listUploadRequests(RequestStatus.PENDING)
+    upload(uploadRequestsList).collect { result ->
       val uploadRequest = result.uploadRequest
       val requestsPreviousStatus = uploadRequest.status
       when (result) {

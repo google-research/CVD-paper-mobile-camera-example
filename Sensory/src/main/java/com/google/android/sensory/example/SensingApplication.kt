@@ -63,7 +63,6 @@ class SensingApplication : Application(), DataCaptureConfig.Provider {
           authenticator =
             object : Authenticator {
               override fun getUserName() = properties.getProperty("USER")
-
               override fun getPassword() = properties.getProperty("PASSWORD")
             }
         )

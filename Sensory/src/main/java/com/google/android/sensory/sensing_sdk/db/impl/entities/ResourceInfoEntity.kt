@@ -24,7 +24,7 @@ import com.google.android.sensory.sensing_sdk.model.RequestStatus
 @Entity(
   indices =
     [
-      // Index(value = ["resourceFolderPath"], unique = true),
+      Index(value = ["resourceFolderPath"], unique = true),
       Index(value = ["resourceInfoId"], unique = true),
       Index(value = ["captureId"]),
       Index(value = ["participantId"]),

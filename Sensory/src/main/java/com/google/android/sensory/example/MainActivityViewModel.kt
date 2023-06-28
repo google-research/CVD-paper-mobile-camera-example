@@ -23,8 +23,8 @@ import androidx.work.Constraints
 import com.google.android.fhir.sync.PeriodicSyncConfiguration
 import com.google.android.fhir.sync.RepeatInterval
 import com.google.android.fhir.sync.Sync
-import com.google.android.sensory.example.fhir_data.AppSensorDataUploadWorker
 import com.google.android.sensory.example.fhir_data.FhirSyncWorker
+import com.google.android.sensory.example.sensing_data.AppSensorDataUploadWorker
 import com.google.android.sensory.sensing_sdk.upload.UploadSync
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.ExperimentalCoroutinesApi

@@ -33,7 +33,7 @@
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|end"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:srcCompat="@drawable/flashlight_on"
+        app:srcCompat="@drawable/sensingsdk_flashlight_on"
         app:layout_constraintEnd_toEndOf="parent"
     />
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.google.android.sensory.example.fhir_data
+package com.google.android.sensory.example.sensing_data
 
 import android.content.Context
 import androidx.work.WorkerParameters

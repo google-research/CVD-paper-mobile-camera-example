@@ -25,7 +25,6 @@ import android.widget.Toast
 import androidx.activity.addCallback
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.MenuProvider
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.commit
 import androidx.fragment.app.viewModels
@@ -43,7 +42,7 @@ class AnemiaScreenerFragment : Fragment(R.layout.fragment_anemia_screening) {
   override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
     super.onViewCreated(view, savedInstanceState)
     setUpActionBar()
-    setupMenu()
+    setHasOptionsMenu(true)
     updateArguments()
     onBackPressed()
     observeResourcesSaveAction()
@@ -52,29 +51,23 @@ class AnemiaScreenerFragment : Fragment(R.layout.fragment_anemia_screening) {
     }
   }
 
-  private fun setupMenu() {
-    (requireActivity() as MainActivity).addMenuProvider(
-      object : MenuProvider {
-        override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
-          menuInflater.inflate(R.menu.anemia_screen_encounter_fragment_menu, menu)
-        }
+  override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
+    super.onCreateOptionsMenu(menu, inflater)
+    inflater.inflate(R.menu.anemia_screen_encounter_fragment_menu, menu)
+  }
 
-        override fun onMenuItemSelected(menuItem: MenuItem): Boolean {
-          return when (menuItem.itemId) {
-            R.id.action_add_patient_submit -> {
-              onSubmitAction()
-              true
-            }
-            android.R.id.home -> {
-              showCancelScreenerQuestionnaireAlertDialog()
-              true
-            }
-            else -> true
-          }
-        }
-      },
-      viewLifecycleOwner
-    )
+  override fun onOptionsItemSelected(item: MenuItem): Boolean {
+    return when (item.itemId) {
+      R.id.action_add_patient_submit -> {
+        onSubmitAction()
+        true
+      }
+      android.R.id.home -> {
+        showCancelScreenerQuestionnaireAlertDialog()
+        true
+      }
+      else -> true
+    }
   }
 
   private fun setUpActionBar() {

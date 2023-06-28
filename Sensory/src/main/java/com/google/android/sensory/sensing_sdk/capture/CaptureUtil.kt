@@ -30,11 +30,11 @@ class CaptureUtil {
       if (c!!.cameraInfo.torchState.value == TorchState.ON) {
         // Turn off flash
         c.cameraControl.enableTorch(false)
-        toggleFlashFab.setImageResource(R.drawable.flashlight_off)
+        toggleFlashFab.setImageResource(R.drawable.sensingsdk_flashlight_off)
       } else {
         // Turn on flash
         c.cameraControl.enableTorch(true)
-        toggleFlashFab.setImageResource(R.drawable.flashlight_on)
+        toggleFlashFab.setImageResource(R.drawable.sensingsdk_flashlight_on)
       }
     }
 

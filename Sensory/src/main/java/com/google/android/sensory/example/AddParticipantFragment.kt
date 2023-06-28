@@ -24,7 +24,6 @@ import android.view.MenuItem
 import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.MenuProvider
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.commit
 import androidx.fragment.app.viewModels
@@ -49,33 +48,27 @@ class AddParticipantFragment : Fragment(R.layout.fragment_add_participant) {
     if (savedInstanceState == null) {
       addQuestionnaireFragment()
     }
-    setupMenu()
+    setHasOptionsMenu(true)
     observePatientSaveAction()
   }
 
-  private fun setupMenu() {
-    (requireActivity() as MainActivity).addMenuProvider(
-      object : MenuProvider {
-        override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
-          menuInflater.inflate(R.menu.add_patient_fragment_menu, menu)
-        }
+  override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
+    super.onCreateOptionsMenu(menu, inflater)
+    inflater.inflate(R.menu.add_patient_fragment_menu, menu)
+  }
 
-        override fun onMenuItemSelected(menuItem: MenuItem): Boolean {
-          return when (menuItem.itemId) {
-            R.id.action_add_patient_submit -> {
-              onSubmitAction()
-              true
-            }
-            android.R.id.home -> {
-              NavHostFragment.findNavController(this@AddParticipantFragment).navigateUp()
-              true
-            }
-            else -> true
-          }
-        }
-      },
-      viewLifecycleOwner
-    )
+  override fun onOptionsItemSelected(item: MenuItem): Boolean {
+    return when (item.itemId) {
+      R.id.action_add_patient_submit -> {
+        onSubmitAction()
+        true
+      }
+      android.R.id.home -> {
+        NavHostFragment.findNavController(this@AddParticipantFragment).navigateUp()
+        true
+      }
+      else -> true
+    }
   }
 
   private fun setUpActionBar() {
