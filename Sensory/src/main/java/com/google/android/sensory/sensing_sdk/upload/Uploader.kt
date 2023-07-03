@@ -42,9 +42,9 @@ class Uploader(
   private val blobstoreService: BlobstoreService
 ) {
   /**
-   * TODO(mjajoo@) Ideally this should not be hardcode 6MB (6291456L) bytes as part size. Instead
-   * this should be a function of network strength. Note: Min upload part size of MinioAsyncClient
-   * is 5MB
+   * TODO: Ideally this should not be hardcode 6MB (6291456L) bytes as part size. Instead this
+   * should be a function of network strength. Note: Min upload part size of MinioAsyncClient is
+   * 5MB.
    */
   private val uploadPartSizeInBytes = 6291456L
   private var minPartSizeInBytes = 5242880L // 5MB

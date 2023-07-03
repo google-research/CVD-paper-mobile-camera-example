@@ -56,9 +56,8 @@ import kotlinx.coroutines.launch
  * [CaptureType.VIDEO_PPG] and [CaptureType.IMAGE]. The UI is programmatically inflated based on the
  * captureType given. Reason why all [CaptureType]s are managed by this fragment is for a given
  * capture type, multiple sensors may be required. Business logic like subscribing, emitting flows
- * of [SensorCaptureResult], timers, livedata handling are done in [CaptureViewModel].
- * TODO(mjajoo@): This is too customised and we will need to make it configurable. Configurability
- * options:-
+ * of [SensorCaptureResult], timers, livedata handling are done in [CaptureViewModel]. TODO: This is
+ * too customised and we will need to make it configurable. Configurability options:-
  * 1. CaptureRequestOptions could be a part of [captureInfo.captureSettings] instead of being
  * hardcoded in the viewModel
  * 2. WriteJpegFutureSubscriber could be any generic subscriber

@@ -26,9 +26,8 @@ import com.google.android.sensory.sensing_sdk.model.UploadResult
 import kotlinx.coroutines.flow.Flow
 
 /**
- * The Sensing Engine interface that handles the local storage of captured resources. TODO(mjajoo@)
- * For application developers to use the upload mechanism ONLY CRUD APIs for UploadRequest will need
- * to be added.
+ * The Sensing Engine interface that handles the local storage of captured resources. TODO: CRUD
+ * APIs for UploadRequest to use only the upload mechanism this Engine provides.
  */
 interface SensingEngine {
 
@@ -44,7 +43,7 @@ interface SensingEngine {
    *      c. zip the [captureInfo.captureFolder]/[sensorType] folder.
    *      d. create [UploadRequest] for it and save it in the database.
    * ```
-   * TODO(mjajoo@) Support uploading of any mime type.
+   * TODO: Support uploading of any mime type.
    */
   suspend fun onCaptureCompleteCallback(captureInfo: CaptureInfo): Flow<SensorCaptureResult>
 

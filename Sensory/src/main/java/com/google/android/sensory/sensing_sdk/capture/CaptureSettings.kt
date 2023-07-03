@@ -20,8 +20,8 @@ import com.google.android.sensory.sensing_sdk.model.SensorType
 
 data class CaptureSettings(
   /**
-   * The mimetype map for files captured via a sensor. TODO(mjajoo@): Need to have default types for
-   * each sensor.
+   * The mimetype map for files captured via a sensor. TODO: Need to have default types for each
+   * sensor.
    */
   val fileTypeMap: Map<SensorType, String>,
   /** The mimetype map for metadata files captured via a sensor. */

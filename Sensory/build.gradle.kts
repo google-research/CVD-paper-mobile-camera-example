@@ -68,13 +68,13 @@ dependencies {
   // ========= minio =========
 
   // Following set of dependencies are not tested and may change
-  // ========= fitbit.sensing.common.libraries =========//
+  // ========= Dependencies for fitbit.research.sensing.common.libraries =========//
   implementation("com.google.auto.value:auto-value-annotations:1.10.1")
   kapt("com.google.auto.value:auto-value:1.10.1")
   implementation("com.google.flogger:flogger:0.7.4")
   implementation("com.google.flogger:flogger-system-backend:0.7.4")
   implementation("org.apache.commons:commons-csv:1.10.0")
-  // ========= fitbit.sensing.common.libraries =========//
+  // ========= Dependencies for fitbit.research.sensing.common.libraries =========//
 
   kapt(Dependencies.Room.compiler)
 
