@@ -33,6 +33,11 @@ object Dependencies {
       "org.jetbrains.kotlinx:kotlinx-coroutines-android:${Versions.Kotlin.kotlinCoroutinesCore}"
   }
 
+  object AndroidFhir {
+    const val dataCapture = "com.google.android.fhir:data-capture:1.0.0"
+    const val fhirEngine = "com.google.android.fhir:engine:0.1.0-beta03"
+  }
+
   object Room {
     const val compiler = "androidx.room:room-compiler:${Versions.Androidx.room}"
     const val ktx = "androidx.room:room-ktx:${Versions.Androidx.room}"
@@ -57,6 +62,27 @@ object Dependencies {
   object ReactiveStreams {
     const val reactiveStreams = "org.reactivestreams:reactive-streams:1.0.0"
     const val lifecycle = "androidx.lifecycle:lifecycle-reactivestreams-ktx:2.5.1"
+  }
+
+  object Minio {
+    const val minio = "io.minio:minio:8.5.2"
+    // Minio is not out-of-the-box compatible with Android Studio. For fully working Minio following
+    // dependencies
+    // were needed to be added [https://stackoverflow.com/a/66395017]
+    object Extra {
+      const val poiOoxml = "org.apache.poi:poi-ooxml:3.17"
+      const val xmlbeans = "org.apache.xmlbeans:xmlbeans:3.1.0"
+      const val staxApi = "javax.xml.stream:stax-api:1.0"
+      const val aaltoXml = "com.fasterxml:aalto-xml:1.2.2"
+    }
+  }
+
+  object FitbitSensingLibraryDeps {
+    const val autoValueAnnotation = "com.google.auto.value:auto-value-annotations:1.10.1"
+    const val autoValue = "com.google.auto.value:auto-value:1.10.1"
+    const val flogger = "com.google.flogger:flogger:0.7.4"
+    const val floggerBackend = "com.google.flogger:flogger-system-backend:0.7.4"
+    const val commonsCsv = "org.apache.commons:commons-csv:1.10.0"
   }
 
   object Navigation {

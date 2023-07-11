@@ -56,32 +56,22 @@ dependencies {
   implementation(Dependencies.ReactiveStreams.reactiveStreams)
   implementation(Dependencies.ReactiveStreams.lifecycle)
 
-  // Following set of dependencies are not tested and may change
-  // ========= minio =========
-  implementation("io.minio:minio:8.5.2")
-  // Minio is not out-of-the-box Android compatible. For fully working Minio following dependencies
-  // were needed to be added [https://stackoverflow.com/a/66395017]
-  implementation("org.apache.poi:poi-ooxml:3.17")
-  implementation("org.apache.xmlbeans:xmlbeans:3.1.0")
-  implementation("javax.xml.stream:stax-api:1.0")
-  implementation("com.fasterxml:aalto-xml:1.2.2")
-  // ========= minio =========
+  implementation(Dependencies.Minio.minio)
+  implementation(Dependencies.Minio.Extra.poiOoxml)
+  implementation(Dependencies.Minio.Extra.xmlbeans)
+  implementation(Dependencies.Minio.Extra.staxApi)
+  implementation(Dependencies.Minio.Extra.aaltoXml)
 
-  // Following set of dependencies are not tested and may change
-  // ========= Dependencies for fitbit.research.sensing.common.libraries =========//
-  implementation("com.google.auto.value:auto-value-annotations:1.10.1")
-  kapt("com.google.auto.value:auto-value:1.10.1")
-  implementation("com.google.flogger:flogger:0.7.4")
-  implementation("com.google.flogger:flogger-system-backend:0.7.4")
-  implementation("org.apache.commons:commons-csv:1.10.0")
-  // ========= Dependencies for fitbit.research.sensing.common.libraries =========//
+  implementation(Dependencies.FitbitSensingLibraryDeps.autoValueAnnotation)
+  implementation(Dependencies.FitbitSensingLibraryDeps.flogger)
+  implementation(Dependencies.FitbitSensingLibraryDeps.floggerBackend)
+  implementation(Dependencies.FitbitSensingLibraryDeps.commonsCsv)
+  kapt(Dependencies.FitbitSensingLibraryDeps.autoValue)
 
   kapt(Dependencies.Room.compiler)
 
-  // ========= FHIR SDC =========//
-  implementation("com.google.android.fhir:data-capture:1.0.0")
-  implementation("com.google.android.fhir:engine:0.1.0-beta03")
-  // ========= FHIR SDC =========//
+  implementation(Dependencies.AndroidFhir.dataCapture)
+  implementation(Dependencies.AndroidFhir.fhirEngine)
 
   testImplementation(Dependencies.junit)
   androidTestImplementation(Dependencies.AndroidxTest.extJunit)
