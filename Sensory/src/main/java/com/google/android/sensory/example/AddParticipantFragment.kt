@@ -115,7 +115,7 @@ class AddParticipantFragment : Fragment(R.layout.fragment_add_participant) {
       Toast.makeText(requireContext(), "Patient is saved.", Toast.LENGTH_SHORT).show()
       findNavController()
         .navigate(
-          AddParticipantFragmentDirections.actionAddParticipantFragmentToAnemiaScreenerFragment(
+          AddParticipantFragmentDirections.actionAddParticipantFragmentToScreenerFragment(
             it.idElement.idPart
           )
         )

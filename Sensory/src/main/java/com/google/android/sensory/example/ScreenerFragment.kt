@@ -32,12 +32,13 @@ import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.fragment.navArgs
 import com.google.android.fhir.datacapture.QuestionnaireFragment
 import com.google.android.sensory.R
+import com.google.android.sensory.example.fhir_data.ScreeningConfig
 
-/** A fragment class to show anemia questionnaire on screen. */
-class AnemiaScreenerFragment : Fragment(R.layout.fragment_anemia_screening) {
+/** A fragment class to show questionnaire on screen. */
+class ScreenerFragment : Fragment(R.layout.fragment_screening) {
 
-  private val anemiaScreenerViewModel: AnemiaScreenerViewModel by viewModels()
-  private val args: AnemiaScreenerFragmentArgs by navArgs()
+  private val screenerViewModel: ScreenerViewModel by viewModels()
+  private val args: ScreenerFragmentArgs by navArgs()
 
   override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
     super.onViewCreated(view, savedInstanceState)
@@ -53,7 +54,7 @@ class AnemiaScreenerFragment : Fragment(R.layout.fragment_anemia_screening) {
 
   override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
     super.onCreateOptionsMenu(menu, inflater)
-    inflater.inflate(R.menu.anemia_screen_encounter_fragment_menu, menu)
+    inflater.inflate(R.menu.screen_encounter_fragment_menu, menu)
   }
 
   override fun onOptionsItemSelected(item: MenuItem): Boolean {
@@ -72,20 +73,21 @@ class AnemiaScreenerFragment : Fragment(R.layout.fragment_anemia_screening) {
 
   private fun setUpActionBar() {
     (requireActivity() as AppCompatActivity).supportActionBar?.apply {
-      title = requireContext().getString(R.string.anemia_screening)
+      title = requireContext().getString(R.string.screening)
       setDisplayHomeAsUpEnabled(true)
     }
   }
 
   private fun updateArguments() {
-    requireArguments().putString(QUESTIONNAIRE_FILE_PATH_KEY, "anemia-study-questionnaire.json")
+    requireArguments().putString(QUESTIONNAIRE_FILE_PATH_KEY, ScreeningConfig.questionnairePath)
+    requireArguments().putString(QUESTIONNAIRE_CUSTOM_MAPPING, ScreeningConfig.structureMapping)
   }
 
   private fun addQuestionnaireFragment() {
     childFragmentManager.commit {
       replace(
         R.id.screener_container,
-        anemiaScreenerViewModel.questionnaireFragment,
+        screenerViewModel.questionnaireFragment,
         QUESTIONNAIRE_FRAGMENT_TAG
       )
     }
@@ -94,7 +96,7 @@ class AnemiaScreenerFragment : Fragment(R.layout.fragment_anemia_screening) {
   private fun onSubmitAction() {
     val questionnaireFragment =
       childFragmentManager.findFragmentByTag(QUESTIONNAIRE_FRAGMENT_TAG) as QuestionnaireFragment
-    anemiaScreenerViewModel.saveScreenerEncounter(
+    screenerViewModel.saveScreenerEncounter(
       questionnaireFragment.getQuestionnaireResponse(),
       args.patientId
     )
@@ -107,7 +109,7 @@ class AnemiaScreenerFragment : Fragment(R.layout.fragment_anemia_screening) {
         builder.apply {
           setMessage(getString(R.string.cancel_questionnaire_message))
           setPositiveButton(getString(android.R.string.yes)) { _, _ ->
-            NavHostFragment.findNavController(this@AnemiaScreenerFragment).navigateUp()
+            NavHostFragment.findNavController(this@ScreenerFragment).navigateUp()
           }
           setNegativeButton(getString(android.R.string.no)) { _, _ -> }
         }
@@ -123,7 +125,7 @@ class AnemiaScreenerFragment : Fragment(R.layout.fragment_anemia_screening) {
   }
 
   private fun observeResourcesSaveAction() {
-    anemiaScreenerViewModel.isResourcesSaved.observe(viewLifecycleOwner) {
+    screenerViewModel.isResourcesSaved.observe(viewLifecycleOwner) {
       if (!it) {
         Toast.makeText(requireContext(), getString(R.string.inputs_missing), Toast.LENGTH_SHORT)
           .show()
@@ -137,6 +139,7 @@ class AnemiaScreenerFragment : Fragment(R.layout.fragment_anemia_screening) {
 
   companion object {
     const val QUESTIONNAIRE_FILE_PATH_KEY = "questionnaire-file-path-key"
+    const val QUESTIONNAIRE_CUSTOM_MAPPING = "questionnaire-custom-mapping"
     const val QUESTIONNAIRE_FRAGMENT_TAG = "questionnaire-fragment-tag"
   }
 }

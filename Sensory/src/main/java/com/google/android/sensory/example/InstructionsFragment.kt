@@ -41,7 +41,7 @@ class InstructionsFragment : DialogFragment() {
         "Anemia_Conjunctiva" -> R.layout.fragment_conjunctiva_instructions
         "Anemia_Fingernails_Closed" -> R.layout.fragment_fingernails_closed_instructions
         "Anemia_Fingernails_Open" -> R.layout.fragment_fingernails_open_instructions
-        /** Anemia_PPG_Signal */
+        /** PPG_Signals */
         else -> R.layout.fragment_ppg_instructions
       }
     return inflater.inflate(layoutId, container, false)

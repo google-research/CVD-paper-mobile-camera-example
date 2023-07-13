@@ -27,7 +27,6 @@ import com.google.android.fhir.FhirEngine
 import com.google.android.fhir.datacapture.QuestionnaireFragment
 import com.google.android.fhir.datacapture.mapping.ResourceMapper
 import com.google.android.fhir.datacapture.mapping.StructureMapExtractionContext
-import com.google.android.fhir.testing.jsonParser
 import com.google.android.sensory.sensing_sdk.SensingEngine
 import java.util.Date
 import java.util.UUID
@@ -46,7 +45,7 @@ import org.hl7.fhir.r4.model.Resource
 import org.hl7.fhir.r4.utils.StructureMapUtilities
 
 /** ViewModel for screener questionnaire screen {@link ScreenerEncounterFragment}. */
-class AnemiaScreenerViewModel(application: Application, private val state: SavedStateHandle) :
+class ScreenerViewModel(application: Application, private val state: SavedStateHandle) :
   AndroidViewModel(application) {
 
   val questionnaireFragment =
@@ -57,7 +56,7 @@ class AnemiaScreenerViewModel(application: Application, private val state: Saved
       )
       .setShowSubmitButton(false)
       .build()
-  val questionnaire: String
+  private val questionnaire: String
     get() = getQuestionnaireJson()
   val isResourcesSaved = MutableLiveData<Boolean>()
 
@@ -66,6 +65,7 @@ class AnemiaScreenerViewModel(application: Application, private val state: Saved
       FhirContext.forCached(FhirVersionEnum.R4).newJsonParser().parseResource(questionnaire)
         as Questionnaire
   private var questionnaireJson: String? = null
+  private var structureMapping: String? = null
   private var fhirEngine: FhirEngine = SensingApplication.fhirEngine(application.applicationContext)
 
   private var sensingEngine: SensingEngine =
@@ -78,74 +78,6 @@ class AnemiaScreenerViewModel(application: Application, private val state: Saved
    */
   fun saveScreenerEncounter(questionnaireResponse: QuestionnaireResponse, patientId: String) {
     viewModelScope.launch {
-      val mapping =
-        """
-          map "http://example.org/fhir/StructureMap/SensorCapture" = 'SensorCapture'
-          uses "http://hl7.org/fhir/StructureDefinition/QuestionnaireReponse" as source
-          uses "http://hl7.org/fhir/StructureDefinition/Bundle" as target
- 
-          group SensorCapture(source src : QuestionnaireResponse, target bundle: Bundle) {
-            src -> bundle.id = uuid() "rule_bundle_id";
-            src -> bundle.type = 'collection' "rule_bundle_type";
-            src -> bundle.entry as entry, entry.resource = create('DocumentReference') as ppgdocref then
-              ExtractPPGDocumentReference(src, ppgdocref) "rule_extract_document_reference";
-            src -> bundle.entry as entry, entry.resource = create('DocumentReference') as photofingernailscloseddocref then
-              ExtractFingernailsClosedPhotoDocumentReference(src, photofingernailscloseddocref) "rule_extract_photo_fingernails_closed_document_reference";
-            src -> bundle.entry as entry, entry.resource = create('DocumentReference') as photofingernailsopendocref then
-              ExtractFingernailsOpenPhotoDocumentReference(src, photofingernailsopendocref) "rule_extract_photo_fingernails_open_document_reference";
-            src -> bundle.entry as entry, entry.resource = create('DocumentReference') as photoconjunctivadocref then
-              ExtractConjunctivaPhotoDocumentReference(src, photoconjunctivadocref) "rule_extract_photo_conjunctiva_document_reference";
-          }
- 
-          group ExtractPPGDocumentReference(source src : QuestionnaireResponse, target tgt : Patient) {
-            src.item as item where(linkId = 'sensing-capture-group-ppg') then {
-              item.item as inner_item where (linkId = 'ppg-capture-api-call') then {
-                inner_item.answer first as ans then {
-                  ans.value as coding then {
-                    coding.code as val -> tgt.type = val "rule_ppg_capture_id";
-                  };
-                };
-              };
-          };
-        }
-          
-          group ExtractFingernailsOpenPhotoDocumentReference(source src : QuestionnaireResponse, target tgt : Patient) {
-            src.item as item where(linkId = 'sensing-capture-group-fingernails-open') then {
-              item.item as inner_item where (linkId = 'photo-capture-fingernails-open-api-call') then {
-                    inner_item.answer first as ans then {
-                      ans.value as coding then {
-                        coding.code as val -> tgt.type = val "rule_photo_capture_id";
-                      };
-                    };
-                  };
-            };
-          }
-          
-          group ExtractFingernailsClosedPhotoDocumentReference(source src : QuestionnaireResponse, target tgt : Patient) {
-            src.item as item where(linkId = 'sensing-capture-group-fingernails-closed') then {
-              item.item as inner_item where (linkId = 'photo-capture-fingernails-closed-api-call') then {
-                    inner_item.answer first as ans then {
-                      ans.value as coding then {
-                        coding.code as val -> tgt.type = val "rule_photo_capture_id";
-                      };
-                    };
-                  };
-            };
-          }
-          
-          group ExtractConjunctivaPhotoDocumentReference(source src : QuestionnaireResponse, target tgt : Patient) {
-            src.item as item where(linkId = 'sensing-capture-group-conjunctiva') then {
-              item.item as inner_item where (linkId = 'photo-capture-conjunctiva-api-call') then {
-                    inner_item.answer first as ans then {
-                      ans.value as coding then {
-                        coding.code as val -> tgt.type = val "rule_photo_capture_id";
-                      };
-                    };
-                  };
-            };
-          }
-                """.trimIndent()
-
       val iParser = FhirContext.forCached(FhirVersionEnum.R4).newJsonParser()
 
       val uriTestQuestionnaire =
@@ -163,7 +95,7 @@ class AnemiaScreenerViewModel(application: Application, private val state: Saved
           uriTestQuestionnaireResponse,
           StructureMapExtractionContext(
             context = getApplication<Application>().applicationContext
-          ) { _, worker -> StructureMapUtilities(worker).parse(mapping, "") },
+          ) { _, worker -> StructureMapUtilities(worker).parse(structureMapping, "") },
         )
 
       val subjectReference = Reference("Patient/$patientId")
@@ -256,9 +188,8 @@ class AnemiaScreenerViewModel(application: Application, private val state: Saved
     questionnaireJson?.let {
       return it
     }
-    questionnaireJson =
-      readFileFromAssets(state[AnemiaScreenerFragment.QUESTIONNAIRE_FILE_PATH_KEY]!!)
-    val questionnaire = jsonParser.parseResource(questionnaireJson) as Questionnaire
+    questionnaireJson = readFileFromAssets(state[ScreenerFragment.QUESTIONNAIRE_FILE_PATH_KEY]!!)
+    structureMapping = state[ScreenerFragment.QUESTIONNAIRE_CUSTOM_MAPPING]!!
     return questionnaireJson!!
   }
 

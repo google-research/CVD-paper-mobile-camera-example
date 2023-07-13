@@ -23,15 +23,15 @@
         android:label="AddParticipantFragment"
     >
     <action
-            android:id="@+id/action_addParticipantFragment_to_anemiaScreenerFragment"
-            app:destination="@id/anemiaScreenerFragment"
+            android:id="@+id/action_addParticipantFragment_to_screenerFragment"
+            app:destination="@id/screenerFragment"
             app:popUpTo="@id/homeFragment"
         />
   </fragment>
   <fragment
-        android:id="@+id/anemiaScreenerFragment"
-        android:name="com.google.android.sensory.example.AnemiaScreenerFragment"
-        android:label="AnemiaScreenerFragment"
+        android:id="@+id/screenerFragment"
+        android:name="com.google.android.sensory.example.ScreenerFragment"
+        android:label="ScreenerFragment"
     >
     <argument android:name="patient_id" app:argType="string" />
   </fragment>

@@ -39,7 +39,7 @@
           "text": "Capture PPG Video"
         },
         {
-          "text": "Anemia_PPG_Signals",
+          "text": "PPG_Signals",
           "linkId": "ppg-capture-api-call",
           "extension": [
             {

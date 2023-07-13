@@ -28,6 +28,20 @@ publication on models trained on mobile-sensor data to evaluate CVD risk.
    PASSWORD=<Minio Account Password>
 ```
 
+## Fhir SDC Questionnaires
+To support the above questionnaires we followed instructions from [here](https://github.com/google/android-fhir/wiki/SDCL%3A-Customize-how-a-Questionnaire-is-displayed#custom-questionnaire-components) and 
+added 2 custom widget types: PhotoCaptureViewHolderFactory.WIDGET_TYPE & 
+PPGSensorCaptureViewHolderFactory.WIDGET_TYPE.
+Following are 2 questionnaires that can be used with this app:-
+1. ScreeningConfig.PPG_QUESTIONNAIRE_PATH: To collect only PPG data.
+2. ScreeningConfig.ANEMIA_QUESTIONNAIRE_PATH: To collect images of eye, nails 
+along with PPG data for anemia use-case.
+
+Set `ScreeningConfig.questionnairePath` and `ScreeningConfig.structureMapping` 
+to whichever questionnaire you want to use. Additionally, you can test the app 
+with your questionnaire designed using the same custom widget types by adding 
+questionnaire-path and it's required structure-mapping in the ScreeningConfig.
+
 
 This is not an official Google product. The code is not intended for use in any
 clinical settings. It is not intended to be a medical device and is not

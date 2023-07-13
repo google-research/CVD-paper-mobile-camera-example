@@ -1,0 +1,54 @@
+{
+  "resourceType": "Questionnaire",
+  "id": "sensor-capture-questionnaire",
+  "status": "active",
+  "extension": [
+    {
+      "url": "http://hl7.org/fhir/uv/sdc/StructureDefinition/sdc-questionnaire-targetStructureMap",
+      "valueCanonical": "http://example.org/fhir/StructureMap/SensorCapture"
+    }
+  ],
+  "item": [
+    {
+      "linkId": "sensing-capture-group-ppg",
+      "type": "group",
+      "extension": [
+        {
+          "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-itemControl",
+          "valueCodeableConcept": {
+            "coding": [
+              {
+                "system": "http://hl7.org/fhir/questionnaire-item-control",
+                "code": "page",
+                "display": "Page"
+              }
+            ],
+            "text": "Page"
+          }
+        }
+      ],
+      "item": [
+        {
+          "linkId": "ppg-capture-header",
+          "type": "display",
+          "text": "Anaemia Study Data Capture"
+        },
+        {
+          "linkId": "ppg-capture-question",
+          "type": "display",
+          "text": "Capture PPG Video"
+        },
+        {
+          "text": "PPG_Signals",
+          "linkId": "ppg-capture-api-call",
+          "extension": [
+            {
+              "url": "http://external-api-call/sensing-backbone",
+              "valueCode": "ppg-capture"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
