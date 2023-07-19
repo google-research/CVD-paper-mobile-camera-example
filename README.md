@@ -14,7 +14,8 @@ publication on models trained on mobile-sensor data to evaluate CVD risk.
    production use, which would also need error-handling, authentication, etc.
 3. Integrates with FHIR-SDK to generate forms (participant registration and data
    capturing) using FHIR-SDC which generates FHIR resources (Patient, 
-   DocumentReference)
+   DocumentReference). Note: One needs to configure fhir server to sync fhir 
+   resources.
 
 ## Setting up Upload Configuration:-
 

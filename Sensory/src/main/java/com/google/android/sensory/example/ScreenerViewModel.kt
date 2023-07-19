@@ -24,7 +24,6 @@ import androidx.lifecycle.viewModelScope
 import ca.uhn.fhir.context.FhirContext
 import ca.uhn.fhir.context.FhirVersionEnum
 import com.google.android.fhir.FhirEngine
-import com.google.android.fhir.datacapture.QuestionnaireFragment
 import com.google.android.fhir.datacapture.mapping.ResourceMapper
 import com.google.android.fhir.datacapture.mapping.StructureMapExtractionContext
 import com.google.android.sensory.sensing_sdk.SensingEngine
@@ -47,22 +46,13 @@ import org.hl7.fhir.r4.utils.StructureMapUtilities
 /** ViewModel for screener questionnaire screen {@link ScreenerEncounterFragment}. */
 class ScreenerViewModel(application: Application, private val state: SavedStateHandle) :
   AndroidViewModel(application) {
-
-  val questionnaireFragment =
-    QuestionnaireFragment.builder()
-      .setQuestionnaire(questionnaire)
-      .setCustomQuestionnaireItemViewHolderFactoryMatchersProvider(
-        SensingApplication.CUSTOM_VIEW_HOLDER_FACTORY_TAG
-      )
-      .setShowSubmitButton(false)
-      .build()
-  private val questionnaire: String
+  val questionnaireString: String
     get() = getQuestionnaireJson()
   val isResourcesSaved = MutableLiveData<Boolean>()
 
   private val questionnaireResource: Questionnaire
     get() =
-      FhirContext.forCached(FhirVersionEnum.R4).newJsonParser().parseResource(questionnaire)
+      FhirContext.forCached(FhirVersionEnum.R4).newJsonParser().parseResource(questionnaireString)
         as Questionnaire
   private var questionnaireJson: String? = null
   private var structureMapping: String? = null

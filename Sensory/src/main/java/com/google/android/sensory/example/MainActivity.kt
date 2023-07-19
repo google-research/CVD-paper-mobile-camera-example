@@ -55,8 +55,7 @@ class MainActivity : AppCompatActivity() {
     super.onRequestPermissionsResult(requestCode, permissions, grantResults)
     if (REQUEST_CODE_PERMISSIONS == requestCode) {
       if (grantResults.size < REQUIRED_PERMISSIONS.size ||
-          grantResults[0] != PackageManager.PERMISSION_GRANTED ||
-          grantResults[1] != PackageManager.PERMISSION_GRANTED
+          grantResults.any { it != PackageManager.PERMISSION_GRANTED }
       ) {
         if (permissionsRequestCount < MAX_PERMISSIONS_REQUESTS) {
           // Retry getting permissions.
@@ -93,6 +92,7 @@ class MainActivity : AppCompatActivity() {
       else
         arrayOf(
           Manifest.permission.CAMERA,
+          // Following are needed for Android API 33 to access files generated out of camera
           Manifest.permission.READ_MEDIA_IMAGES,
           Manifest.permission.READ_MEDIA_AUDIO,
           Manifest.permission.READ_MEDIA_VIDEO

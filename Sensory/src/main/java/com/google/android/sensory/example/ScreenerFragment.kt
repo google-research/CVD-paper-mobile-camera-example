@@ -84,10 +84,19 @@ class ScreenerFragment : Fragment(R.layout.fragment_screening) {
   }
 
   private fun addQuestionnaireFragment() {
+    val questionnaireFragment =
+      childFragmentManager.findFragmentByTag(QUESTIONNAIRE_FRAGMENT_TAG) as QuestionnaireFragment?
     childFragmentManager.commit {
       replace(
         R.id.screener_container,
-        screenerViewModel.questionnaireFragment,
+        questionnaireFragment
+          ?: QuestionnaireFragment.builder()
+            .setQuestionnaire(screenerViewModel.questionnaireString)
+            .setCustomQuestionnaireItemViewHolderFactoryMatchersProvider(
+              SensingApplication.CUSTOM_VIEW_HOLDER_FACTORY_TAG
+            )
+            .setShowSubmitButton(false)
+            .build(),
         QUESTIONNAIRE_FRAGMENT_TAG
       )
     }
