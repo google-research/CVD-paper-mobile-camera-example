@@ -22,6 +22,7 @@ publication on models trained on mobile-sensor data to evaluate CVD risk.
 1. Create file Sensory/src/main/assets/local.properties
 2. Add following information: 
 ```
+   FHIR_BASE_URL=<fhir server url>
    BASE_URL=<Minio Upload Base Url>
    BASE_ACCESS_URL=<Minio Data Access Url>
    BUCKET_NAME=<Minio Bucket Name>
