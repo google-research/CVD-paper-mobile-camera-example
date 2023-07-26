@@ -107,6 +107,7 @@ internal class SensingEngineImpl(
           zipFile = outputZipFile,
           fileSize = File(outputZipFile).length(),
           fileOffset = 0L,
+          bucketName = serverConfiguration.bucketName,
           uploadRelativeURL = uploadRelativeUrl,
           isMultiPart = serverConfiguration.networkConfiguration.isMultiPart,
           nextPart = 1,

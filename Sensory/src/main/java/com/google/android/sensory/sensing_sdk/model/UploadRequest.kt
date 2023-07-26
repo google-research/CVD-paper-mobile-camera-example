@@ -26,6 +26,7 @@ data class UploadRequest(
   val zipFile: String,
   val fileSize: Long,
   var fileOffset: Long,
+  val bucketName: String,
   val uploadRelativeURL: String,
   val isMultiPart: Boolean,
   var nextPart: Int,

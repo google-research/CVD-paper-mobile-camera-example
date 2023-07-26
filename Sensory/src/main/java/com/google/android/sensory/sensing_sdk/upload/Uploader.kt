@@ -16,7 +16,6 @@
 
 package com.google.android.sensory.sensing_sdk.upload
 
-import com.google.android.sensory.sensing_sdk.ServerConfiguration
 import com.google.android.sensory.sensing_sdk.model.UploadRequest
 import com.google.android.sensory.sensing_sdk.model.UploadResult
 import com.google.common.collect.HashMultimap
@@ -37,10 +36,7 @@ import timber.log.Timber
  * Processes upload requests and uploads the data referenced in chunks. Ideally we would want the
  * uploader to figure out [uploadPartSizeInBytes] based on network strength
  */
-class Uploader(
-  private val serverConfiguration: ServerConfiguration,
-  private val blobstoreService: BlobstoreService
-) {
+class Uploader(private val blobstoreService: BlobstoreService) {
   /**
    * TODO: Ideally this should not be hardcode 6MB (6291456L) bytes as part size. Instead this
    * should be a function of network strength. Note: Min upload part size of MinioAsyncClient is
@@ -55,7 +51,7 @@ class Uploader(
         headers.put("Content-Type", "application/octet-stream")
         uploadRequest.uploadId =
           blobstoreService.initMultiPartUpload(
-            serverConfiguration.bucketName,
+            uploadRequest.bucketName,
             null,
             uploadRequest.uploadRelativeURL,
             headers,
@@ -95,7 +91,7 @@ class Uploader(
     val parts = arrayOfNulls<Part>(1000)
     val partResult: ListPartsResponse =
       blobstoreService.listMultipart(
-        serverConfiguration.bucketName,
+        uploadRequest.bucketName,
         null,
         uploadRequest.uploadRelativeURL,
         1000,
@@ -110,7 +106,7 @@ class Uploader(
       partNumber++
     }
     blobstoreService.mergeMultipartUpload(
-      serverConfiguration.bucketName,
+      uploadRequest.bucketName,
       null,
       uploadRequest.uploadRelativeURL,
       uploadRequest.uploadId,
@@ -127,7 +123,7 @@ class Uploader(
     chunkSize: Long,
   ): UploadPartResponse? {
     return blobstoreService.uploadFilePart(
-      serverConfiguration.bucketName,
+      uploadRequest.bucketName,
       null,
       uploadRequest.uploadRelativeURL,
       data,

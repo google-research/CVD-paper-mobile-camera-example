@@ -24,8 +24,7 @@ import com.google.android.fhir.sync.PeriodicSyncConfiguration
 import com.google.android.fhir.sync.RepeatInterval
 import com.google.android.fhir.sync.Sync
 import com.google.android.sensory.example.fhir_data.FhirSyncWorker
-import com.google.android.sensory.example.sensing_data.AppSensorDataUploadWorker
-import com.google.android.sensory.sensing_sdk.upload.UploadSync
+import com.google.android.sensory.sensing_sdk.upload.SensingUploadSync
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
@@ -34,9 +33,7 @@ import kotlinx.coroutines.launch
 class MainActivityViewModel(application: Application) : AndroidViewModel(application) {
   init {
     viewModelScope.launch {
-      UploadSync.enqueueUploadPeriodicWork<AppSensorDataUploadWorker>(
-        application.applicationContext
-      )
+      SensingUploadSync.enqueueUploadPeriodicWork(application.applicationContext)
       Sync.periodicSync<FhirSyncWorker>(
         application.applicationContext,
         PeriodicSyncConfiguration(
@@ -49,7 +46,7 @@ class MainActivityViewModel(application: Application) : AndroidViewModel(applica
 
   fun triggerOneTimeSync() {
     viewModelScope.launch {
-      UploadSync.enqueueUploadUniqueWork<AppSensorDataUploadWorker>(getApplication())
+      SensingUploadSync.enqueueUploadUniqueWork(getApplication())
       Sync.oneTimeSync<FhirSyncWorker>(getApplication())
     }
   }

@@ -52,9 +52,9 @@ object SensingEngineProvider {
     return sensingEngine!!
   }
 
-  fun getBlobStoreService(serverConfiguration: ServerConfiguration): BlobstoreService {
+  fun getBlobStoreService(): BlobstoreService {
     if (blobstoreService == null) {
-      with(serverConfiguration) {
+      with(sensingEngineConfiguration!!.serverConfiguration) {
         blobstoreService =
           BlobstoreService(
             MinioAsyncClient.builder()

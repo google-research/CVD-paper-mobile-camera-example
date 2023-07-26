@@ -19,32 +19,21 @@ package com.google.android.sensory.sensing_sdk.upload
 import android.content.Context
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
-import com.google.android.sensory.sensing_sdk.SensingEngine
 import com.google.android.sensory.sensing_sdk.SensingEngineProvider
-import com.google.android.sensory.sensing_sdk.ServerConfiguration
 import com.google.android.sensory.sensing_sdk.model.UploadResult
 import kotlinx.coroutines.flow.flow
 
 /** A WorkManager Worker that handles onetime and periodic requests to upload. */
-abstract class SensorDataUploadWorker(appContext: Context, workerParams: WorkerParameters) :
+class SensorDataUploadWorker(appContext: Context, workerParams: WorkerParameters) :
   CoroutineWorker(appContext, workerParams) {
-  abstract fun getSensingEngine(): SensingEngine
 
-  abstract fun getServerConfiguration(): ServerConfiguration
-
-  open fun getUploader(): Uploader {
-    val serverConfiguration = getServerConfiguration()
-    return Uploader(
-      serverConfiguration,
-      SensingEngineProvider.getBlobStoreService(serverConfiguration)
-    )
-  }
+  private val uploader = Uploader(SensingEngineProvider.getBlobStoreService())
 
   override suspend fun doWork(): Result {
     var failed = false
-    getSensingEngine().syncUpload { list ->
+    SensingEngineProvider.getOrCreateSensingEngine(applicationContext).syncUpload { list ->
       flow {
-        getUploader().upload(list).collect {
+        uploader.upload(list).collect {
           emit(it)
           if (it is UploadResult.Failure) {
             failed = true

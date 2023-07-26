@@ -58,6 +58,9 @@ internal data class UploadRequestEntity(
   /** Bytes uploaded out of the [fileSize]. */
   val fileOffset: Long,
 
+  /** Bytes uploaded out of the [fileSize]. */
+  val bucketName: String,
+
   /** Relative URL because the Uploader is configured with the HOST. */
   val uploadRelativeURL: String,
 

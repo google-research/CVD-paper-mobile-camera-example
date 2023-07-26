@@ -24,23 +24,23 @@ import androidx.work.OneTimeWorkRequest
 import androidx.work.PeriodicWorkRequest
 import androidx.work.WorkManager
 
-object UploadSync {
-  inline fun <reified W : SensorDataUploadWorker> enqueueUploadUniqueWork(
+object SensingUploadSync {
+  fun enqueueUploadUniqueWork(
     context: Context,
     retryConfiguration: RetryConfiguration = defaultRetryConfiguration,
   ) {
     WorkManager.getInstance(context)
       .enqueueUniqueWork(
-        "Unique_" + W::class.java.name,
+        "Unique_" + SensorDataUploadWorker::class.java.name,
         ExistingWorkPolicy.KEEP,
-        createOneTimeWorkRequest(retryConfiguration, W::class.java)
+        createOneTimeWorkRequest(retryConfiguration, SensorDataUploadWorker::class.java)
       )
   }
 
   @PublishedApi
-  internal inline fun <W : SensorDataUploadWorker> createOneTimeWorkRequest(
+  internal fun createOneTimeWorkRequest(
     retryConfiguration: RetryConfiguration?,
-    clazz: Class<W>,
+    clazz: Class<SensorDataUploadWorker>,
   ): OneTimeWorkRequest {
     val oneTimeWorkRequestBuilder = OneTimeWorkRequest.Builder(clazz)
     retryConfiguration?.let {
@@ -56,22 +56,22 @@ object UploadSync {
     return oneTimeWorkRequestBuilder.build()
   }
 
-  inline fun <reified W : SensorDataUploadWorker> enqueueUploadPeriodicWork(
+  fun enqueueUploadPeriodicWork(
     context: Context,
     periodicSyncConfiguration: PeriodicSyncConfiguration = defaultPeriodicSyncConfiguration,
   ) {
     WorkManager.getInstance(context)
       .enqueueUniquePeriodicWork(
-        "Periodic_" + W::class.java.name,
+        "Periodic_" + SensorDataUploadWorker::class.java.name,
         ExistingPeriodicWorkPolicy.KEEP,
-        createPeriodicWorkRequest(periodicSyncConfiguration, W::class.java)
+        createPeriodicWorkRequest(periodicSyncConfiguration, SensorDataUploadWorker::class.java)
       )
   }
 
   @PublishedApi
-  internal inline fun <W : SensorDataUploadWorker> createPeriodicWorkRequest(
+  internal fun createPeriodicWorkRequest(
     periodicSyncConfiguration: PeriodicSyncConfiguration,
-    clazz: Class<W>,
+    clazz: Class<SensorDataUploadWorker>,
   ): PeriodicWorkRequest {
     val periodicWorkRequestBuilder =
       PeriodicWorkRequest.Builder(
