@@ -23,11 +23,11 @@ publication on models trained on mobile-sensor data to evaluate CVD risk.
 2. Add following information: 
 ```
    FHIR_BASE_URL=<fhir server url>
-   BASE_URL=<Minio Upload Base Url>
-   BASE_ACCESS_URL=<Minio Data Access Url>
-   BUCKET_NAME=<Minio Bucket Name>
-   USER=<Minio Account Username>
-   PASSWORD=<Minio Account Password>
+   BLOBSTORE_BASE_URL=<Minio Blobstore Base Url>
+   BLOBSTORE_BASE_ACCESS_URL=<Minio Blobstore Data Access Url>
+   BLOBSTORE_BUCKET_NAME=<Minio Blobstore Bucket Name>
+   BLOBSTORE_USER=<Minio Blobstore Account Username>
+   BLOBSTORE_PASSWORD=<Minio Blobstore Account Password>
 ```
 
 ## Fhir SDC Questionnaires

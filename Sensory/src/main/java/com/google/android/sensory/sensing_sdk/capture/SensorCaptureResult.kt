@@ -24,5 +24,5 @@ sealed class SensorCaptureResult {
 
   data class CaptureComplete(val captureId: String) : SensorCaptureResult()
 
-  data class ResourceStoringComplete(val captureId: String) : SensorCaptureResult()
+  data class ResourcesStored(val captureId: String) : SensorCaptureResult()
 }

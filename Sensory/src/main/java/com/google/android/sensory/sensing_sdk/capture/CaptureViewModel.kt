@@ -47,7 +47,6 @@ import java.util.UUID
 import java.util.concurrent.Executors
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.launch
@@ -88,7 +87,7 @@ class CaptureViewModel(application: Application) : AndroidViewModel(application)
       captureInfo.apply { captureId = UUID.randomUUID().toString() }
     }
     this.captureInfo = captureInfo
-    GlobalScope.launch { captureResultCollector(captureResultFlow) }
+    CoroutineScope(context = Dispatchers.IO).launch { captureResultCollector(captureResultFlow) }
   }
   fun processRecord(camera: Camera2InteropSensor) {
     if (this::recordingGate.isInitialized && recordingGate.isOpen) {
@@ -126,6 +125,7 @@ class CaptureViewModel(application: Application) : AndroidViewModel(application)
     recordingGate.open()
     viewModelScope.launch {
       _captureResultFlow.emit(SensorCaptureResult.Started(captureInfo.captureId!!))
+      // timer in a different coroutine
       startTimer()
     }
   }

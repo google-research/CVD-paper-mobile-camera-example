@@ -83,8 +83,9 @@ class CaptureFragment : Fragment() {
   private lateinit var btnTakePhoto: Button
 
   /**
-   * Callback defined by the application developers that collects emitted [SensorCaptureResult] from
-   * [SensingEngine::onCaptureCompleteCallback].
+   * A setter function: Callback defined by the application developers that collects
+   * [SensorCaptureResult] emitted from [CaptureViewModel] and
+   * [SensingEngine.onCaptureCompleteCallback].
    */
   fun setSensorCaptureResultCollector(
     sensorCaptureResultCollector: suspend ((Flow<SensorCaptureResult>) -> Unit)
@@ -92,7 +93,10 @@ class CaptureFragment : Fragment() {
     this.sensorCaptureResultCollector = sensorCaptureResultCollector
   }
 
-  /** All details about the capture. Not passing via arguments as it requires API >= 33. */
+  /**
+   * A setter function: All details about the capture. Not passing via arguments as it requires API
+   * >= 33.
+   */
   fun setCaptureInfo(captureInfo: CaptureInfo) {
     this.captureInfo = captureInfo
   }

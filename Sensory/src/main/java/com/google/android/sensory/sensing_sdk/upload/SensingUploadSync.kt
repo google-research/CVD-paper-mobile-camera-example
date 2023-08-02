@@ -33,16 +33,15 @@ object SensingUploadSync {
       .enqueueUniqueWork(
         "Unique_" + SensorDataUploadWorker::class.java.name,
         ExistingWorkPolicy.KEEP,
-        createOneTimeWorkRequest(retryConfiguration, SensorDataUploadWorker::class.java)
+        createOneTimeWorkRequest(retryConfiguration)
       )
   }
 
   @PublishedApi
   internal fun createOneTimeWorkRequest(
-    retryConfiguration: RetryConfiguration?,
-    clazz: Class<SensorDataUploadWorker>,
+    retryConfiguration: RetryConfiguration?
   ): OneTimeWorkRequest {
-    val oneTimeWorkRequestBuilder = OneTimeWorkRequest.Builder(clazz)
+    val oneTimeWorkRequestBuilder = OneTimeWorkRequest.Builder(SensorDataUploadWorker::class.java)
     retryConfiguration?.let {
       oneTimeWorkRequestBuilder.setBackoffCriteria(
         it.backoffCriteria.backoffPolicy,
@@ -64,18 +63,17 @@ object SensingUploadSync {
       .enqueueUniquePeriodicWork(
         "Periodic_" + SensorDataUploadWorker::class.java.name,
         ExistingPeriodicWorkPolicy.KEEP,
-        createPeriodicWorkRequest(periodicSyncConfiguration, SensorDataUploadWorker::class.java)
+        createPeriodicWorkRequest(periodicSyncConfiguration)
       )
   }
 
   @PublishedApi
   internal fun createPeriodicWorkRequest(
-    periodicSyncConfiguration: PeriodicSyncConfiguration,
-    clazz: Class<SensorDataUploadWorker>,
+    periodicSyncConfiguration: PeriodicSyncConfiguration
   ): PeriodicWorkRequest {
     val periodicWorkRequestBuilder =
       PeriodicWorkRequest.Builder(
-          clazz,
+          SensorDataUploadWorker::class.java,
           periodicSyncConfiguration.repeat.interval,
           periodicSyncConfiguration.repeat.timeUnit
         )

@@ -155,7 +155,7 @@ object PhotoCaptureViewHolderFactory :
               )
               setSensorCaptureResultCollector { sensorCaptureResultFlow ->
                 sensorCaptureResultFlow.collect {
-                  if (it is SensorCaptureResult.ResourceStoringComplete) {
+                  if (it is SensorCaptureResult.ResourcesStored) {
                     val answer =
                       QuestionnaireResponse.QuestionnaireResponseItemAnswerComponent().apply {
                         value =

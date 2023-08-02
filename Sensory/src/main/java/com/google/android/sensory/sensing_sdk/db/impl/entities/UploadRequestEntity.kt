@@ -46,7 +46,7 @@ internal data class UploadRequestEntity(
   /** UUID for this record. */
   val requestUuid: UUID,
 
-  /** Foreign key in [ResourceInfoEntity]: Required to update upload status of the resource. */
+  /** Unique key in [ResourceInfoEntity]: Required to update upload status of the resource. */
   val resourceInfoId: String,
 
   /** Absolute location of the zip file to be uploaded. Uploader can upload only zip files. */
@@ -58,16 +58,16 @@ internal data class UploadRequestEntity(
   /** Bytes uploaded out of the [fileSize]. */
   val fileOffset: Long,
 
-  /** Bytes uploaded out of the [fileSize]. */
+  /** Bucket name in the blob store for this upload request. */
   val bucketName: String,
 
-  /** Relative URL because the Uploader is configured with the HOST. */
+  /** Relative URL int he bucket where the data should reside. */
   val uploadRelativeURL: String,
 
   /** Next file part number to be uploaded. Updated post successful previous part uploading. */
   val nextPart: Int,
 
-  /** If the upload should be in multiple parts. */
+  /** If the upload should be in multiple parts. This could be decided based on [fileSize]. */
   val isMultiPart: Boolean,
 
   /** Assuming this value is either null or unique. Initialized from first upload response. */

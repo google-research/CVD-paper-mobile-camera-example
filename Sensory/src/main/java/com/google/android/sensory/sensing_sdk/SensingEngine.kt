@@ -33,7 +33,7 @@ interface SensingEngine {
 
   /**
    * Responsible for creating resource records for captured data and completing upload setup. This
-   * API is triggerd by [CaptureViewModel] after completion of capturing. Limitation: All captured
+   * API is triggered by [CaptureViewModel] after completion of capturing. Limitation: All captured
    * data and metadata are stored in the same folder and zipped for uploading.
    * 1. Save [CaptureInfo] in the database
    * 2. read map for a capture type, for each sensor type:-

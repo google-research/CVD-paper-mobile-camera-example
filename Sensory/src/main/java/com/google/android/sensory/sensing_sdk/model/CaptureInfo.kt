@@ -18,7 +18,7 @@ package com.google.android.sensory.sensing_sdk.model
 
 import com.google.android.sensory.sensing_sdk.capture.CaptureSettings
 
-/** Data class equivalent to CaptureInfoEntity for usage outside database. */
+/** Data class equivalent to [CaptureInfoEntity] for usage outside database. */
 data class CaptureInfo(
   val participantId: String,
   val captureType: CaptureType,

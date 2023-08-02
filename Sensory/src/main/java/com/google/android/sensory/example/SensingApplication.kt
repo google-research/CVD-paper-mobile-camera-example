@@ -49,13 +49,13 @@ class SensingApplication : Application(), DataCaptureConfig.Provider {
         enableEncryptionIfSupported = false,
         serverConfiguration =
           ServerConfiguration(
-            baseUrl = properties.getProperty("BASE_URL"),
-            baseAccessUrl = properties.getProperty("BASE_ACCESS_URL"),
-            bucketName = properties.getProperty("BUCKET_NAME"),
+            baseUrl = properties.getProperty("BLOBSTORE_BASE_URL"),
+            baseAccessUrl = properties.getProperty("BLOBSTORE_BASE_ACCESS_URL"),
+            bucketName = properties.getProperty("BLOBSTORE_BUCKET_NAME"),
             authenticator =
               object : Authenticator {
-                override fun getUserName() = properties.getProperty("USER")
-                override fun getPassword() = properties.getProperty("PASSWORD")
+                override fun getUserName() = properties.getProperty("BLOBSTORE_USER")
+                override fun getPassword() = properties.getProperty("BLOBSTORE_PASSWORD")
               }
           )
       )

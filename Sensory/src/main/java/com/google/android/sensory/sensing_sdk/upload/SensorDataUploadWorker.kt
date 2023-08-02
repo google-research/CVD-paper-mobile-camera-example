@@ -27,6 +27,7 @@ import kotlinx.coroutines.flow.flow
 class SensorDataUploadWorker(appContext: Context, workerParams: WorkerParameters) :
   CoroutineWorker(appContext, workerParams) {
 
+  // Each new upload work will use a new instance of uploader
   private val uploader = Uploader(SensingEngineProvider.getBlobStoreService())
 
   override suspend fun doWork(): Result {

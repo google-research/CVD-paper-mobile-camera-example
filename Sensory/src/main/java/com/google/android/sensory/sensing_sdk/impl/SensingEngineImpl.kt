@@ -117,7 +117,7 @@ internal class SensingEngineImpl(
         )
       database.addUploadRequest(uploadRequest)
     }
-    emit(SensorCaptureResult.ResourceStoringComplete(captureInfo.captureId!!))
+    emit(SensorCaptureResult.ResourcesStored(captureInfo.captureId!!))
   }
 
   override suspend fun captureSensorData(pendingIntent: Intent) {
@@ -146,12 +146,14 @@ internal class SensingEngineImpl(
             fileOffset = 0
             status = RequestStatus.UPLOADING
             uploadId = result.uploadId
+            nextPart = 1
           }
         }
         is UploadResult.Success -> {
           uploadRequest.apply {
             lastUpdatedTime = result.lastUploadTime
             fileOffset = uploadRequest.fileOffset + result.bytesUploaded
+            nextPart = uploadRequest.nextPart + 1
           }
         }
         is UploadResult.Completed -> {
