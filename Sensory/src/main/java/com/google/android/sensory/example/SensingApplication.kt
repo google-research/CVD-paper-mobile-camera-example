@@ -59,16 +59,17 @@ class SensingApplication : Application(), DataCaptureConfig.Provider {
               }
           )
       )
+    SensingEngineProvider.init(sensingEngineConfiguration)
     /**
      * Local hapi fhir server was used to test the following. Add
      * [FhirEngineConfiguration.serverConfiguration] for your own fhir server.
      */
-    SensingEngineProvider.init(sensingEngineConfiguration)
     FhirEngineProvider.init(
       FhirEngineConfiguration(
         enableEncryptionIfSupported = true,
-        DatabaseErrorStrategy.RECREATE_AT_OPEN,
-        com.google.android.fhir.ServerConfiguration(properties.getProperty("FHIR_BASE_URL"))
+        databaseErrorStrategy = DatabaseErrorStrategy.RECREATE_AT_OPEN,
+        serverConfiguration =
+          com.google.android.fhir.ServerConfiguration(properties.getProperty("FHIR_BASE_URL"))
       )
     )
   }
