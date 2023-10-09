@@ -12,7 +12,7 @@
   <!--  Sensing SDK-->
   <string name="app_name">Sensory</string>
   <string name="screening">Screening</string>
-  <string name="data_collection_app">Mobile Sensors Study Workflow App</string>
+  <string name="data_collection_app">Data Collection App</string>
   <string name="steps_summary">There are 3 steps</string>
   <string name="step_record_video_ppg">Record video of PPG</string>
   <string name="step_photo_fingernails">Photo of fingernails</string>
@@ -97,5 +97,7 @@
     >Are you sure you want to discard the answers?</string>
   <string name="inputs_missing">Inputs are missing.</string>
   <string name="resources_saved">Resources are saved.</string>
+  <string name="last_sync">Last sync</string>
+  <string name="sync_menu">Sync</string>
   <!--  From FHIR demo-->
 </resources>

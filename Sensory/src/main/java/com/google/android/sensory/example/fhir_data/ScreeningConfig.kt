@@ -112,6 +112,6 @@ object ScreeningConfig {
             };
           }
     """.trimIndent()
-  val structureMapping = PPG_SCREENING_STRUCTURE_MAPPING
-  const val questionnairePath = PPG_QUESTIONNAIRE_PATH
+  val structureMapping = ANEMIA_SCREENING_STRUCTURE_MAPPING
+  const val questionnairePath = ANEMIA_QUESTIONNAIRE_PATH
 }
