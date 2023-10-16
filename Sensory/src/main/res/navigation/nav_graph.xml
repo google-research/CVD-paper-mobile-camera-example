@@ -8,7 +8,7 @@
 
   <fragment
         android:id="@+id/homeFragment"
-        android:name="com.google.android.sensory.example.HomeFragment"
+        android:name="com.google.android.sensory.HomeFragment"
         android:label="HomeFragment"
     >
     <action
@@ -19,7 +19,7 @@
 
   <fragment
         android:id="@+id/addParticipantFragment"
-        android:name="com.google.android.sensory.example.AddParticipantFragment"
+        android:name="com.google.android.sensory.AddParticipantFragment"
         android:label="AddParticipantFragment"
     >
     <action
@@ -30,7 +30,7 @@
   </fragment>
   <fragment
         android:id="@+id/screenerFragment"
-        android:name="com.google.android.sensory.example.ScreenerFragment"
+        android:name="com.google.android.sensory.ScreenerFragment"
         android:label="ScreenerFragment"
     >
     <argument android:name="patient_id" app:argType="string" />
