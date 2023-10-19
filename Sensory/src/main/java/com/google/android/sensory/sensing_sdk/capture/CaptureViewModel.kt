@@ -92,7 +92,6 @@ class CaptureViewModel(application: Application) : AndroidViewModel(application)
     CoroutineScope(context = Dispatchers.IO).launch { captureResultCollector(captureResultFlow) }
   }
   fun processRecord(camera: Camera2InteropSensor) {
-
     if (this::recordingGate.isInitialized && recordingGate.isOpen) {
       recordingGate.completeAndClose()
       countDownTimer.cancel()
@@ -101,32 +100,32 @@ class CaptureViewModel(application: Application) : AndroidViewModel(application)
       }
       return
     }
-    viewModelScope.launch {
-      recordingGate = FlowGate.createClosed()
-      if (!isPhoneSafeToUse.value!!) {
-        isPhoneSafeToUse.postValue(false)
-      }
-      // Get stream of images while recording
-      val recordingImages = recordingGate.passThrough(camera.dataPublisher())
+    recordingGate = FlowGate.createClosed()
+    if (!isPhoneSafeToUse.value!!) {
+      isPhoneSafeToUse.postValue(false)
+    }
+    // Get stream of images while recording
+    val recordingImages = recordingGate.passThrough(camera.dataPublisher())
 
-      // Compatibility layer between camerax ImageProxy and camera2 Image
-      SharedImageProxy.asImagePublisher(recordingImages) // Write from stream to disk as JPEGs
-        .subscribe(
-          WriteJpegFutureSubscriber.builder()
-            .setFileSupplier { getCameraResourceFile() }
-            .setTotalFrames(Long.MAX_VALUE)
-            .build()
-        )
-      val captureResultStream = recordingGate.passThrough(camera.captureResultPublisher())
-      val cameraMetadataSaver =
-        StreamToTsvSubscriber.builder<CaptureResult>()
-          .setTsvWriter(TSV_WRITER)
-          .setSingleFile(getCameraMetadataFile())
+    // Compatibility layer between camerax ImageProxy and camera2 Image
+    SharedImageProxy.asImagePublisher(recordingImages) // Write from stream to disk as JPEGs
+      .subscribe(
+        WriteJpegFutureSubscriber.builder()
+          .setFileSupplier { getCameraResourceFile() }
+          .setTotalFrames(Long.MAX_VALUE)
           .build()
-      captureResultStream.subscribe(cameraMetadataSaver)
+      )
+    val captureResultStream = recordingGate.passThrough(camera.captureResultPublisher())
+    val cameraMetadataSaver =
+      StreamToTsvSubscriber.builder<CaptureResult>()
+        .setTsvWriter(TSV_WRITER)
+        .setSingleFile(getCameraMetadataFile())
+        .build()
+    captureResultStream.subscribe(cameraMetadataSaver)
 
-      // Open the recording stream
-      recordingGate.open()
+    // Open the recording stream
+    recordingGate.open()
+    viewModelScope.launch {
       _captureResultFlow.emit(SensorCaptureResult.Started(captureInfo.captureId!!))
       // timer in a different coroutine
       startTimer()
