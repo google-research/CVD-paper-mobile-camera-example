@@ -75,16 +75,18 @@ class CaptureViewModel(application: Application) : AndroidViewModel(application)
     captureInfo: CaptureInfo,
     captureResultCollector: suspend ((Flow<SensorCaptureResult>) -> Unit)
   ) {
-    if (captureInfo.captureId != null) {
-      // delete everything in folder associated with this captureId to re-capture
-      val file =
-        File(
-          Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
-          captureInfo.captureFolder
-        )
-      file.deleteRecursively()
-    } else {
-      captureInfo.apply { captureId = UUID.randomUUID().toString() }
+    viewModelScope.launch {
+      if (captureInfo.captureId != null) {
+        // delete everything in folder associated with this captureId to re-capture
+        val file =
+          File(
+            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
+            captureInfo.captureFolder
+          )
+        file.deleteRecursively()
+      } else {
+        captureInfo.apply { captureId = UUID.randomUUID().toString() }
+      }
     }
     this.captureInfo = captureInfo
     CoroutineScope(context = Dispatchers.IO).launch { captureResultCollector(captureResultFlow) }
