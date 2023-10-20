@@ -1,15 +1,4 @@
 <resources>
-  <!--  Sensing SDK-->
-  <string
-        name="overheat_dialog_title"
-    >Wait until the phone is not too hot before proceeding</string>
-  <string
-        name="overheat_dialog_message"
-    >Check that the camera area is no longer hot, before resuming the session.</string>
-  <string
-        name="overheat_ok_to_proceed"
-    >I have checked it is safe to proceed</string>
-  <!--  Sensing SDK-->
   <string name="app_name">Sensory</string>
   <string name="screening">Screening</string>
   <string name="data_collection_app">Mobile Sensors Study Workflow App</string>
@@ -31,9 +20,6 @@
         name="step1_instruction2"
     >The participant\'s finger should cover the entire camera.</string>
   <string name="step1_instruction3">Record for 30 seconds.</string>
-  <string
-        name="video_recording_instruction"
-    >Place their fingertip over the entire back camera</string>
   <string name="recording_ppg">Recording PPG</string>
   <string
         name="error_dialog_message"
@@ -48,7 +34,6 @@
   <string
         name="step2_instruction1"
     >Place participant\'s fingers together such that nails are clearly visible</string>
-  <string name="take_photo">Take photo</string>
   <string
         name="ensure_one_hand"
     >Make sure there is only one hand in the photo</string>

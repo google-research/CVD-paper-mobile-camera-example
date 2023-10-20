@@ -1,0 +1,15 @@
+<resources>
+    <string
+        name="overheat_dialog_title"
+    >Wait until the phone is not too hot before proceeding</string>
+  <string
+        name="overheat_dialog_message"
+    >Check that the camera area is no longer hot, before resuming the session.</string>
+  <string
+        name="overheat_ok_to_proceed"
+    >I have checked it is safe to proceed</string>
+  <string
+        name="video_recording_instruction"
+    >Place their fingertip over the entire back camera</string>
+  <string name="take_photo">Take photo</string>
+</resources>
