@@ -21,7 +21,6 @@ import android.content.DialogInterface
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
-import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
@@ -37,8 +36,6 @@ class MainActivity : AppCompatActivity() {
     if (!hasPermissions()) {
       permissionsRequestCount = 0
       ActivityCompat.requestPermissions(this, REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS)
-    } else {
-      testWritingImage()
     }
   }
 
@@ -49,7 +46,6 @@ class MainActivity : AppCompatActivity() {
     }
   }
 
-  @RequiresApi(Build.VERSION_CODES.P)
   override fun onRequestPermissionsResult(
     requestCode: Int,
     permissions: Array<out String>,
@@ -78,30 +74,8 @@ class MainActivity : AppCompatActivity() {
           val dialog = builder.create()
           dialog.show()
         }
-      } else {
-        testWritingImage()
       }
     }
-  }
-
-  fun testWritingImage() {
-    // val tempFile = File(applicationContext.filesDir,"conjunctiva2.jpg")
-    // if(tempFile.exists()){
-    //   tempFile.delete()
-    // }
-    // val bitmap = BitmapFactory.decodeResource(applicationContext.resources,
-    // R.drawable.conjunctiva)
-    // val stream = ByteArrayOutputStream()
-    // bitmap.compress(Bitmap.CompressFormat.JPEG, 100, stream)
-    // val data = stream.toByteArray()
-    // val yuvImage = YuvImage(data, ImageFormat.YUY2, 10, 10, intArrayOf(1))
-    // val outputStream: OutputStream = Files.newOutputStream(File(applicationContext.filesDir,
-    // "conjunctiva2.jpg").toPath())
-    // val success: Boolean = yuvImage.compressToJpeg(
-    //   Rect(0, 0, yuvImage.getWidth(), yuvImage.getHeight()),
-    //   100,
-    //   outputStream
-    // )
   }
 
   companion object {
