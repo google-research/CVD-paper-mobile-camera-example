@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<resources>
+  <style name="text_style">
+    <item name="android:textSize">14sp</item>
+    <item name="android:letterSpacing">0.01</item>
+    <item name="android:textColor">@android:color/black</item>
+  </style>
+</resources>
