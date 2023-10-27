@@ -177,7 +177,7 @@ class CaptureFragment : Fragment() {
               }
             }
           )
-        recordTimer.text = "00 : 30"
+        recordTimer.text = "00 : ${captureViewModel.captureInfo.captureSettings.ppgTimer}"
         recordFab.setOnClickListener { captureViewModel.processRecord(camera!!) }
         toggleFlashFab.setOnClickListener {
           CaptureUtil.toggleFlashWithView(camera!!, toggleFlashFab)

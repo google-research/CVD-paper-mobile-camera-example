@@ -174,7 +174,7 @@ class CaptureViewModel(application: Application) : AndroidViewModel(application)
 
   private suspend fun startTimer() {
     countDownTimer =
-      object : CountDownTimer(30000, 1000) {
+      object : CountDownTimer(1000L * captureInfo.captureSettings.ppgTimer, 1000) {
           override fun onTick(millisUntilFinished: Long) {
             timerLiveData.postValue(millisUntilFinished)
           }
