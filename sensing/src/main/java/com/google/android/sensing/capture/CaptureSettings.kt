@@ -29,5 +29,7 @@ data class CaptureSettings(
   /** The title map for naming conventions of files captured via a sensor. */
   val titleMap: Map<SensorType, String>,
   /** The capture title used for naming folder that stores all sensors' captured data. */
-  val captureTitle: String
+  val captureTitle: String,
+  /** Seconds one wants to record PPG video. */
+  val ppgTimer: Int = 0
 )
