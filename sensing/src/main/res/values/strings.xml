@@ -11,5 +11,6 @@
   <string
         name="video_recording_instruction"
     >Place their fingertip over the entire back camera</string>
+  <string name="ppg_instruction_recording">Recording video</string>
   <string name="take_photo">Take photo</string>
 </resources>
