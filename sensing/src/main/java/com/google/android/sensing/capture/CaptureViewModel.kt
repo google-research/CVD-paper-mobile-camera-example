@@ -69,7 +69,7 @@ class CaptureViewModel(application: Application) : AndroidViewModel(application)
   val isPhoneSafeToUse = MutableLiveData<Boolean>(false)
   private lateinit var countDownTimer: CountDownTimer
   val timerLiveData = MutableLiveData<Long?>(null)
-  private var frameCount = 0
+  private var frameNumber = 0
   val captured = MutableLiveData<Boolean?>(null)
 
   fun setupCaptureResultFlow(
@@ -155,14 +155,17 @@ class CaptureViewModel(application: Application) : AndroidViewModel(application)
     )
   }
 
-  /** Storage folder is fetched from [captureInfo]. This is supposed to contain sub-folders for different [SensorType]s used in a [CaptureType]. Here it's only [SensorType.CAMERA].
-   *  Format of filename is Participant<PatientID>_<captureTitle>_<frameCount>_<timestamp>_<context>.<jpeg/tsv>
-   * */
+  /**
+   * Storage folder is fetched from [captureInfo]. This is supposed to contain sub-folders for
+   * different [SensorType]s used in a [CaptureType]. Here it's only [SensorType.CAMERA]. Format of
+   * filename is
+   * Participant<PatientID>_<captureTitle>_<frameNumber>_<timestamp>_<context>.<jpeg/tsv>
+   */
   private fun getCameraResourceFile(): File {
     val folder = "${captureInfo.captureFolder}/${SensorType.CAMERA}"
     val filename =
-      "Participant${captureInfo.participantId}_${captureInfo.captureSettings.captureTitle}_${frameCount}_${System.currentTimeMillis()}_${captureInfo.captureSettings.contextMap[SensorType.CAMERA]}.${captureInfo.captureSettings.fileTypeMap[SensorType.CAMERA]}"
-    frameCount++;
+      "Participant${captureInfo.participantId}_${captureInfo.captureSettings.captureTitle}_${frameNumber}_${System.currentTimeMillis()}_${captureInfo.captureSettings.contextMap[SensorType.CAMERA]}.${captureInfo.captureSettings.fileTypeMap[SensorType.CAMERA]}"
+    frameNumber++
     val filePath = "$folder/$filename"
     val fileFolder = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
     return File(fileFolder, filePath)
@@ -180,20 +183,20 @@ class CaptureViewModel(application: Application) : AndroidViewModel(application)
   private suspend fun startTimer() {
     countDownTimer =
       object : CountDownTimer(1000L * captureInfo.captureSettings.ppgTimer, 1000) {
-        override fun onTick(millisUntilFinished: Long) {
-          timerLiveData.postValue(millisUntilFinished)
-        }
+          override fun onTick(millisUntilFinished: Long) {
+            timerLiveData.postValue(millisUntilFinished)
+          }
 
-        override fun onFinish() {
-          if (recordingGate.isOpen) {
-            viewModelScope.launch {
-              _captureResultFlow.emit(
-                SensorCaptureResult.CaptureComplete(captureInfo.captureId!!)
-              )
+          override fun onFinish() {
+            if (recordingGate.isOpen) {
+              viewModelScope.launch {
+                _captureResultFlow.emit(
+                  SensorCaptureResult.CaptureComplete(captureInfo.captureId!!)
+                )
+              }
             }
           }
         }
-      }
         .start()
   }
 

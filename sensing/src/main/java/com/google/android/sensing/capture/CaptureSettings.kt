@@ -28,7 +28,10 @@ data class CaptureSettings(
   val metaDataTypeMap: Map<SensorType, String>,
   /** The context is appended at the end of a filename being produced while capturing. */
   val contextMap: Map<SensorType, String>,
-  /** The capture title is appended next to ParticipantID in a filename being produced while capturing. */
+  /**
+   * The capture title is appended next to ParticipantID in a filename being produced while
+   * capturing.
+   */
   val captureTitle: String,
   /** Seconds one wants to record PPG video. */
   val ppgTimer: Int = 0
