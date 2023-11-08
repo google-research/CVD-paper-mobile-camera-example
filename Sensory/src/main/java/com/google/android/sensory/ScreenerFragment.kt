@@ -72,6 +72,7 @@ class ScreenerFragment : Fragment(R.layout.fragment_screening) {
 
   private fun setUpActionBar() {
     (requireActivity() as AppCompatActivity).supportActionBar?.apply {
+      show()
       title = requireContext().getString(R.string.screening)
       setDisplayHomeAsUpEnabled(true)
     }

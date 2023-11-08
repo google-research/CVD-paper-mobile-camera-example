@@ -73,6 +73,7 @@ class CaptureViewModel(application: Application) : AndroidViewModel(application)
   val isPhoneSafeToUse = MutableLiveData<Boolean>(false)
   private lateinit var countDownTimer: CountDownTimer
   val timerLiveData = MutableLiveData<Long?>(null)
+  private var frameNumber = 0
   val captured = MutableLiveData<Boolean?>(null)
 
   fun setupCaptureResultFlow(
@@ -146,10 +147,17 @@ class CaptureViewModel(application: Application) : AndroidViewModel(application)
     )
   }
 
+  /**
+   * Storage folder is fetched from [captureInfo]. This is supposed to contain sub-folders for
+   * different [SensorType]s used in a [CaptureType]. Here it's only [SensorType.CAMERA]. Format of
+   * filename is
+   * Participant<PatientID>_<captureTitle>_<frameNumber>_<timestamp>_<context>.<jpeg/tsv>
+   */
   private fun getCameraResourceFile(): File {
     val folder = "${captureInfo.captureFolder}/${SensorType.CAMERA}"
     val filename =
-      "Participant${captureInfo.participantId}_${captureInfo.captureSettings!!.captureTitle}_data_${System.currentTimeMillis()}_${captureInfo.captureSettings!!.titleMap[SensorType.CAMERA]}.${captureInfo.captureSettings!!.fileTypeMap[SensorType.CAMERA]}"
+      "Participant${captureInfo.participantId}_${captureInfo.captureSettings.captureTitle}_${frameNumber}_${System.currentTimeMillis()}_${captureInfo.captureSettings!!.contextMap[SensorType.CAMERA]}.${captureInfo.captureSettings!!.fileTypeMap[SensorType.CAMERA]}"
+    frameNumber++
     val filePath = "$folder/$filename"
     return File(internalStorageFolder, filePath)
   }
@@ -157,7 +165,7 @@ class CaptureViewModel(application: Application) : AndroidViewModel(application)
   private fun getCameraMetadataFile(): File {
     val folder = "${captureInfo.captureFolder}/${SensorType.CAMERA}"
     val filename =
-      "Participant_${captureInfo.participantId}_${captureInfo.captureSettings!!.captureTitle}_metadata_${System.currentTimeMillis()}_${captureInfo.captureSettings!!.titleMap[SensorType.CAMERA]}.${captureInfo.captureSettings!!.metaDataTypeMap[SensorType.CAMERA]}"
+      "Participant_${captureInfo.participantId}_${captureInfo.captureSettings.captureTitle}_${System.currentTimeMillis()}_${captureInfo.captureSettings!!.contextMap[SensorType.CAMERA]}.${captureInfo.captureSettings!!.metaDataTypeMap[SensorType.CAMERA]}"
     val filePath = "$folder/$filename"
     return File(internalStorageFolder, filePath)
   }

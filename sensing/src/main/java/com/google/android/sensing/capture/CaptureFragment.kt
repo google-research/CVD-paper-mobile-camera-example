@@ -18,18 +18,20 @@ package com.google.android.sensing.capture
 
 import android.annotation.SuppressLint
 import android.app.AlertDialog
+import android.content.res.ColorStateList
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Button
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.AppCompatImageView
 import androidx.camera.camera2.interop.CaptureRequestOptions
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.Preview
 import androidx.camera.view.PreviewView
+import androidx.core.content.ContextCompat
 import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.setFragmentResult
@@ -41,6 +43,7 @@ import androidx.lifecycle.lifecycleScope
 import com.google.android.fitbit.research.sensing.common.libraries.camera.Camera2InteropSensor
 import com.google.android.fitbit.research.sensing.common.libraries.camera.CameraXSensorV2
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.google.android.material.progressindicator.CircularProgressIndicator
 import com.google.android.sensing.R
 import com.google.android.sensing.model.CaptureInfo
 import com.google.android.sensing.model.CaptureType
@@ -81,7 +84,9 @@ class CaptureFragment : Fragment() {
   private lateinit var recordFab: FloatingActionButton
   private lateinit var toggleFlashFab: FloatingActionButton
   private lateinit var recordTimer: TextView
-  private lateinit var btnTakePhoto: Button
+  private lateinit var ppgInstruction: TextView
+  private lateinit var ppgProgress: CircularProgressIndicator
+  private lateinit var btnTakePhoto: AppCompatImageView
 
   /**
    * A setter function: Callback defined by the application developers that collects
@@ -121,10 +126,7 @@ class CaptureFragment : Fragment() {
     container: ViewGroup?,
     savedInstanceState: Bundle?,
   ): View? {
-    /** *** To fit full screen */
-    requireActivity().window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_FULLSCREEN
     (requireActivity() as AppCompatActivity).supportActionBar?.hide()
-    /** *** To fit full screen */
     /** For a different [CaptureType] sensors may be initialized differently. */
     when (captureViewModel.captureInfo.captureType) {
       CaptureType.VIDEO_PPG -> {
@@ -171,6 +173,10 @@ class CaptureFragment : Fragment() {
         recordFab = view.findViewById(R.id.record_fab)
         toggleFlashFab = view.findViewById(R.id.toggle_flash_fab)
         recordTimer = view.findViewById(R.id.record_timer)
+        ppgInstruction = view.findViewById(R.id.ppg_instruction)
+        ppgProgress = view.findViewById(R.id.ppg_progress)
+        ppgProgress.max = captureViewModel.captureInfo.captureSettings.ppgTimer
+        ppgProgress.progress = 0
         // Start the camera and preview
         preview!!.setSurfaceProvider(previewView.surfaceProvider)
         camera!!
@@ -186,7 +192,7 @@ class CaptureFragment : Fragment() {
         recordTimer.text = "00 : ${captureViewModel.captureInfo.captureSettings!!.ppgTimer}"
         recordFab.setOnClickListener { captureViewModel.processRecord(camera!!) }
         toggleFlashFab.setOnClickListener {
-          CaptureUtil.toggleFlashWithView(camera!!, toggleFlashFab)
+          CaptureUtil.toggleFlashWithView(camera!!, toggleFlashFab, requireContext())
         }
       }
       CaptureType.IMAGE -> {
@@ -208,7 +214,7 @@ class CaptureFragment : Fragment() {
           captureViewModel.capturePhoto(camera!!, requireContext())
         }
         toggleFlashFab.setOnClickListener {
-          CaptureUtil.toggleFlashWithView(camera!!, toggleFlashFab)
+          CaptureUtil.toggleFlashWithView(camera!!, toggleFlashFab, requireContext())
         }
       }
     }
@@ -242,6 +248,9 @@ class CaptureFragment : Fragment() {
               TimeUnit.MILLISECONDS.toSeconds(it)
             )
           recordTimer.text = strDuration
+          ppgProgress.progress =
+            captureViewModel.captureInfo.captureSettings.ppgTimer -
+              TimeUnit.MILLISECONDS.toSeconds(it).toInt()
         }
       }
       captureViewModel.captured.observe(viewLifecycleOwner) {
@@ -261,12 +270,15 @@ class CaptureFragment : Fragment() {
             CaptureType.IMAGE -> "Image Saved"
           }
         Toast.makeText(requireContext(), toastText, Toast.LENGTH_SHORT).show()
-        stopRecording()
+        finishCapturing()
       }
       lifecycleScope.launch {
         captureViewModel.captureResultFlow.collect {
           if (it is SensorCaptureResult.Started) {
+            ppgInstruction.text = resources.getString(R.string.ppg_instruction_recording)
             recordFab.setImageResource(R.drawable.videocam_off)
+            recordFab.imageTintList =
+              ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.colorPrimary))
           }
           if (it is SensorCaptureResult.CaptureComplete) {
             finishCapturing()
@@ -274,10 +286,6 @@ class CaptureFragment : Fragment() {
         }
       }
     }
-  }
-
-  private fun stopRecording() {
-    finishCapturing()
   }
 
   // Safe to ignore CameraControl futures
@@ -302,17 +310,6 @@ class CaptureFragment : Fragment() {
   private fun finishCapturing() {
     captureViewModel.captureComplete()
     setFragmentResult(CAPTURE_FRAGMENT_TAG, bundleOf(CAPTURED to true))
-  }
-
-  override fun onDetach() {
-    if (captureViewModel.captured.value == null || !captureViewModel.captured.value!!) {
-      setFragmentResult(CAPTURE_FRAGMENT_TAG, bundleOf(CAPTURED to false))
-    }
-    /** *** To remove full screen */
-    requireActivity().window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_VISIBLE
-    (requireActivity() as AppCompatActivity).supportActionBar?.show()
-    /** *** To remove full screen */
-    super.onDetach()
   }
 
   companion object {
