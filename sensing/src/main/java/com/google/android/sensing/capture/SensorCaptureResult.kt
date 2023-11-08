@@ -20,9 +20,13 @@ sealed class SensorCaptureResult {
 
   data class Started(val captureId: String) : SensorCaptureResult()
 
-  data class StateChange(val resourceInfoId: String) : SensorCaptureResult()
-
   data class CaptureComplete(val captureId: String) : SensorCaptureResult()
+
+  data class CaptureInfoCreated(val captureId: String) : SensorCaptureResult()
+
+  data class ResourceInfoCreated(val resourceInfoId: String) : SensorCaptureResult()
+
+  data class UploadRequestCreated(val uploadRequestId: String) : SensorCaptureResult()
 
   data class ResourcesStored(val captureId: String) : SensorCaptureResult()
 }

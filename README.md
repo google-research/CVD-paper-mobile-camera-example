@@ -36,7 +36,7 @@ Sensory is an illustrative code intended to accompany an upcoming research publi
    ```agsl
    context.supportFragmentManager
    .beginTransaction()
-   .replace(R.id.nav_host_fragment, captureFragment)
+   .add(R.id.nav_host_fragment, captureFragment)
    .setReorderingAllowed(true)
    .addToBackStack(null)
    .commit()
@@ -44,21 +44,33 @@ Sensory is an illustrative code intended to accompany an upcoming research publi
 
 ## Upload:-
 
-### Setup MinIO Server
+### Setup Local MinIO Server
 
-1. Run MinIO server as docker container: 
+1. Create a Minio container by either using Docker Desktop, or running the following command: 
    
    `sudo docker run -p 9000:9000 -p 9001:9001 quay.io/minio/minio server /data --console-address ":9001"`
    
    **Troubleshooting**: You might need to run `ufw allow 9000:9010/tcp` before running the docker command. [link](https://github.com/minio/minio#allow-port-access-for-firewalls).
-2. Go to http://localhost:9001/ and sign in. Default admin credentials are:-
+2. Inspect the server by opening the URL http://localhost:9001/ in a browser. You should see the Minio Web Interface. 
+3. Sign in. Default admin credentials are:-
    ```
    username: minioadmin
    password: minioadmin
    ```
-3. Create a bucket `<bucket-name>`
+4Create a bucket `<bucket-name>`
 
 Full details and other ways of setting up MinIO: [Here](https://github.com/minio/minio)
+
+### Setup Local Fhir Server
+Run the following command in a terminal to get the latest image of HAPI FHIR
+
+`docker pull hapiproject/hapi:latest`
+
+Create a HAPI FHIR container by either using Docker Desktop to run the previously download image hapiproject/hapi, or running the following command
+
+`docker run -p 8080:8080 hapiproject/hapi:latest`
+
+Inspect the server by opening the URL http://localhost:8080/ in a browser. You should see the HAPI FHIR web interface.
 
 ### App Configuration
 1. Create file `Sensory/src/main/assets/local.properties`

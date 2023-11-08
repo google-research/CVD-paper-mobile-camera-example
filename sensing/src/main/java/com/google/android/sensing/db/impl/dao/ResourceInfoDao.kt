@@ -85,10 +85,14 @@ internal abstract class ResourceInfoDao {
   abstract suspend fun getResourceInfoEntity(resourceInfoId: String): ResourceInfoEntity?
 
   @Transaction
-  open suspend fun getResourceInfo(resourceInfoId: String): ResourceInfo {
+  open suspend fun getResourceInfo(resourceInfoId: String): ResourceInfo? {
     return getResourceInfoEntity(resourceInfoId)?.toResourceInfo()
-      ?: throw Exception("ResourceInfo with resourceInfoId = $resourceInfoId not found!")
   }
+
+  @Query("""
+    DELETE FROM ResourceInfoEntity WHERE resourceInfoId=:resourceInfoId
+  """)
+  abstract suspend fun deleteResourceInfo(resourceInfoId: String): Int
 }
 
 internal fun ResourceInfoEntity.toResourceInfo() =
@@ -98,7 +102,7 @@ internal fun ResourceInfoEntity.toResourceInfo() =
     participantId = participantId,
     captureTitle = captureTitle,
     fileType = fileType,
-    resourceFolderPath = resourceFolderPath,
+    resourceFolderRelativePath = resourceFolderRelativePath,
     uploadURL = uploadURL,
     status = status
   )
@@ -111,7 +115,7 @@ internal fun ResourceInfo.toResourceInfoEntity() =
     participantId = participantId,
     captureTitle = captureTitle,
     fileType = fileType,
-    resourceFolderPath = resourceFolderPath,
+    resourceFolderRelativePath = resourceFolderRelativePath,
     uploadURL = uploadURL,
     status = status
   )

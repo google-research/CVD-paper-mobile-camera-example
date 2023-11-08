@@ -107,7 +107,7 @@ object PhotoCaptureViewHolderFactory :
             val resourceInfo = sensingEngine.listResourceInfoInCapture(captureId)[0]
             livePath.postValue(
               ViewHolderFactoryUtil.getFirstOrNullImageUri(
-                resourceInfo.resourceFolderPath,
+                resourceInfo.resourceFolderRelativePath,
                 resourceInfo.fileType
               )!!
             )
@@ -150,6 +150,7 @@ object PhotoCaptureViewHolderFactory :
                       titleMap = mapOf(SensorType.CAMERA to SensingApplication.APP_VERSION),
                       captureTitle = QUESTION_TITLE
                     ),
+                  retake = captureId != null,
                   captureId = captureId,
                 )
               )
@@ -171,15 +172,15 @@ object PhotoCaptureViewHolderFactory :
             }
           context.supportFragmentManager
             .beginTransaction()
-            .replace(R.id.nav_host_fragment, captureFragment)
+            .add(R.id.screener_container, captureFragment)
             .setReorderingAllowed(true)
             .addToBackStack(null)
             .commit()
         }
         context.supportFragmentManager
           .beginTransaction()
-          .replace(
-            R.id.nav_host_fragment,
+          .add(
+            R.id.screener_container,
             InstructionsFragment().apply {
               arguments = bundleOf(InstructionsFragment.TITLE to QUESTION_TITLE)
             }

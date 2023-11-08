@@ -20,6 +20,7 @@ import android.content.Context
 import androidx.room.Room
 import com.google.android.sensing.DatabaseErrorStrategy
 import com.google.android.sensing.db.Database
+import com.google.android.sensing.db.ResourceNotFoundException
 import com.google.android.sensing.model.CaptureInfo
 import com.google.android.sensing.model.RequestStatus
 import com.google.android.sensing.model.ResourceInfo
@@ -76,6 +77,34 @@ internal class DatabaseImpl(context: Context, databaseConfig: DatabaseConfig) : 
 
   override suspend fun getResourceInfo(resourceInfoId: String): ResourceInfo {
     return resourceInfoDao.getResourceInfo(resourceInfoId)
+      ?: throw ResourceNotFoundException("ResourceInfo", resourceInfoId)
+  }
+
+  override suspend fun getCaptureInfo(captureId: String): CaptureInfo {
+    return captureInfoDao.getCaptureInfo(captureId)
+      ?: throw ResourceNotFoundException("CaptureInfo", captureId)
+  }
+
+  override suspend fun deleteCaptureInfo(captureId: String): Boolean {
+    return captureInfoDao.deleteCaptureInfo(captureId) == 1
+  }
+
+  override suspend fun deleteResourceInfo(resourceInfoId: String): Boolean {
+    return resourceInfoDao.deleteResourceInfo(resourceInfoId) == 1
+  }
+
+  override suspend fun deleteUploadRequest(resourceInfoId: String): Boolean {
+    return uploadRequestDao.deleteUploadRequest(resourceInfoId) == 1
+  }
+
+  override suspend fun deleteRecordsInCapture(captureId: String): Boolean {
+    var deleted = true
+    listResourceInfoInCapture(captureId).forEach {
+      deleted = deleted and deleteUploadRequest(it.resourceInfoId)
+      deleted = deleted and deleteResourceInfo(it.resourceInfoId)
+    }
+    deleted = deleted and deleteCaptureInfo(captureId)
+    return deleted
   }
 
   companion object {

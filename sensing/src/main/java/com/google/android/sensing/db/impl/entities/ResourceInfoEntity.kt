@@ -24,7 +24,7 @@ import com.google.android.sensing.model.RequestStatus
 @Entity(
   indices =
     [
-      Index(value = ["resourceFolderPath"], unique = true),
+      Index(value = ["resourceFolderRelativePath"], unique = true),
       Index(value = ["resourceInfoId"], unique = true),
       Index(value = ["captureId"]),
       Index(value = ["participantId"]),
@@ -50,8 +50,8 @@ internal data class ResourceInfoEntity(
   /** Resource extension */
   val fileType: String,
 
-  /** Absolute android folder location of the captured data from a sensor. */
-  val resourceFolderPath: String,
+  /** Folder location of the captured data from a sensor, relative to app's internal storage. */
+  val resourceFolderRelativePath: String,
 
   /** Absolute and immutable upload url. */
   val uploadURL: String,

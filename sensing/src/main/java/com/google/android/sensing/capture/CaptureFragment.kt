@@ -47,24 +47,25 @@ import com.google.android.sensing.model.CaptureType
 import java.util.Locale
 import java.util.Timer
 import java.util.TimerTask
+import java.util.UUID
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 
 /**
- * Fragment that deals with all sensors: For now only camera with capture types being
- * [CaptureType.VIDEO_PPG] and [CaptureType.IMAGE]. The UI is programmatically inflated based on the
- * captureType given. Reason why all [CaptureType]s are managed by this fragment is for a given
- * capture type, multiple sensors may be required. Business logic like subscribing, emitting flows
- * of [SensorCaptureResult], timers, livedata handling are done in [CaptureViewModel]. TODO: This is
- * too customised and we will need to make it configurable. Configurability options:-
- * 1. CaptureRequestOptions could be a part of [captureInfo.captureSettings] instead of being
- * hardcoded in the viewModel
- * 2. WriteJpegFutureSubscriber could be any generic subscriber
- * 3. Video timer should not be hardcoded
- * 4. Other camera settings like DEFAULT_BACK_CAMERA, TORCH, LOCK_AFTER_MS, etc.
- * 5. TSVWriter can be configurable
- * 6. File suppliers should be more generic ==>> DONE
+ * Fragment that displays screens to capture data from sensors involved in a captureType. The UI is
+ * programmatically inflated based on the captureType given.
+ *
+ * Expects to set [CaptureInfo] and application callback to receive [SensorCaptureResult]s.
+ *
+ * Business logic like subscribing, emitting flows of [SensorCaptureResult], timers, livedata
+ * handling are done in [CaptureViewModel].
+ *
+ * TODO: More configurability needs to be added:-
+ * ```
+ *      a. Camera settings like CaptureRequestOptions, torch, default_back_camera, etc.
+ *      b. Accepting generic output subscribers for different sensor types (instead of just WriteJpegFutureSubscriber here)
+ * ```
  */
 @SuppressLint("UnsafeOptInUsageError")
 class CaptureFragment : Fragment() {
@@ -88,7 +89,7 @@ class CaptureFragment : Fragment() {
    * [SensingEngine.onCaptureCompleteCallback].
    */
   fun setSensorCaptureResultCollector(
-    sensorCaptureResultCollector: suspend ((Flow<SensorCaptureResult>) -> Unit)
+    sensorCaptureResultCollector: suspend ((Flow<SensorCaptureResult>) -> Unit),
   ) {
     this.sensorCaptureResultCollector = sensorCaptureResultCollector
   }
@@ -96,8 +97,13 @@ class CaptureFragment : Fragment() {
   /**
    * A setter function: All details about the capture. Not passing via arguments as it requires API
    * >= 33.
+   *
+   * If [captureInfo.retake] is true then [captureInfo.captureId] must not be null
    */
   fun setCaptureInfo(captureInfo: CaptureInfo) {
+    if (captureInfo.captureId == null) {
+      captureInfo.captureId = UUID.randomUUID().toString()
+    }
     this.captureInfo = captureInfo
   }
 
@@ -177,7 +183,7 @@ class CaptureFragment : Fragment() {
               }
             }
           )
-        recordTimer.text = "00 : ${captureViewModel.captureInfo.captureSettings.ppgTimer}"
+        recordTimer.text = "00 : ${captureViewModel.captureInfo.captureSettings!!.ppgTimer}"
         recordFab.setOnClickListener { captureViewModel.processRecord(camera!!) }
         toggleFlashFab.setOnClickListener {
           CaptureUtil.toggleFlashWithView(camera!!, toggleFlashFab)
@@ -296,7 +302,6 @@ class CaptureFragment : Fragment() {
   private fun finishCapturing() {
     captureViewModel.captureComplete()
     setFragmentResult(CAPTURE_FRAGMENT_TAG, bundleOf(CAPTURED to true))
-    requireActivity().supportFragmentManager.popBackStack()
   }
 
   override fun onDetach() {

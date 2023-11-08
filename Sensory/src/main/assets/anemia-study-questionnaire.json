@@ -39,7 +39,7 @@
           "text": "Capture PPG Video"
         },
         {
-          "text": "PPG_Signals",
+          "text": "PPG",
           "linkId": "ppg-capture-api-call",
           "extension": [
             {
@@ -80,7 +80,7 @@
           "text": "Capture Open Fingernails Image"
         },
         {
-          "text": "Anemia_Fingernails_Open",
+          "text": "FingernailsOpen",
           "linkId": "photo-capture-fingernails-open-api-call",
           "extension": [
             {
@@ -121,7 +121,7 @@
           "text": "Capture Closed Fingernails Image"
         },
         {
-          "text": "Anemia_Fingernails_Closed",
+          "text": "FingernailsClosed",
           "linkId": "photo-capture-fingernails-closed-api-call",
           "extension": [
             {
@@ -162,7 +162,7 @@
           "text": "Capture Conjunctiva Image"
         },
         {
-          "text": "Anemia_Conjunctiva",
+          "text": "Conjunctiva",
           "linkId": "photo-capture-conjunctiva-api-call",
           "extension": [
             {

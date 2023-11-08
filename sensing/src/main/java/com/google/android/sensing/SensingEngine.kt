@@ -26,22 +26,30 @@ import com.google.android.sensing.model.UploadResult
 import kotlinx.coroutines.flow.Flow
 
 /**
- * The Sensing Engine interface that handles the local storage of captured resources. TODO: CRUD
- * APIs for UploadRequest to use only the upload mechanism this Engine provides.
+ * The Interface that defines APIs for tracking and handling sensing data. As a tracker it has
+ * following responsibilities:-
+ * 1. Track capture of data and create database records
+ * 2. Track upload of data and update database records
+ *
+ * As a handler it has following responsibilities:-
+ * 1. CRUD APIs to access capture information
+ *
+ * TODO: CRUD APIs for UploadRequest to use only the upload mechanism this Engine provides.
  */
 interface SensingEngine {
 
   /**
-   * Responsible for creating resource records for captured data and completing upload setup. This
-   * API is triggered by [CaptureViewModel] after completion of capturing. Limitation: All captured
-   * data and metadata are stored in the same folder and zipped for uploading.
-   * 1. Save [CaptureInfo] in the database
-   * 2. read map for a capture type, for each sensor type:-
+   * Responsible for creating database records ([CaptureInfoEntity], [ResouurceInfoEntity],
+   * [UploadRequestEntity]) to track captured data. This API is triggered by [CaptureViewModel]
+   * after completion of capturing. Limitation: All captured data and metadata are stored in the
+   * same folder and zipped for uploading.
+   * 1. Delete all data for [captureInfo.captureId] if present.
+   * 2. Move data from cache to files directory in internal storage.
+   * 2. Save [CaptureInfo] in the database.
+   * 3. For each sensor involved in the capture:-
    * ```
-   *      a. create [ResourceInfo] for it and save it in the database.
-   *      b. emit [SensorCaptureResult.StateChange].
-   *      c. zip the [captureInfo.captureFolder]/[sensorType] folder.
-   *      d. create [UploadRequest] for it and save it in the database.
+   *      a. create [ResourceInfo] record.
+   *      d. create [UploadRequest] record.
    * ```
    * TODO: Support uploading of any mime type.
    */
@@ -49,7 +57,7 @@ interface SensingEngine {
 
   /**
    * Lists all ResourceInfo given a participantId. This will return all ResourceInfo across multiple
-   * capturings.
+   * captures.
    */
   suspend fun listResourceInfoForParticipant(participantId: String): List<ResourceInfo>
 
@@ -64,7 +72,7 @@ interface SensingEngine {
 
   /**
    * [SensorDataUploadWorker] invokes this API to fetch [RequestStatus.PENDING] records to upload
-   * and then update thos records on collecting [UploadResult]s. Additionally, it also deletes
+   * and then update those records on collecting [UploadResult]s. Additionally, it also deletes
    * captured files and folders after successful upload.
    */
   suspend fun syncUpload(upload: (suspend (List<UploadRequest>) -> Flow<UploadResult>))
@@ -78,4 +86,9 @@ interface SensingEngine {
   /** Delete data stored in blobstore */
   suspend fun deleteSensorData(uploadURL: String)
   suspend fun deleteSensorMetaData(uploadURL: String)
+
+  suspend fun getCaptureInfo(captureId: String): CaptureInfo
+
+  /** Delete data associated with [captureId] */
+  suspend fun deleteDataInCapture(captureId: String): Boolean
 }

@@ -19,9 +19,12 @@ package com.google.android.sensing.db.impl.dao
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
+import androidx.room.Query
 import androidx.room.Transaction
 import com.google.android.sensing.db.impl.entities.CaptureInfoEntity
 import com.google.android.sensing.model.CaptureInfo
+import java.time.Instant
+import java.util.Date
 
 @Dao
 internal abstract class CaptureInfoDao {
@@ -30,19 +33,42 @@ internal abstract class CaptureInfoDao {
 
   @Transaction
   open suspend fun insertCaptureInfo(captureInfo: CaptureInfo): String {
-    // convert to CaptureInfoEntity and insert
-    val entity: CaptureInfoEntity
-    with(captureInfo) {
-      entity =
-        CaptureInfoEntity(
-          id = 0,
-          participantId = participantId,
-          captureType = captureType,
-          captureFolder = captureFolder,
-          captureId = captureId!!
-        )
-    }
-    insertCaptureInfoEntity(entity)
+    insertCaptureInfoEntity(captureInfo.toCaptureInfoEntity())
     return captureInfo.participantId
   }
+
+  @Query("""
+    SELECT * FROM CaptureInfoEntity WHERE captureId=:captureId
+  """)
+  abstract suspend fun getCaptureInfoEntity(captureId: String): CaptureInfoEntity?
+
+  @Transaction
+  open suspend fun getCaptureInfo(captureId: String): CaptureInfo? {
+    return getCaptureInfoEntity(captureId)?.toCaptureInfo()
+  }
+
+  @Query("""
+    DELETE FROM CaptureInfoEntity WHERE captureId=:captureId
+  """)
+  abstract suspend fun deleteCaptureInfo(captureId: String): Int
 }
+
+internal fun CaptureInfo.toCaptureInfoEntity() =
+  CaptureInfoEntity(
+    id = 0,
+    participantId = participantId,
+    captureType = captureType,
+    captureFolder = captureFolder,
+    captureId = captureId!!,
+    startTime = startTime?.toInstant() ?: Instant.now()
+  )
+
+internal fun CaptureInfoEntity.toCaptureInfo() =
+  CaptureInfo(
+    participantId = participantId,
+    captureType = captureType,
+    captureFolder = captureFolder,
+    captureId = captureId,
+    captureSettings = null,
+    startTime = Date.from(startTime)
+  )

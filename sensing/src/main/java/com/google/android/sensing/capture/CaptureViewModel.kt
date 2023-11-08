@@ -23,7 +23,6 @@ import android.hardware.camera2.CaptureResult
 import android.hardware.camera2.params.ColorSpaceTransform
 import android.hardware.camera2.params.RggbChannelVector
 import android.os.CountDownTimer
-import android.os.Environment
 import androidx.camera.camera2.interop.CaptureRequestOptions
 import androidx.camera.camera2.interop.ExperimentalCamera2Interop
 import androidx.core.content.ContextCompat
@@ -43,7 +42,7 @@ import com.google.android.sensing.model.SensorType
 import com.google.common.util.concurrent.FutureCallback
 import com.google.common.util.concurrent.Futures
 import java.io.File
-import java.util.UUID
+import java.util.Date
 import java.util.concurrent.Executors
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -65,6 +64,11 @@ class CaptureViewModel(application: Application) : AndroidViewModel(application)
   val captureResultFlow: Flow<SensorCaptureResult>
     get() = _captureResultFlow
 
+  private val internalStorageFolder: File
+    get() =
+      if (captureInfo.retake == true) getApplication<Application>().cacheDir
+      else getApplication<Application>().filesDir
+
   lateinit var recordingGate: FlowGate
   val isPhoneSafeToUse = MutableLiveData<Boolean>(false)
   private lateinit var countDownTimer: CountDownTimer
@@ -75,19 +79,6 @@ class CaptureViewModel(application: Application) : AndroidViewModel(application)
     captureInfo: CaptureInfo,
     captureResultCollector: suspend ((Flow<SensorCaptureResult>) -> Unit)
   ) {
-    viewModelScope.launch {
-      if (captureInfo.captureId != null) {
-        // delete everything in folder associated with this captureId to re-capture
-        val file =
-          File(
-            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
-            captureInfo.captureFolder
-          )
-        file.deleteRecursively()
-      } else {
-        captureInfo.apply { captureId = UUID.randomUUID().toString() }
-      }
-    }
     this.captureInfo = captureInfo
     CoroutineScope(context = Dispatchers.IO).launch { captureResultCollector(captureResultFlow) }
   }
@@ -127,6 +118,7 @@ class CaptureViewModel(application: Application) : AndroidViewModel(application)
     recordingGate.open()
     viewModelScope.launch {
       _captureResultFlow.emit(SensorCaptureResult.Started(captureInfo.captureId!!))
+      captureInfo.startTime = Date()
       // timer in a different coroutine
       startTimer()
     }
@@ -157,24 +149,22 @@ class CaptureViewModel(application: Application) : AndroidViewModel(application)
   private fun getCameraResourceFile(): File {
     val folder = "${captureInfo.captureFolder}/${SensorType.CAMERA}"
     val filename =
-      "Participant${captureInfo.participantId}_${captureInfo.captureSettings.captureTitle}_data_${System.currentTimeMillis()}_${captureInfo.captureSettings.titleMap[SensorType.CAMERA]}.${captureInfo.captureSettings.fileTypeMap[SensorType.CAMERA]}"
+      "Participant${captureInfo.participantId}_${captureInfo.captureSettings!!.captureTitle}_data_${System.currentTimeMillis()}_${captureInfo.captureSettings!!.titleMap[SensorType.CAMERA]}.${captureInfo.captureSettings!!.fileTypeMap[SensorType.CAMERA]}"
     val filePath = "$folder/$filename"
-    val fileFolder = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-    return File(fileFolder, filePath)
+    return File(internalStorageFolder, filePath)
   }
 
   private fun getCameraMetadataFile(): File {
     val folder = "${captureInfo.captureFolder}/${SensorType.CAMERA}"
     val filename =
-      "Participant_${captureInfo.participantId}_${captureInfo.captureSettings.captureTitle}_metadata_${System.currentTimeMillis()}_${captureInfo.captureSettings.titleMap[SensorType.CAMERA]}.${captureInfo.captureSettings.metaDataTypeMap[SensorType.CAMERA]}"
+      "Participant_${captureInfo.participantId}_${captureInfo.captureSettings!!.captureTitle}_metadata_${System.currentTimeMillis()}_${captureInfo.captureSettings!!.titleMap[SensorType.CAMERA]}.${captureInfo.captureSettings!!.metaDataTypeMap[SensorType.CAMERA]}"
     val filePath = "$folder/$filename"
-    val fileFolder = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-    return File(fileFolder, filePath)
+    return File(internalStorageFolder, filePath)
   }
 
   private suspend fun startTimer() {
     countDownTimer =
-      object : CountDownTimer(1000L * captureInfo.captureSettings.ppgTimer, 1000) {
+      object : CountDownTimer(1000L * captureInfo.captureSettings!!.ppgTimer, 1000) {
           override fun onTick(millisUntilFinished: Long) {
             timerLiveData.postValue(millisUntilFinished)
           }

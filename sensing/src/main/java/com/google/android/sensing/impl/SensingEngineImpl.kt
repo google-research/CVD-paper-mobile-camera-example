@@ -18,7 +18,6 @@ package com.google.android.sensing.impl
 
 import android.content.Context
 import android.content.Intent
-import android.os.Environment
 import androidx.camera.camera2.interop.ExperimentalCamera2Interop
 import com.google.android.sensing.SensingEngine
 import com.google.android.sensing.ServerConfiguration
@@ -26,6 +25,7 @@ import com.google.android.sensing.capture.CaptureFragment
 import com.google.android.sensing.capture.CaptureUtil
 import com.google.android.sensing.capture.SensorCaptureResult
 import com.google.android.sensing.db.Database
+import com.google.android.sensing.db.ResourceNotFoundException
 import com.google.android.sensing.model.CaptureInfo
 import com.google.android.sensing.model.CaptureType
 import com.google.android.sensing.model.RequestStatus
@@ -41,8 +41,10 @@ import java.util.Date
 import java.util.UUID
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.withContext
 
 /**
  * @param database Interface to interact with room database.
@@ -58,66 +60,95 @@ internal class SensingEngineImpl(
 ) : SensingEngine {
 
   override suspend fun onCaptureCompleteCallback(captureInfo: CaptureInfo) = flow {
-    database.addCaptureInfo(captureInfo)
-    CaptureUtil.sensorsInvolved(captureInfo.captureType).forEach {
-      val resourceFolderRelativePath = getResourceFolderRelativePath(it, captureInfo)
-      val uploadRelativeUrl = "/$resourceFolderRelativePath.zip"
-      val resourceInfo =
-        ResourceInfo(
-          resourceInfoId = UUID.randomUUID().toString(),
-          captureId = captureInfo.captureId!!,
-          participantId = captureInfo.participantId,
-          captureTitle = captureInfo.captureSettings.captureTitle,
-          fileType = resourceInfoFileType(it, captureInfo),
-          resourceFolderPath =
-            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-              .absolutePath + "/$resourceFolderRelativePath",
-          uploadURL = serverConfiguration.getBucketUrl() + uploadRelativeUrl,
-          status = RequestStatus.PENDING
-        )
-      database.addResourceInfo(resourceInfo)
-      emit(SensorCaptureResult.StateChange(resourceInfo.resourceInfoId))
-      /** Zipping logic from: https://stackoverflow.com/a/63828765 */
-      /**
-       * [CaptureFragment] stores files in:
-       * Downloads/Sensory/Participant_<participantId>/<captureType>/<sensorType>
-       */
-      val resourceFolder =
-        File(
-          Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
-          resourceFolderRelativePath
-        )
+    assert(captureInfo.captureId != null)
+    with(captureInfo) {
+      if (retake == true) {
+        try {
+          val inRecordCaptureInfo = getCaptureInfo(captureId!!)
+          deleteDataInCapture(inRecordCaptureInfo.captureId!!)
+          moveDataFromCacheToFiles(inRecordCaptureInfo.captureFolder)
+        } catch (_: ResourceNotFoundException) {}
+      } // else we don't need to worry about it because the capture module stored data in the
+      // internal
+      // filesDir
+      database.addCaptureInfo(captureInfo)
+      emit(SensorCaptureResult.CaptureInfoCreated(captureId!!))
+      CaptureUtil.sensorsInvolved(captureType).forEach {
+        val resourceInfo = createResourceInfo(it, captureInfo)
+        database.addResourceInfo(resourceInfo)
+        emit(SensorCaptureResult.ResourceInfoCreated(resourceInfo.resourceInfoId))
+
+        val uploadRequest = createUploadRequest(it, resourceInfo)
+        database.addUploadRequest(uploadRequest)
+        emit(SensorCaptureResult.UploadRequestCreated(uploadRequest.requestUuid.toString()))
+      }
+      emit(SensorCaptureResult.ResourcesStored(captureId!!))
+    }
+  }
+
+  private suspend fun moveDataFromCacheToFiles(captureFolder: String) {
+    withContext(Dispatchers.IO) {
+      val sourceFile = File(context.cacheDir, captureFolder)
+      val destFile = File(context.filesDir, captureFolder)
+      destFile.mkdirs()
+      return@withContext sourceFile.renameTo(destFile)
+    }
+  }
+
+  private fun createResourceInfo(sensorType: SensorType, captureInfo: CaptureInfo): ResourceInfo {
+    val resourceFolderRelativePath = getResourceFolderRelativePath(sensorType, captureInfo)
+    val uploadRelativeUrl = "/$resourceFolderRelativePath.zip"
+    return ResourceInfo(
+      resourceInfoId = UUID.randomUUID().toString(),
+      captureId = captureInfo.captureId!!,
+      participantId = captureInfo.participantId,
+      captureTitle = captureInfo.captureSettings!!.captureTitle,
+      fileType = resourceInfoFileType(sensorType, captureInfo),
+      resourceFolderRelativePath = resourceFolderRelativePath,
+      uploadURL = serverConfiguration.getBucketUrl() + uploadRelativeUrl,
+      status = RequestStatus.PENDING
+    )
+  }
+
+  private suspend fun createUploadRequest(
+    sensorType: SensorType,
+    resourceInfo: ResourceInfo
+  ): UploadRequest {
+    with(resourceInfo) {
+      /** [CaptureFragment] stores files in app's internal storage directory */
+      val resourceFolder = File(context.filesDir, resourceFolderRelativePath)
       val outputZipFile = resourceFolder.absolutePath + ".zip"
-      val zipOutputStream = ZipOutputStream(BufferedOutputStream(FileOutputStream(outputZipFile)))
-      zipOutputStream.use { zos ->
-        resourceFolder.walkTopDown().forEach { file ->
-          val zipFileName =
-            file.absolutePath.removePrefix(resourceFolder.absolutePath).removePrefix("/")
-          val entry = ZipEntry("$zipFileName${(if (file.isDirectory) "/" else "")}")
-          zos.putNextEntry(entry)
-          if (file.isFile) {
-            file.inputStream().use { fis -> fis.copyTo(zos) }
+      /** Zipping logic from: https://stackoverflow.com/a/63828765 */
+      withContext(Dispatchers.IO) {
+        val zipOutputStream = ZipOutputStream(BufferedOutputStream(FileOutputStream(outputZipFile)))
+        zipOutputStream.use { zos ->
+          resourceFolder.walkTopDown().forEach { file ->
+            val zipFileName =
+              file.absolutePath.removePrefix(resourceFolder.absolutePath).removePrefix("/")
+            val entry = ZipEntry("$zipFileName${(if (file.isDirectory) "/" else "")}")
+            zos.putNextEntry(entry)
+            if (file.isFile) {
+              file.inputStream().use { fis -> fis.copyTo(zos) }
+            }
           }
         }
       }
-      val uploadRequest =
-        UploadRequest(
-          requestUuid = UUID.randomUUID(),
-          resourceInfoId = resourceInfo.resourceInfoId,
-          zipFile = outputZipFile,
-          fileSize = File(outputZipFile).length(),
-          fileOffset = 0L,
-          bucketName = serverConfiguration.bucketName,
-          uploadRelativeURL = uploadRelativeUrl,
-          isMultiPart = serverConfiguration.networkConfiguration.isMultiPart,
-          nextPart = 1,
-          uploadId = null,
-          status = RequestStatus.PENDING,
-          lastUpdatedTime = Date.from(Instant.now())
-        )
-      database.addUploadRequest(uploadRequest)
+
+      return UploadRequest(
+        requestUuid = UUID.randomUUID(),
+        resourceInfoId = resourceInfoId,
+        zipFile = outputZipFile,
+        fileSize = File(outputZipFile).length(),
+        fileOffset = 0L,
+        bucketName = serverConfiguration.bucketName,
+        uploadRelativeURL = "/$resourceFolderRelativePath.zip",
+        isMultiPart = serverConfiguration.networkConfiguration.isMultiPart,
+        nextPart = 1,
+        uploadId = null,
+        status = RequestStatus.PENDING,
+        lastUpdatedTime = Date.from(Instant.now())
+      )
     }
-    emit(SensorCaptureResult.ResourcesStored(captureInfo.captureId!!))
   }
 
   override suspend fun captureSensorData(pendingIntent: Intent) {
@@ -175,7 +206,7 @@ internal class SensingEngineImpl(
       database.updateUploadRequest(uploadRequest)
       /** Update status of ResourceInfo only when UploadRequest.status changes */
       if (requestsPreviousStatus != uploadRequest.status) {
-        val resourceInfo = database.getResourceInfo(uploadRequest.resourceInfoId)!!
+        val resourceInfo = database.getResourceInfo(uploadRequest.resourceInfoId)
         resourceInfo.apply { status = uploadRequest.status }
         database.updateResourceInfo(resourceInfo)
       }
@@ -194,11 +225,39 @@ internal class SensingEngineImpl(
     TODO("Not yet implemented")
   }
 
+  override suspend fun getCaptureInfo(captureId: String): CaptureInfo {
+    return database.getCaptureInfo(captureId)
+  }
+
+  override suspend fun deleteDataInCapture(captureId: String): Boolean {
+    val captureInfo =
+      try {
+        getCaptureInfo(captureId)
+      } catch (e: ResourceNotFoundException) {
+        null
+      } ?: return true
+
+    // Step 1: Delete db records
+    database.deleteRecordsInCapture(captureId)
+    // Step 2: delete the captureFolder
+    val captureFile = File(context.filesDir, captureInfo.captureFolder)
+    val parentFile = captureFile.parentFile
+    val deleted: Boolean
+    withContext(Dispatchers.IO) {
+      deleted = captureFile.deleteRecursively()
+      // delete Participant's folder if there are no data
+      if (parentFile?.list()?.isEmpty() == true) {
+        parentFile.delete()
+      }
+    }
+    return deleted
+  }
+
   companion object {
     /** File format for any sensor is taken from [captureSettings.fileTypeMap]. */
     private fun resourceInfoFileType(sensorType: SensorType, captureInfo: CaptureInfo): String {
       return when (sensorType) {
-        SensorType.CAMERA -> captureInfo.captureSettings.fileTypeMap[sensorType]!!
+        SensorType.CAMERA -> captureInfo.captureSettings!!.fileTypeMap[sensorType]!!
       }
     }
 
