@@ -169,7 +169,7 @@ object PPGSensorCaptureViewHolderFactory :
                       captureTitle = QUESTION_TITLE,
                       ppgTimer = 30
                     ),
-                  retake = captureId != null,
+                  recapture = captureId != null,
                   captureId = captureId,
                 )
               )
@@ -192,7 +192,7 @@ object PPGSensorCaptureViewHolderFactory :
           parentFragmentsChildFragmentManager
             .beginTransaction()
             .add(R.id.screener_container, captureFragment)
-            .addToBackStack(CaptureFragment.TAG)
+            .addToBackStack(null)
             .commit()
         }
         parentFragmentsChildFragmentManager
@@ -203,7 +203,7 @@ object PPGSensorCaptureViewHolderFactory :
               arguments = bundleOf(InstructionsFragment.TITLE to QUESTION_TITLE)
             }
           )
-          .addToBackStack(InstructionsFragment.TAG)
+          .addToBackStack(null)
           .commit()
       }
 

@@ -25,7 +25,7 @@ data class CaptureInfo(
   val captureType: CaptureType,
   val captureFolder: String,
   var startTime: Date? = null,
-  val retake: Boolean? = false,
+  val recapture: Boolean? = false,
   var captureId: String? = null,
   /** This is not persisted in database for now */
   val captureSettings: CaptureSettings?,

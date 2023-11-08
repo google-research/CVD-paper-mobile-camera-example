@@ -37,9 +37,9 @@ class InstructionsFragment : DialogFragment() {
     // Inflate the layout for this fragment
     val layoutId =
       when (arguments?.getString(TITLE)) {
-        "Anemia_Conjunctiva" -> R.layout.fragment_conjunctiva_instructions
-        "Anemia_Fingernails_Closed" -> R.layout.fragment_fingernails_closed_instructions
-        "Anemia_Fingernails_Open" -> R.layout.fragment_fingernails_open_instructions
+        "Conjunctiva" -> R.layout.fragment_conjunctiva_instructions
+        "FingernailsClosed" -> R.layout.fragment_fingernails_closed_instructions
+        "FingernailsOpen" -> R.layout.fragment_fingernails_open_instructions
         /** PPG_Signals */
         else -> R.layout.fragment_ppg_instructions
       }

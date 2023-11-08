@@ -25,8 +25,10 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.os.bundleOf
+import androidx.fragment.app.findFragment
 import androidx.lifecycle.MutableLiveData
 import com.bumptech.glide.Glide
+import com.google.android.fhir.datacapture.QuestionnaireFragment
 import com.google.android.fhir.datacapture.tryUnwrapContext
 import com.google.android.fhir.datacapture.views.QuestionnaireViewItem
 import com.google.android.fhir.datacapture.views.factories.QuestionnaireItemViewHolderDelegate
@@ -104,11 +106,16 @@ object PhotoCaptureViewHolderFactory :
           val captureId = code.code
           val livePath = MutableLiveData<Uri>()
           CoroutineScope(Dispatchers.IO).launch {
-            val resourceInfo = sensingEngine.listResourceInfoInCapture(captureId)[0]
+            val resourceInfoList = sensingEngine.listResourceInfoInCapture(captureId)
+            if (resourceInfoList.isEmpty()) {
+              clearPhotoPreview()
+              return@launch
+            }
             livePath.postValue(
               ViewHolderFactoryUtil.getFirstOrNullImageUri(
-                resourceInfo.resourceFolderRelativePath,
-                resourceInfo.fileType
+                context.filesDir,
+                resourceInfoList[0].resourceFolderRelativePath,
+                resourceInfoList[0].fileType
               )!!
             )
           }
@@ -121,11 +128,26 @@ object PhotoCaptureViewHolderFactory :
       private fun onTakePhotoButtonClicked(
         view: View /*, questionnaireItem: Questionnaire.QuestionnaireItemComponent*/
       ) {
-        context.supportFragmentManager.setFragmentResultListener(
+        val parentFragmentsChildFragmentManager =
+          view.findFragment<QuestionnaireFragment>().parentFragmentManager
+        parentFragmentsChildFragmentManager.setFragmentResultListener(
+          CaptureFragment.CAPTURE_FRAGMENT_TAG,
+          context
+        ) { _, result ->
+          if (result.getBoolean(CaptureFragment.CAPTURED)) {
+            // Following condition arises when user presses back button from CaptureFragment and the
+            // fragment is removed from backstack by the BackPressCallback defined in
+            // ScreenerFragment
+            if (parentFragmentsChildFragmentManager.backStackEntryCount > 1) {
+              parentFragmentsChildFragmentManager.popBackStack()
+            }
+          }
+        }
+        parentFragmentsChildFragmentManager.setFragmentResultListener(
           InstructionsFragment.INSTRUCTION_FRAGMENT_RESULT,
           context,
         ) { _, result ->
-          context.supportFragmentManager.popBackStack()
+          parentFragmentsChildFragmentManager.popBackStack()
           val instructionsUnderstood =
             result.getBoolean(InstructionsFragment.INSTRUCTION_UNDERSTOOD)
           if (!instructionsUnderstood) {
@@ -150,7 +172,7 @@ object PhotoCaptureViewHolderFactory :
                       titleMap = mapOf(SensorType.CAMERA to SensingApplication.APP_VERSION),
                       captureTitle = QUESTION_TITLE
                     ),
-                  retake = captureId != null,
+                  recapture = captureId != null,
                   captureId = captureId,
                 )
               )
@@ -170,14 +192,13 @@ object PhotoCaptureViewHolderFactory :
                 }
               }
             }
-          context.supportFragmentManager
+          parentFragmentsChildFragmentManager
             .beginTransaction()
             .add(R.id.screener_container, captureFragment)
-            .setReorderingAllowed(true)
             .addToBackStack(null)
             .commit()
         }
-        context.supportFragmentManager
+        parentFragmentsChildFragmentManager
           .beginTransaction()
           .add(
             R.id.screener_container,
@@ -185,7 +206,6 @@ object PhotoCaptureViewHolderFactory :
               arguments = bundleOf(InstructionsFragment.TITLE to QUESTION_TITLE)
             }
           )
-          .setReorderingAllowed(true)
           .addToBackStack(null)
           .commit()
       }
@@ -195,6 +215,7 @@ object PhotoCaptureViewHolderFactory :
         attachmentByteArray: ByteArray? = null,
         attachmentUri: Uri? = null,
       ) {
+        takePhotoButton.text = "Retake Image"
         if (attachmentByteArray != null) {
           loadPhotoPreview(attachmentByteArray, attachmentTitle)
         } else if (attachmentUri != null) {
@@ -215,6 +236,7 @@ object PhotoCaptureViewHolderFactory :
       }
 
       fun clearPhotoPreview() {
+        takePhotoButton.text = "Capture Image"
         photoPreview.visibility = View.GONE
         Glide.with(context).clear(photoThumbnail)
         photoTitle.text = ""

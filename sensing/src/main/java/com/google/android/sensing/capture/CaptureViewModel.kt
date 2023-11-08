@@ -66,7 +66,7 @@ class CaptureViewModel(application: Application) : AndroidViewModel(application)
 
   private val internalStorageFolder: File
     get() =
-      if (captureInfo.retake == true) getApplication<Application>().cacheDir
+      if (captureInfo.recapture == true) getApplication<Application>().cacheDir
       else getApplication<Application>().filesDir
 
   lateinit var recordingGate: FlowGate

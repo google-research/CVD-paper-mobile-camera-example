@@ -62,7 +62,7 @@ internal class SensingEngineImpl(
   override suspend fun onCaptureCompleteCallback(captureInfo: CaptureInfo) = flow {
     assert(captureInfo.captureId != null)
     with(captureInfo) {
-      if (retake == true) {
+      if (recapture == true) {
         try {
           val inRecordCaptureInfo = getCaptureInfo(captureId!!)
           deleteDataInCapture(inRecordCaptureInfo.captureId!!)
