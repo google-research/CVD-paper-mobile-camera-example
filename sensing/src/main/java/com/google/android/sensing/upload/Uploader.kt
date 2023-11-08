@@ -67,7 +67,7 @@ class Uploader(private val blobstoreService: BlobstoreService) {
       dataStream.channel.position(uploadRequest.fileOffset)
       var bytesUploaded = uploadRequest.fileOffset
       // Upload until last part
-      while (!uploadRequest.isMultiPart &&
+      while (uploadRequest.isMultiPart &&
         uploadRequest.fileSize - bytesUploaded >= uploadPartSizeInBytes + minPartSizeInBytes) {
         val chunkSize = uploadPartSizeInBytes
         val buffer = ByteArray(chunkSize.toInt())
@@ -80,10 +80,12 @@ class Uploader(private val blobstoreService: BlobstoreService) {
       val chunkSize = uploadRequest.fileSize - bytesUploaded
       val buffer = ByteArray(chunkSize.toInt())
       withContext(Dispatchers.IO) { dataStream.read(buffer) }
+      Timber.d("Uploading part ${uploadRequest.nextPart}..")
       uploadPart(uploadRequest, buffer, chunkSize)
       emit(UploadResult.Success(uploadRequest, chunkSize, Date.from(Instant.now())))
       emit(mergeMultipartUpload(uploadRequest))
       Timber.d("File Uploaded and Merged")
+      dataStream.close()
     }
   }
 

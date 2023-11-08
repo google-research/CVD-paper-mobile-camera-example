@@ -32,12 +32,16 @@ import com.google.android.sensing.ServerConfiguration
 import com.google.android.sensory.fhir_data.PPGSensorCaptureViewHolderFactory
 import com.google.android.sensory.fhir_data.PhotoCaptureViewHolderFactory
 import java.util.Properties
+import timber.log.Timber
 
 class SensingApplication : Application(), DataCaptureConfig.Provider {
   private val fhirEngine by lazy { constructFhirEngine() }
   private val sensingEngine by lazy { constructSensingEngine() }
 
   override fun onCreate() {
+    if (BuildConfig.DEBUG) {
+      Timber.plant(Timber.DebugTree())
+    }
     super.onCreate()
     initSensingAndFhirEngines()
   }
