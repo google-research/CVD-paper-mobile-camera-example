@@ -175,7 +175,7 @@ class CaptureFragment : Fragment() {
         recordTimer = view.findViewById(R.id.record_timer)
         ppgInstruction = view.findViewById(R.id.ppg_instruction)
         ppgProgress = view.findViewById(R.id.ppg_progress)
-        ppgProgress.max = captureViewModel.captureInfo.captureSettings.ppgTimer
+        ppgProgress.max = captureViewModel.captureInfo.captureSettings!!.ppgTimer
         ppgProgress.progress = 0
         // Start the camera and preview
         preview!!.setSurfaceProvider(previewView.surfaceProvider)
@@ -249,7 +249,7 @@ class CaptureFragment : Fragment() {
             )
           recordTimer.text = strDuration
           ppgProgress.progress =
-            captureViewModel.captureInfo.captureSettings.ppgTimer -
+            captureViewModel.captureInfo.captureSettings!!.ppgTimer -
               TimeUnit.MILLISECONDS.toSeconds(it).toInt()
         }
       }
