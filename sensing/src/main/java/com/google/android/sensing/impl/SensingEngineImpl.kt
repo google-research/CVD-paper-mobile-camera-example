@@ -17,7 +17,6 @@
 package com.google.android.sensing.impl
 
 import android.content.Context
-import android.content.Intent
 import androidx.camera.camera2.interop.ExperimentalCamera2Interop
 import com.google.android.sensing.SensingEngine
 import com.google.android.sensing.ServerConfiguration
@@ -28,11 +27,11 @@ import com.google.android.sensing.db.Database
 import com.google.android.sensing.db.ResourceNotFoundException
 import com.google.android.sensing.model.CaptureInfo
 import com.google.android.sensing.model.CaptureType
-import com.google.android.sensing.model.RequestStatus
-import com.google.android.sensing.model.ResourceInfo
+import com.google.android.sensing.model.ResourceMetaInfo
 import com.google.android.sensing.model.SensorType
 import com.google.android.sensing.model.UploadRequest
 import com.google.android.sensing.model.UploadResult
+import com.google.android.sensing.model.UploadStatus
 import java.io.BufferedOutputStream
 import java.io.File
 import java.io.FileOutputStream
@@ -59,7 +58,7 @@ internal class SensingEngineImpl(
   private val serverConfiguration: ServerConfiguration,
 ) : SensingEngine {
 
-  override suspend fun onCaptureCompleteCallback(captureInfo: CaptureInfo) = flow {
+  override suspend fun onCaptureComplete(captureInfo: CaptureInfo) = flow {
     assert(captureInfo.captureId != null)
     with(captureInfo) {
       if (recapture == true) {
@@ -74,11 +73,11 @@ internal class SensingEngineImpl(
       database.addCaptureInfo(captureInfo)
       emit(SensorCaptureResult.CaptureInfoCreated(captureId!!))
       CaptureUtil.sensorsInvolved(captureType).forEach {
-        val resourceInfo = createResourceInfo(it, captureInfo)
-        database.addResourceInfo(resourceInfo)
-        emit(SensorCaptureResult.ResourceInfoCreated(resourceInfo.resourceInfoId))
+        val resourceMetaInfo = createResourceMetaInfo(it, captureInfo)
+        database.addResourceMetaInfo(resourceMetaInfo)
+        emit(SensorCaptureResult.ResourceMetaInfoCreated(resourceMetaInfo.resourceMetaInfoId))
 
-        val uploadRequest = createUploadRequest(it, resourceInfo)
+        val uploadRequest = createUploadRequest(it, resourceMetaInfo)
         database.addUploadRequest(uploadRequest)
         emit(SensorCaptureResult.UploadRequestCreated(uploadRequest.requestUuid.toString()))
       }
@@ -95,26 +94,29 @@ internal class SensingEngineImpl(
     }
   }
 
-  private fun createResourceInfo(sensorType: SensorType, captureInfo: CaptureInfo): ResourceInfo {
+  private fun createResourceMetaInfo(
+    sensorType: SensorType,
+    captureInfo: CaptureInfo
+  ): ResourceMetaInfo {
     val resourceFolderRelativePath = getResourceFolderRelativePath(sensorType, captureInfo)
     val uploadRelativeUrl = "/$resourceFolderRelativePath.zip"
-    return ResourceInfo(
-      resourceInfoId = UUID.randomUUID().toString(),
+    return ResourceMetaInfo(
+      resourceMetaInfoId = UUID.randomUUID().toString(),
       captureId = captureInfo.captureId!!,
       participantId = captureInfo.participantId,
       captureTitle = captureInfo.captureSettings!!.captureTitle,
-      fileType = resourceInfoFileType(sensorType, captureInfo),
+      fileType = resourceMetaInfoFileType(sensorType, captureInfo),
       resourceFolderRelativePath = resourceFolderRelativePath,
       uploadURL = serverConfiguration.getBucketUrl() + uploadRelativeUrl,
-      status = RequestStatus.PENDING
+      uploadStatus = UploadStatus.PENDING
     )
   }
 
   private suspend fun createUploadRequest(
     sensorType: SensorType,
-    resourceInfo: ResourceInfo
+    resourceMetaInfo: ResourceMetaInfo
   ): UploadRequest {
-    with(resourceInfo) {
+    with(resourceMetaInfo) {
       /** [CaptureFragment] stores files in app's internal storage directory */
       val resourceFolder = File(context.filesDir, resourceFolderRelativePath)
       val outputZipFile = resourceFolder.absolutePath + ".zip"
@@ -136,7 +138,7 @@ internal class SensingEngineImpl(
 
       return UploadRequest(
         requestUuid = UUID.randomUUID(),
-        resourceInfoId = resourceInfoId,
+        resourceMetaInfoId = resourceMetaInfoId,
         zipFile = outputZipFile,
         fileSize = File(outputZipFile).length(),
         fileOffset = 0L,
@@ -145,28 +147,26 @@ internal class SensingEngineImpl(
         isMultiPart = serverConfiguration.networkConfiguration.isMultiPart,
         nextPart = 1,
         uploadId = null,
-        status = RequestStatus.PENDING,
+        status = UploadStatus.PENDING,
         lastUpdatedTime = Date.from(Instant.now())
       )
     }
   }
 
-  override suspend fun captureSensorData(pendingIntent: Intent) {
-    TODO("Not yet implemented")
+  override suspend fun listResourceMetaInfoForParticipant(
+    participantId: String
+  ): List<ResourceMetaInfo> {
+    return database.listResourceMetaInfoForParticipant(participantId)
   }
 
-  override suspend fun listResourceInfoForParticipant(participantId: String): List<ResourceInfo> {
-    return database.listResourceInfoForParticipant(participantId)
-  }
-
-  override suspend fun listResourceInfoInCapture(captureId: String): List<ResourceInfo> {
-    return database.listResourceInfoInCapture(captureId)
+  override suspend fun listResourceMetaInfoInCapture(captureId: String): List<ResourceMetaInfo> {
+    return database.listResourceMetaInfoInCapture(captureId)
   }
 
   override suspend fun syncUpload(upload: suspend (List<UploadRequest>) -> Flow<UploadResult>) {
     val uploadRequestsList =
-      database.listUploadRequests(RequestStatus.UPLOADING) +
-        database.listUploadRequests(RequestStatus.PENDING)
+      database.listUploadRequests(UploadStatus.UPLOADING) +
+        database.listUploadRequests(UploadStatus.PENDING)
     upload(uploadRequestsList).collect { result ->
       val uploadRequest = result.uploadRequest
       val requestsPreviousStatus = uploadRequest.status
@@ -175,7 +175,7 @@ internal class SensingEngineImpl(
           uploadRequest.apply {
             lastUpdatedTime = result.startTime
             fileOffset = 0
-            status = RequestStatus.UPLOADING
+            status = UploadStatus.UPLOADING
             uploadId = result.uploadId
             nextPart = 1
           }
@@ -191,7 +191,7 @@ internal class SensingEngineImpl(
           assert(uploadRequest.fileOffset == uploadRequest.fileSize)
           uploadRequest.apply {
             lastUpdatedTime = result.completeTime
-            status = RequestStatus.UPLOADED
+            status = UploadStatus.UPLOADED
           }
           /** Delete the zipped file as its no longer required. */
           File(uploadRequest.zipFile).delete()
@@ -199,29 +199,21 @@ internal class SensingEngineImpl(
         is UploadResult.Failure -> {
           uploadRequest.apply {
             lastUpdatedTime = uploadRequest.lastUpdatedTime
-            status = RequestStatus.FAILED
+            status = UploadStatus.FAILED
           }
         }
       }
       database.updateUploadRequest(uploadRequest)
-      /** Update status of ResourceInfo only when UploadRequest.status changes */
+      /** Update status of ResourceMetaInfo only when UploadRequest.status changes */
       if (requestsPreviousStatus != uploadRequest.status) {
-        val resourceInfo = database.getResourceInfo(uploadRequest.resourceInfoId)
-        resourceInfo.apply { status = uploadRequest.status }
-        database.updateResourceInfo(resourceInfo)
+        val resourceMetaInfo = database.getResourceMetaInfo(uploadRequest.resourceMetaInfoId)
+        resourceMetaInfo.apply { uploadStatus = uploadRequest.status }
+        database.updateResourceMetaInfo(resourceMetaInfo)
       }
     }
   }
 
-  override suspend fun getUploadRequest(resourceInfoId: String): UploadRequest? {
-    TODO("Not yet implemented")
-  }
-
-  override suspend fun deleteSensorData(uploadURL: String) {
-    TODO("Not yet implemented")
-  }
-
-  override suspend fun deleteSensorMetaData(uploadURL: String) {
+  override suspend fun getUploadRequest(resourceMetaInfoId: String): UploadRequest? {
     TODO("Not yet implemented")
   }
 
@@ -255,7 +247,7 @@ internal class SensingEngineImpl(
 
   companion object {
     /** File format for any sensor is taken from [captureSettings.fileTypeMap]. */
-    private fun resourceInfoFileType(sensorType: SensorType, captureInfo: CaptureInfo): String {
+    private fun resourceMetaInfoFileType(sensorType: SensorType, captureInfo: CaptureInfo): String {
       return when (sensorType) {
         SensorType.CAMERA -> captureInfo.captureSettings!!.fileTypeMap[sensorType]!!
       }

@@ -20,34 +20,32 @@ import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
-import com.google.android.sensing.model.RequestStatus
+import com.google.android.sensing.model.UploadStatus
 import java.time.Instant
 import java.util.UUID
 
 @Entity(
-  indices = [Index(value = ["status"]), Index(value = ["requestUuid"], unique = true)],
+  indices = [Index(value = ["status"])],
   foreignKeys =
     [
       ForeignKey(
-        entity = ResourceInfoEntity::class,
-        parentColumns = ["resourceInfoId"],
-        childColumns = ["resourceInfoId"],
+        entity = ResourceMetaInfoEntity::class,
+        parentColumns = ["resourceMetaInfoId"],
+        childColumns = ["resourceMetaInfoId"],
         onDelete = ForeignKey.CASCADE
       )
     ]
 )
 /**
- * Database Entity for book-keeping uploads. It has a reference to [resourceInfoId] which a record
- * of this is responsible to upload. Relevantly it requires other file information.
+ * Database Entity for record-keeping uploads. It has a reference to [resourceMetaInfoId] which a
+ * record of this is responsible to upload. Relevantly it requires other file information.
  */
 internal data class UploadRequestEntity(
-  @PrimaryKey(autoGenerate = true) val id: Long,
-
   /** UUID for this record. */
-  val requestUuid: UUID,
+  @PrimaryKey val requestUuid: UUID,
 
-  /** Unique key in [ResourceInfoEntity]: Required to update upload status of the resource. */
-  val resourceInfoId: String,
+  /** Unique key in [ResourceMetaInfoEntity]: Required to update upload status of the resource. */
+  val resourceMetaInfoId: String,
 
   /** Absolute location of the zip file to be uploaded. Uploader can upload only zip files. */
   val zipFile: String,
@@ -74,7 +72,7 @@ internal data class UploadRequestEntity(
   val uploadId: String? = null,
 
   /** Upload status. */
-  val status: RequestStatus,
+  val status: UploadStatus,
 
   /** Time of initialization or successful part upload or completion. */
   val lastUpdatedTime: Instant,

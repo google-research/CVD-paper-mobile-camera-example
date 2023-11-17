@@ -16,14 +16,9 @@
 
 package com.google.android.sensing.model
 
-/** Data class equivalent to ResourceInfoEntity for usage outside database. */
-data class ResourceInfo(
-  val resourceInfoId: String,
-  val captureId: String,
-  val participantId: String,
-  val captureTitle: String,
-  val fileType: String,
-  val resourceFolderRelativePath: String,
-  val uploadURL: String,
-  var status: RequestStatus,
-)
+enum class UploadStatus {
+  PENDING,
+  UPLOADING,
+  UPLOADED,
+  FAILED
+}

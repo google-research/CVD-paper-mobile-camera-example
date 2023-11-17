@@ -23,8 +23,8 @@ import androidx.room.Query
 import androidx.room.Transaction
 import androidx.room.Update
 import com.google.android.sensing.db.impl.entities.UploadRequestEntity
-import com.google.android.sensing.model.RequestStatus
 import com.google.android.sensing.model.UploadRequest
+import com.google.android.sensing.model.UploadStatus
 import java.util.Date
 
 @Dao
@@ -44,10 +44,10 @@ internal abstract class UploadRequestDao {
       FROM UploadRequestEntity
       WHERE status = :status
     """)
-  abstract suspend fun listUploadRequestEntities(status: RequestStatus): List<UploadRequestEntity>
+  abstract suspend fun listUploadRequestEntities(status: UploadStatus): List<UploadRequestEntity>
 
   @Transaction
-  open suspend fun listUploadRequests(status: RequestStatus): List<UploadRequest> {
+  open suspend fun listUploadRequests(status: UploadStatus): List<UploadRequest> {
     return listUploadRequestEntities(status).map { it.toUploadRequest() }
   }
 
@@ -59,15 +59,15 @@ internal abstract class UploadRequestDao {
   }
 
   @Query("""
-    DELETE FROM UploadRequestEntity WHERE resourceInfoId=:resourceInfoId
+    DELETE FROM UploadRequestEntity WHERE resourceMetaInfoId=:resourceMetaInfoId
   """)
-  abstract suspend fun deleteUploadRequest(resourceInfoId: String): Int
+  abstract suspend fun deleteUploadRequest(resourceMetaInfoId: String): Int
 }
 
 internal fun UploadRequestEntity.toUploadRequest() =
   UploadRequest(
     requestUuid = requestUuid,
-    resourceInfoId = resourceInfoId,
+    resourceMetaInfoId = resourceMetaInfoId,
     zipFile = zipFile,
     fileSize = fileSize,
     fileOffset = fileOffset,
@@ -82,9 +82,8 @@ internal fun UploadRequestEntity.toUploadRequest() =
 
 internal fun UploadRequest.toUploadRequestEntity() =
   UploadRequestEntity(
-    id = 0,
     requestUuid = requestUuid,
-    resourceInfoId = resourceInfoId,
+    resourceMetaInfoId = resourceMetaInfoId,
     zipFile = zipFile,
     fileSize = fileSize,
     fileOffset = fileOffset,

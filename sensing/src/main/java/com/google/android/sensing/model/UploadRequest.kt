@@ -22,7 +22,7 @@ import java.util.UUID
 /** Data class equivalent to UploadRequestEntity for usage outside database. */
 data class UploadRequest(
   val requestUuid: UUID,
-  val resourceInfoId: String,
+  val resourceMetaInfoId: String,
   val zipFile: String,
   val fileSize: Long,
   var fileOffset: Long,
@@ -31,6 +31,6 @@ data class UploadRequest(
   val isMultiPart: Boolean,
   var nextPart: Int,
   var uploadId: String? = null,
-  var status: RequestStatus,
+  var status: UploadStatus,
   var lastUpdatedTime: Date,
 )

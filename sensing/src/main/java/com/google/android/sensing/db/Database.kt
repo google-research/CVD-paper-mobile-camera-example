@@ -17,24 +17,24 @@
 package com.google.android.sensing.db
 
 import com.google.android.sensing.model.CaptureInfo
-import com.google.android.sensing.model.RequestStatus
-import com.google.android.sensing.model.ResourceInfo
+import com.google.android.sensing.model.ResourceMetaInfo
 import com.google.android.sensing.model.UploadRequest
+import com.google.android.sensing.model.UploadStatus
 
 /** The interface for the sensor resources database. */
 internal interface Database {
   suspend fun addCaptureInfo(captureInfo: CaptureInfo): String
-  suspend fun addResourceInfo(resourceInfo: ResourceInfo): String
+  suspend fun addResourceMetaInfo(resourceMetaInfo: ResourceMetaInfo): String
   suspend fun addUploadRequest(uploadRequest: UploadRequest): String
-  suspend fun listResourceInfoForParticipant(participantId: String): List<ResourceInfo>
-  suspend fun listResourceInfoInCapture(captureId: String): List<ResourceInfo>
-  suspend fun listUploadRequests(status: RequestStatus): List<UploadRequest>
+  suspend fun listResourceMetaInfoForParticipant(participantId: String): List<ResourceMetaInfo>
+  suspend fun listResourceMetaInfoInCapture(captureId: String): List<ResourceMetaInfo>
+  suspend fun listUploadRequests(status: UploadStatus): List<UploadRequest>
   suspend fun updateUploadRequest(uploadRequest: UploadRequest)
-  suspend fun updateResourceInfo(resourceInfo: ResourceInfo)
-  suspend fun getResourceInfo(resourceInfoId: String): ResourceInfo
+  suspend fun updateResourceMetaInfo(resourceMetaInfo: ResourceMetaInfo)
+  suspend fun getResourceMetaInfo(resourceMetaInfoId: String): ResourceMetaInfo
   suspend fun getCaptureInfo(captureId: String): CaptureInfo
-  suspend fun deleteUploadRequest(resourceInfoId: String): Boolean
-  suspend fun deleteResourceInfo(resourceInfoId: String): Boolean
+  suspend fun deleteUploadRequest(resourceMetaInfoId: String): Boolean
+  suspend fun deleteResourceMetaInfo(resourceMetaInfoId: String): Boolean
   suspend fun deleteCaptureInfo(captureId: String): Boolean
   suspend fun deleteRecordsInCapture(captureId: String): Boolean
 }

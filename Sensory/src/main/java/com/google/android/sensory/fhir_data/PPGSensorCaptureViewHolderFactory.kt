@@ -107,12 +107,12 @@ object PPGSensorCaptureViewHolderFactory :
           val captureId = code.code
           val livePath = MutableLiveData<String>()
           context.lifecycleScope.launch {
-            val resourceInfoList = sensingEngine.listResourceInfoInCapture(captureId)
-            if (resourceInfoList.isEmpty()) {
+            val resourceMetaInfoList = sensingEngine.listResourceMetaInfoInCapture(captureId)
+            if (resourceMetaInfoList.isEmpty()) {
               clearFilePreview()
               return@launch
             }
-            livePath.postValue(resourceInfoList[0].captureTitle)
+            livePath.postValue(resourceMetaInfoList[0].captureTitle)
           }
           livePath.observe(context) {
             loadFilePreview(com.google.android.fhir.datacapture.R.drawable.ic_document_file, it)

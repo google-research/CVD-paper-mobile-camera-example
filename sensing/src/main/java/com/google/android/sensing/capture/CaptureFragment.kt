@@ -125,35 +125,7 @@ class CaptureFragment : Fragment() {
     savedInstanceState: Bundle?,
   ): View? {
     (requireActivity() as AppCompatActivity).supportActionBar?.hide()
-    /** For a different [CaptureType] sensors may be initialized differently. */
-    when (captureViewModel.captureInfo.captureType) {
-      CaptureType.VIDEO_PPG -> {
-        preview = Preview.Builder().build()
-        camera =
-          Camera2InteropSensor.builder()
-            .setContext(requireContext())
-            .setBoundLifecycle(viewLifecycleOwner)
-            .setCameraXSensorBuilder(
-              CameraXSensorV2.builder()
-                .setCameraSelector(CameraSelector.DEFAULT_BACK_CAMERA)
-                .addUseCase(preview)
-            )
-            .build()
-      }
-      CaptureType.IMAGE -> {
-        preview = Preview.Builder().build()
-        camera =
-          Camera2InteropSensor.builder()
-            .setContext(requireContext())
-            .setBoundLifecycle(viewLifecycleOwner)
-            .setCameraXSensorBuilder(
-              CameraXSensorV2.builder()
-                .setCameraSelector(CameraSelector.DEFAULT_BACK_CAMERA)
-                .addUseCase(preview)
-            )
-            .build()
-      }
-    }
+    setupSensors()
     setupObservers()
     val layout =
       when (captureViewModel.captureInfo.captureType) {
@@ -214,6 +186,38 @@ class CaptureFragment : Fragment() {
         toggleFlashFab.setOnClickListener {
           CaptureUtil.toggleFlashWithView(camera!!, toggleFlashFab, requireContext())
         }
+      }
+    }
+  }
+
+  private fun setupSensors() {
+    /** For a different [CaptureType] sensors may be initialized differently. */
+    when (captureViewModel.captureInfo.captureType) {
+      CaptureType.VIDEO_PPG -> {
+        preview = Preview.Builder().build()
+        camera =
+          Camera2InteropSensor.builder()
+            .setContext(requireContext())
+            .setBoundLifecycle(viewLifecycleOwner)
+            .setCameraXSensorBuilder(
+              CameraXSensorV2.builder()
+                .setCameraSelector(CameraSelector.DEFAULT_BACK_CAMERA)
+                .addUseCase(preview)
+            )
+            .build()
+      }
+      CaptureType.IMAGE -> {
+        preview = Preview.Builder().build()
+        camera =
+          Camera2InteropSensor.builder()
+            .setContext(requireContext())
+            .setBoundLifecycle(viewLifecycleOwner)
+            .setCameraXSensorBuilder(
+              CameraXSensorV2.builder()
+                .setCameraSelector(CameraSelector.DEFAULT_BACK_CAMERA)
+                .addUseCase(preview)
+            )
+            .build()
       }
     }
   }

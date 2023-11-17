@@ -110,20 +110,20 @@ class ScreenerViewModel(application: Application, private val state: SavedStateH
         is DocumentReference -> {
           val captureId =
             if (resource.type.coding.isNullOrEmpty()) "" else resource.type.coding[0].code
-          // This assumes only 1 ResourceInfo is created for this capture.
-          val resourceInfo = sensingEngine.listResourceInfoInCapture(captureId!!)[0]
+          // This assumes only 1 ResourceMetaInfo is created for this capture.
+          val resourceMetaInfo = sensingEngine.listResourceMetaInfoInCapture(captureId!!)[0]
           resource.id = generateUuid()
           resource.status = Enumerations.DocumentReferenceStatus.CURRENT
           resource.subject = subjectReference
           resource.date = Date()
 
-          // modify data based on the nature of the capture (using resourceInfo obtained from
+          // modify data based on the nature of the capture (using resourceMetaInfo obtained from
           // captureId)
           val data =
             Attachment().apply {
               contentType = "application/gzip" // Sensing SDK uploads only in zip for now
-              url = resourceInfo.uploadURL
-              title = resourceInfo.captureTitle
+              url = resourceMetaInfo.uploadURL
+              title = resourceMetaInfo.captureTitle
               creation = Date()
             }
 

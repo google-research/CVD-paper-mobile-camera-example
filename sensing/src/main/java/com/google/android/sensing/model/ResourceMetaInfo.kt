@@ -16,9 +16,14 @@
 
 package com.google.android.sensing.model
 
-enum class RequestStatus {
-  PENDING,
-  UPLOADING,
-  UPLOADED,
-  FAILED
-}
+/** Data class equivalent to ResourceMetaInfoEntity for usage outside database. */
+data class ResourceMetaInfo(
+  val resourceMetaInfoId: String,
+  val captureId: String,
+  val participantId: String,
+  val captureTitle: String,
+  val fileType: String,
+  val resourceFolderRelativePath: String,
+  val uploadURL: String,
+  var uploadStatus: UploadStatus,
+)
