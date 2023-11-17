@@ -29,4 +29,6 @@ sealed class SensorCaptureResult {
   data class UploadRequestCreated(val uploadRequestId: String) : SensorCaptureResult()
 
   data class ResourcesStored(val captureId: String) : SensorCaptureResult()
+
+  data class Failed(val captureId: String, val t: Throwable) : SensorCaptureResult()
 }

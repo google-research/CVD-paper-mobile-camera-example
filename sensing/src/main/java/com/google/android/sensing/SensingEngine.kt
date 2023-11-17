@@ -19,38 +19,26 @@ package com.google.android.sensing
 import android.content.Intent
 import com.google.android.sensing.capture.SensorCaptureResult
 import com.google.android.sensing.model.CaptureInfo
-import com.google.android.sensing.model.RequestStatus
 import com.google.android.sensing.model.ResourceInfo
 import com.google.android.sensing.model.UploadRequest
 import com.google.android.sensing.model.UploadResult
 import kotlinx.coroutines.flow.Flow
 
 /**
- * The Interface that defines APIs for tracking and handling sensing data. As a tracker it has
- * following responsibilities:-
- * 1. Track capture of data and create database records
- * 2. Track upload of data and update database records
- *
- * As a handler it has following responsibilities:-
- * 1. CRUD APIs to access capture information
+ * The interface that provide APIs for bookkeeping and accessing local sensor data.
  *
  * TODO: CRUD APIs for UploadRequest to use only the upload mechanism this Engine provides.
  */
 interface SensingEngine {
 
   /**
-   * Responsible for creating database records ([CaptureInfoEntity], [ResouurceInfoEntity],
-   * [UploadRequestEntity]) to track captured data. This API is triggered by [CaptureViewModel]
-   * after completion of capturing. Limitation: All captured data and metadata are stored in the
-   * same folder and zipped for uploading.
-   * 1. Delete all data for [captureInfo.captureId] if present.
-   * 2. Move data from cache to files directory in internal storage.
-   * 2. Save [CaptureInfo] in the database.
-   * 3. For each sensor involved in the capture:-
-   * ```
-   *      a. create [ResourceInfo] record.
-   *      d. create [UploadRequest] record.
-   * ```
+   * This callback is used by CaptureFragment to book-keep information about the capture. It creates
+   * database records ([CaptureInfoEntity], [ResourceInfoEntity], [UploadRequestEntity]). All
+   * captured data and metadata are zipped into one folder for uploading.
+   *
+   * The application can also independently use this callback to utilize this library's book-keeping
+   * mechanism for its own captured data.
+   *
    * TODO: Support uploading of any mime type.
    */
   suspend fun onCaptureCompleteCallback(captureInfo: CaptureInfo): Flow<SensorCaptureResult>
@@ -71,9 +59,11 @@ interface SensingEngine {
   suspend fun captureSensorData(pendingIntent: Intent)
 
   /**
-   * [SensorDataUploadWorker] invokes this API to fetch [RequestStatus.PENDING] records to upload
-   * and then update those records on collecting [UploadResult]s. Additionally, it also deletes
-   * captured files and folders after successful upload.
+   * Synchronizes the upload results in the database.
+   *
+   * The [upload] function may initiate multiple server calls. Each call's result can then be used
+   * to emit [UploadResult]. The caller should collect these results using [Flow.collect].
+   * Additionally, it should also delete redundant zipped files after successful upload.
    */
   suspend fun syncUpload(upload: (suspend (List<UploadRequest>) -> Flow<UploadResult>))
 

@@ -99,7 +99,6 @@ class ScreenerFragment : Fragment(R.layout.fragment_screening) {
             .build(),
         QUESTIONNAIRE_FRAGMENT_TAG
       )
-      addToBackStack(null)
     }
   }
 
@@ -133,7 +132,7 @@ class ScreenerFragment : Fragment(R.layout.fragment_screening) {
   }
 
   private fun onBackPressed() {
-    if (childFragmentManager.backStackEntryCount > 1) {
+    if (childFragmentManager.backStackEntryCount >= 1) {
       childFragmentManager.popBackStack()
       return
     }

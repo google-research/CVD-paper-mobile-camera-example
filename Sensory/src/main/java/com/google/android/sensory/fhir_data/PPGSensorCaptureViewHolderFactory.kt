@@ -127,14 +127,14 @@ object PPGSensorCaptureViewHolderFactory :
         val parentFragmentsChildFragmentManager =
           view.findFragment<QuestionnaireFragment>().parentFragmentManager
         parentFragmentsChildFragmentManager.setFragmentResultListener(
-          CaptureFragment.CAPTURE_FRAGMENT_TAG,
+          CaptureFragment.TAG,
           context
         ) { _, result ->
           if (result.getBoolean(CaptureFragment.CAPTURED)) {
             // Following condition arises when user presses back button from CaptureFragment and the
             // fragment is removed from backstack by the BackPressCallback defined in
             // ScreenerFragment
-            if (parentFragmentsChildFragmentManager.backStackEntryCount > 1) {
+            if (parentFragmentsChildFragmentManager.backStackEntryCount >= 1) {
               parentFragmentsChildFragmentManager.popBackStack()
             }
           }
@@ -191,8 +191,8 @@ object PPGSensorCaptureViewHolderFactory :
             }
           parentFragmentsChildFragmentManager
             .beginTransaction()
-            .add(R.id.screener_container, captureFragment)
-            .addToBackStack(null)
+            .add(R.id.screener_container, captureFragment, CaptureFragment.TAG)
+            .addToBackStack(CaptureFragment.TAG)
             .commit()
         }
         parentFragmentsChildFragmentManager

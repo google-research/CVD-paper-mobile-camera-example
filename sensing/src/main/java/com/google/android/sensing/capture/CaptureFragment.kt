@@ -38,7 +38,6 @@ import androidx.fragment.app.setFragmentResult
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
-import androidx.lifecycle.distinctUntilChanged
 import androidx.lifecycle.lifecycleScope
 import com.google.android.fitbit.research.sensing.common.libraries.camera.Camera2InteropSensor
 import com.google.android.fitbit.research.sensing.common.libraries.camera.CameraXSensorV2
@@ -53,7 +52,6 @@ import java.util.TimerTask
 import java.util.UUID
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.launch
 
 /**
  * Fragment that displays screens to capture data from sensors involved in a captureType. The UI is
@@ -238,8 +236,7 @@ class CaptureFragment : Fragment() {
             )
           }
         }
-        captureViewModel.timerLiveData.distinctUntilChanged().observe(viewLifecycleOwner) {
-          if (it == null) return@observe
+        captureViewModel.timerLiveData.observe(viewLifecycleOwner) {
           val strDuration =
             String.format(
               Locale.ENGLISH,
@@ -253,36 +250,41 @@ class CaptureFragment : Fragment() {
               TimeUnit.MILLISECONDS.toSeconds(it).toInt()
         }
       }
-      captureViewModel.captured.observe(viewLifecycleOwner) {
-        if (it == null) return@observe
-        if (!it) {
-          val toastText =
+      captureViewModel.captureResultLiveData.observe(viewLifecycleOwner) {
+        when (it) {
+          is SensorCaptureResult.Started -> {
             when (captureViewModel.captureInfo.captureType) {
-              CaptureType.VIDEO_PPG -> "Failed to save Video"
-              CaptureType.IMAGE -> "Failed to save Image"
+              CaptureType.VIDEO_PPG -> {
+                ppgInstruction.text = resources.getString(R.string.ppg_instruction_recording)
+                recordFab.setImageResource(R.drawable.videocam_off)
+                recordFab.imageTintList =
+                  ColorStateList.valueOf(
+                    ContextCompat.getColor(requireContext(), R.color.colorPrimary)
+                  )
+              }
+              CaptureType.IMAGE -> {
+                // No need to do anything here as Image capturing will end in a moment
+              }
             }
-          Toast.makeText(requireContext(), toastText, Toast.LENGTH_SHORT).show()
-          return@observe
-        }
-        val toastText =
-          when (captureViewModel.captureInfo.captureType) {
-            CaptureType.VIDEO_PPG -> "Video Saved"
-            CaptureType.IMAGE -> "Image Saved"
           }
-        Toast.makeText(requireContext(), toastText, Toast.LENGTH_SHORT).show()
-        finishCapturing()
-      }
-      lifecycleScope.launch {
-        captureViewModel.captureResultFlow.collect {
-          if (it is SensorCaptureResult.Started) {
-            ppgInstruction.text = resources.getString(R.string.ppg_instruction_recording)
-            recordFab.setImageResource(R.drawable.videocam_off)
-            recordFab.imageTintList =
-              ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.colorPrimary))
-          }
-          if (it is SensorCaptureResult.CaptureComplete) {
+          is SensorCaptureResult.CaptureComplete -> {
+            val toastText =
+              when (captureViewModel.captureInfo.captureType) {
+                CaptureType.VIDEO_PPG -> "Video Saved"
+                CaptureType.IMAGE -> "Image Saved"
+              }
+            Toast.makeText(requireContext(), toastText, Toast.LENGTH_SHORT).show()
             finishCapturing()
           }
+          is SensorCaptureResult.Failed -> {
+            val toastText =
+              when (captureViewModel.captureInfo.captureType) {
+                CaptureType.VIDEO_PPG -> "Failed to save Video"
+                CaptureType.IMAGE -> "Failed to save Image"
+              }
+            Toast.makeText(requireContext(), toastText, Toast.LENGTH_SHORT).show()
+          }
+          else -> {}
         }
       }
     }
@@ -308,14 +310,19 @@ class CaptureFragment : Fragment() {
   }
 
   private fun finishCapturing() {
-    captureViewModel.captureComplete()
-    setFragmentResult(CAPTURE_FRAGMENT_TAG, bundleOf(CAPTURED to true))
+    captureViewModel.invokeCaptureCompleteCallback()
+    setFragmentResult(TAG, bundleOf(CAPTURED to true))
+  }
+
+  override fun onPause() {
+    super.onPause()
+    captureViewModel.completeCapture()
+    (requireActivity() as AppCompatActivity).supportActionBar?.show()
   }
 
   companion object {
     const val LOCK_AFTER_MS = 1000
-    const val CAPTURE_FRAGMENT_TAG = "capture_fragment_tag"
-    const val CAPTURED = "captured"
     const val TAG = "CAPTURE_FRAGMENT"
+    const val CAPTURED = "captured"
   }
 }
