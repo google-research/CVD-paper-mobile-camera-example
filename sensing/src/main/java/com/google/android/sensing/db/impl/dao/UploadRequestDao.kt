@@ -29,12 +29,13 @@ import java.util.Date
 @Dao
 internal abstract class UploadRequestDao {
   @Insert(onConflict = OnConflictStrategy.REPLACE)
-  abstract suspend fun insertUploadRequestEntity(uploadRequestEntity: UploadRequestEntity): Int
+  abstract suspend fun insertUploadRequestEntity(uploadRequestEntity: UploadRequestEntity)
 
   @Transaction
-  open suspend fun insertUploadRequest(uploadRequest: UploadRequest): Int {
+  open suspend fun insertUploadRequest(uploadRequest: UploadRequest): String {
     // convert to CaptureInfoEntity and insert
-    return insertUploadRequestEntity(uploadRequest.toUploadRequestEntity())
+    insertUploadRequestEntity(uploadRequest.toUploadRequestEntity())
+    return uploadRequest.requestUuid.toString()
   }
 
   @Query("""
@@ -68,6 +69,7 @@ internal fun UploadRequestEntity.toUploadRequest() =
 
 internal fun UploadRequest.toUploadRequestEntity() =
   UploadRequestEntity(
+    id = 0,
     requestUuid = requestUuid,
     resourceInfoId = resourceInfoId,
     zipFile = zipFile,
