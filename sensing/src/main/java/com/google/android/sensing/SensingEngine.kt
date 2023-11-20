@@ -31,6 +31,12 @@ import kotlinx.coroutines.flow.Flow
  */
 interface SensingEngine {
 
+  /** Get CaptureInfo record given @param captureId */
+  suspend fun getCaptureInfo(captureId: String): CaptureInfo
+
+  /** Delete all data associated with [captureId] */
+  suspend fun deleteDataInCapture(captureId: String): Boolean
+
   /**
    * Responsible for creating resource records for captured data and completing upload setup. This
    * API is triggered by [CaptureViewModel] after completion of capturing. Limitation: All captured
