@@ -29,7 +29,7 @@ internal interface Database {
   suspend fun listResourceInfoForParticipant(participantId: String): List<ResourceInfo>
   suspend fun listResourceInfoInCapture(captureId: String): List<ResourceInfo>
   suspend fun listUploadRequests(status: RequestStatus): List<UploadRequest>
-  suspend fun updateUploadRequest(uploadRequest: UploadRequest)
+  suspend fun updateUploadRequest(uploadRequest: UploadRequest): Boolean
   suspend fun updateResourceInfo(resourceInfo: ResourceInfo)
   suspend fun getResourceInfo(resourceInfoId: String): ResourceInfo?
 }

@@ -66,8 +66,8 @@ internal class DatabaseImpl(context: Context, databaseConfig: DatabaseConfig) : 
     return uploadRequestDao.listUploadRequests(status)
   }
 
-  override suspend fun updateUploadRequest(uploadRequest: UploadRequest) {
-    uploadRequestDao.updateUploadRequest(uploadRequest)
+  override suspend fun updateUploadRequest(uploadRequest: UploadRequest): Boolean {
+    return uploadRequestDao.updateUploadRequest(uploadRequest) == 1
   }
 
   override suspend fun updateResourceInfo(resourceInfo: ResourceInfo) {

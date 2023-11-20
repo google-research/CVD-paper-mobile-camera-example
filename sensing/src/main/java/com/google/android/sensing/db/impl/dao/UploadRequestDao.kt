@@ -51,11 +51,12 @@ internal abstract class UploadRequestDao {
     return listUploadRequestEntities(status).map { it.toUploadRequest() }
   }
 
-  @Update abstract suspend fun updateUploadRequestEntity(uploadRequestEntity: UploadRequestEntity)
+  @Update
+  abstract suspend fun updateUploadRequestEntity(uploadRequestEntity: UploadRequestEntity): Int
 
   @Transaction
-  open suspend fun updateUploadRequest(uploadRequest: UploadRequest) {
-    updateUploadRequestEntity(uploadRequest.toUploadRequestEntity())
+  open suspend fun updateUploadRequest(uploadRequest: UploadRequest): Int {
+    return updateUploadRequestEntity(uploadRequest.toUploadRequestEntity())
   }
 }
 

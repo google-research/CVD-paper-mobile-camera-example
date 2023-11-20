@@ -172,7 +172,8 @@ internal class SensingEngineImpl(
           }
         }
       }
-      database.updateUploadRequest(uploadRequest)
+      val updateStatus = database.updateUploadRequest(uploadRequest)
+      assert(updateStatus)
       /** Update status of ResourceInfo only when UploadRequest.status changes */
       if (requestsPreviousStatus != uploadRequest.status) {
         val resourceInfo = database.getResourceInfo(uploadRequest.resourceInfoId)!!
