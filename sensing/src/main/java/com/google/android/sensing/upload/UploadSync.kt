@@ -24,7 +24,7 @@ import androidx.work.OneTimeWorkRequest
 import androidx.work.PeriodicWorkRequest
 import androidx.work.WorkManager
 
-object SensingUploadSync {
+object UploadSync {
   fun enqueueUploadUniqueWork(
     context: Context,
     retryConfiguration: RetryConfiguration = defaultRetryConfiguration,
