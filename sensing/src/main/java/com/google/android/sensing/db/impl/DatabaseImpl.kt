@@ -51,7 +51,8 @@ internal class DatabaseImpl(context: Context, databaseConfig: DatabaseConfig) : 
   }
 
   override suspend fun addUploadRequest(uploadRequest: UploadRequest): String {
-    return uploadRequestDao.insertUploadRequest(uploadRequest)
+    assert(uploadRequestDao.insertUploadRequest(uploadRequest) == 1)
+    return uploadRequest.requestUuid.toString()
   }
 
   override suspend fun listResourceInfoForParticipant(participantId: String): List<ResourceInfo> {
@@ -67,7 +68,7 @@ internal class DatabaseImpl(context: Context, databaseConfig: DatabaseConfig) : 
   }
 
   override suspend fun updateUploadRequest(uploadRequest: UploadRequest): Boolean {
-    return uploadRequestDao.updateUploadRequest(uploadRequest) == 1
+    return uploadRequestDao.insertUploadRequest(uploadRequest) == 1
   }
 
   override suspend fun updateResourceInfo(resourceInfo: ResourceInfo) {
