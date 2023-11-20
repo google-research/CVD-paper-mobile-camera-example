@@ -20,10 +20,11 @@ import android.content.Context
 import androidx.room.Room
 import com.google.android.sensing.DatabaseErrorStrategy
 import com.google.android.sensing.db.Database
+import com.google.android.sensing.db.ResourceNotFoundException
 import com.google.android.sensing.model.CaptureInfo
-import com.google.android.sensing.model.RequestStatus
-import com.google.android.sensing.model.ResourceInfo
+import com.google.android.sensing.model.ResourceMetaInfo
 import com.google.android.sensing.model.UploadRequest
+import com.google.android.sensing.model.UploadStatus
 import net.sqlcipher.database.SQLiteDatabase
 import net.sqlcipher.database.SupportFactory
 
@@ -39,30 +40,32 @@ internal class DatabaseImpl(context: Context, databaseConfig: DatabaseConfig) : 
       .build()
 
   private val captureInfoDao = db.captureInfoDao()
-  private val resourceInfoDao = db.resourceInfoDao()
+  private val resourceMetaInfoDao = db.resourceMetaInfoDao()
   private val uploadRequestDao = db.uploadRequestDao()
 
   override suspend fun addCaptureInfo(captureInfo: CaptureInfo): String {
     return captureInfoDao.insertCaptureInfo(captureInfo)
   }
 
-  override suspend fun addResourceInfo(resourceInfo: ResourceInfo): String {
-    return resourceInfoDao.insertResourceInfo(resourceInfo)
+  override suspend fun addResourceMetaInfo(resourceMetaInfo: ResourceMetaInfo): String {
+    return resourceMetaInfoDao.insertResourceMetaInfo(resourceMetaInfo)
   }
 
   override suspend fun addUploadRequest(uploadRequest: UploadRequest): String {
     return uploadRequestDao.insertUploadRequest(uploadRequest)
   }
 
-  override suspend fun listResourceInfoForParticipant(participantId: String): List<ResourceInfo> {
-    return resourceInfoDao.listResourceInfoForParticipant(participantId)
+  override suspend fun listResourceMetaInfoForParticipant(
+    participantId: String
+  ): List<ResourceMetaInfo> {
+    return resourceMetaInfoDao.listResourceMetaInfoForParticipant(participantId)
   }
 
-  override suspend fun listResourceInfoInCapture(captureId: String): List<ResourceInfo> {
-    return resourceInfoDao.listResourceInfoInCapture(captureId)
+  override suspend fun listResourceMetaInfoInCapture(captureId: String): List<ResourceMetaInfo> {
+    return resourceMetaInfoDao.listResourceMetaInfoInCapture(captureId)
   }
 
-  override suspend fun listUploadRequests(status: RequestStatus): List<UploadRequest> {
+  override suspend fun listUploadRequests(status: UploadStatus): List<UploadRequest> {
     return uploadRequestDao.listUploadRequests(status)
   }
 
@@ -70,12 +73,40 @@ internal class DatabaseImpl(context: Context, databaseConfig: DatabaseConfig) : 
     uploadRequestDao.updateUploadRequest(uploadRequest)
   }
 
-  override suspend fun updateResourceInfo(resourceInfo: ResourceInfo) {
-    resourceInfoDao.updateResourceInfo(resourceInfo)
+  override suspend fun updateResourceMetaInfo(resourceMetaInfo: ResourceMetaInfo) {
+    resourceMetaInfoDao.updateResourceMetaInfo(resourceMetaInfo)
   }
 
-  override suspend fun getResourceInfo(resourceInfoId: String): ResourceInfo {
-    return resourceInfoDao.getResourceInfo(resourceInfoId)
+  override suspend fun getResourceMetaInfo(resourceMetaInfoId: String): ResourceMetaInfo {
+    return resourceMetaInfoDao.getResourceMetaInfo(resourceMetaInfoId)
+      ?: throw ResourceNotFoundException("ResourceMetaInfo", resourceMetaInfoId)
+  }
+
+  override suspend fun getCaptureInfo(captureId: String): CaptureInfo {
+    return captureInfoDao.getCaptureInfo(captureId)
+      ?: throw ResourceNotFoundException("CaptureInfo", captureId)
+  }
+
+  override suspend fun deleteCaptureInfo(captureId: String): Boolean {
+    return captureInfoDao.deleteCaptureInfo(captureId) == 1
+  }
+
+  override suspend fun deleteResourceMetaInfo(resourceMetaInfoId: String): Boolean {
+    return resourceMetaInfoDao.deleteResourceMetaInfo(resourceMetaInfoId) == 1
+  }
+
+  override suspend fun deleteUploadRequest(resourceMetaInfoId: String): Boolean {
+    return uploadRequestDao.deleteUploadRequest(resourceMetaInfoId) == 1
+  }
+
+  override suspend fun deleteRecordsInCapture(captureId: String): Boolean {
+    var deleted = true
+    listResourceMetaInfoInCapture(captureId).forEach {
+      deleted = deleted and deleteUploadRequest(it.resourceMetaInfoId)
+      deleted = deleted and deleteResourceMetaInfo(it.resourceMetaInfoId)
+    }
+    deleted = deleted and deleteCaptureInfo(captureId)
+    return deleted
   }
 
   companion object {

@@ -20,20 +20,20 @@ import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import com.google.android.sensing.db.impl.dao.CaptureInfoDao
-import com.google.android.sensing.db.impl.dao.ResourceInfoDao
+import com.google.android.sensing.db.impl.dao.ResourceMetaInfoDao
 import com.google.android.sensing.db.impl.dao.UploadRequestDao
 import com.google.android.sensing.db.impl.entities.CaptureInfoEntity
-import com.google.android.sensing.db.impl.entities.ResourceInfoEntity
+import com.google.android.sensing.db.impl.entities.ResourceMetaInfoEntity
 import com.google.android.sensing.db.impl.entities.UploadRequestEntity
 
 @Database(
-  entities = [CaptureInfoEntity::class, ResourceInfoEntity::class, UploadRequestEntity::class],
+  entities = [CaptureInfoEntity::class, ResourceMetaInfoEntity::class, UploadRequestEntity::class],
   version = 1,
   exportSchema = false
 )
 @TypeConverters(DbTypeConverters::class)
 internal abstract class ResourceDatabase : RoomDatabase() {
   abstract fun captureInfoDao(): CaptureInfoDao
-  abstract fun resourceInfoDao(): ResourceInfoDao
+  abstract fun resourceMetaInfoDao(): ResourceMetaInfoDao
   abstract fun uploadRequestDao(): UploadRequestDao
 }

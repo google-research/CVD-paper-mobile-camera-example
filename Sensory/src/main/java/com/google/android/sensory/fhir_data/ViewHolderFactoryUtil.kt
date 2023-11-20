@@ -23,8 +23,8 @@ import java.io.File
 
 class ViewHolderFactoryUtil {
   companion object {
-    fun getFirstOrNullImageUri(root: String, fileType: String): Uri? {
-      val file = File(root)
+    fun getFirstOrNullImageUri(root: File, relativePath: String, fileType: String): Uri? {
+      val file = File(root, relativePath)
       return file.listFiles()?.firstOrNull { it.extension == fileType }?.toUri()
     }
     fun removeUnwantedViews(itemView: View) {

@@ -19,24 +19,24 @@ package com.google.android.sensing.db.impl.entities
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
-import com.google.android.sensing.model.RequestStatus
+import com.google.android.sensing.model.UploadStatus
 
 @Entity(
   indices =
     [
-      Index(value = ["resourceFolderPath"], unique = true),
-      Index(value = ["resourceInfoId"], unique = true),
+      Index(value = ["resourceFolderRelativePath"], unique = true),
+      Index(value = ["resourceMetaInfoId"], unique = true),
       Index(value = ["captureId"]),
       Index(value = ["participantId"]),
       Index(value = ["captureTitle"])
     ]
 )
-/** Information about the resource collected per capture. This is not involved in uploading. */
-internal data class ResourceInfoEntity(
+/** Information about the resource collected in a capture. This is not involved in uploading. */
+internal data class ResourceMetaInfoEntity(
   @PrimaryKey(autoGenerate = true) val id: Long,
 
   /** Unique Id of this record. */
-  val resourceInfoId: String,
+  val resourceMetaInfoId: String,
 
   /** Id of the capture that created this record. */
   val captureId: String,
@@ -50,12 +50,12 @@ internal data class ResourceInfoEntity(
   /** Resource extension */
   val fileType: String,
 
-  /** Absolute android folder location of the captured data from a sensor. */
-  val resourceFolderPath: String,
+  /** Folder location of the captured data from a sensor, relative to app's internal storage. */
+  val resourceFolderRelativePath: String,
 
   /** Absolute and immutable upload url. */
   val uploadURL: String,
 
-  /** Upload status. */
-  val status: RequestStatus,
+  /** Upload status of the resource associated with this record. */
+  val uploadStatus: UploadStatus,
 )

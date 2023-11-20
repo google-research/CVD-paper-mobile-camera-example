@@ -44,7 +44,7 @@ class ScreenerFragment : Fragment(R.layout.fragment_screening) {
     setUpActionBar()
     setHasOptionsMenu(true)
     updateArguments()
-    onBackPressed()
+    registerBackPressCallback()
     observeResourcesSaveAction()
     if (savedInstanceState == null) {
       addQuestionnaireFragment()
@@ -63,7 +63,7 @@ class ScreenerFragment : Fragment(R.layout.fragment_screening) {
         true
       }
       android.R.id.home -> {
-        showCancelScreenerQuestionnaireAlertDialog()
+        onBackPressed()
         true
       }
       else -> true
@@ -87,7 +87,7 @@ class ScreenerFragment : Fragment(R.layout.fragment_screening) {
     val questionnaireFragment =
       childFragmentManager.findFragmentByTag(QUESTIONNAIRE_FRAGMENT_TAG) as QuestionnaireFragment?
     childFragmentManager.commit {
-      replace(
+      add(
         R.id.screener_container,
         questionnaireFragment
           ?: QuestionnaireFragment.builder()
@@ -127,10 +127,16 @@ class ScreenerFragment : Fragment(R.layout.fragment_screening) {
     alertDialog?.show()
   }
 
+  private fun registerBackPressCallback() {
+    activity?.onBackPressedDispatcher?.addCallback(viewLifecycleOwner) { onBackPressed() }
+  }
+
   private fun onBackPressed() {
-    activity?.onBackPressedDispatcher?.addCallback(viewLifecycleOwner) {
-      showCancelScreenerQuestionnaireAlertDialog()
+    if (childFragmentManager.backStackEntryCount >= 1) {
+      childFragmentManager.popBackStack()
+      return
     }
+    showCancelScreenerQuestionnaireAlertDialog()
   }
 
   private fun observeResourcesSaveAction() {

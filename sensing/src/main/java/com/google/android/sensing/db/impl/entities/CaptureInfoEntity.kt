@@ -20,6 +20,7 @@ import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
 import com.google.android.sensing.model.CaptureType
+import java.time.Instant
 
 @Entity(
   indices =
@@ -45,4 +46,7 @@ internal data class CaptureInfoEntity(
 
   /** Unique id for each capture. */
   val captureId: String,
+
+  /** Time this capture was initiated. */
+  val startTime: Instant
 )

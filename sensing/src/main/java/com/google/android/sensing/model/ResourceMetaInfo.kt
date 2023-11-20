@@ -16,14 +16,14 @@
 
 package com.google.android.sensing.model
 
-/** Data class equivalent to ResourceInfoEntity for usage outside database. */
-data class ResourceInfo(
-  val resourceInfoId: String,
+/** Data class equivalent to ResourceMetaInfoEntity for usage outside database. */
+data class ResourceMetaInfo(
+  val resourceMetaInfoId: String,
   val captureId: String,
   val participantId: String,
   val captureTitle: String,
   val fileType: String,
-  val resourceFolderPath: String,
+  val resourceFolderRelativePath: String,
   val uploadURL: String,
-  var status: RequestStatus,
+  var uploadStatus: UploadStatus,
 )

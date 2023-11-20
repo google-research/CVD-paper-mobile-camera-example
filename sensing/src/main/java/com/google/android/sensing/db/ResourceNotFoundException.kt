@@ -14,11 +14,7 @@
  * limitations under the License.
  */
 
-package com.google.android.sensing.model
+package com.google.android.sensing.db
 
-enum class RequestStatus {
-  PENDING,
-  UPLOADING,
-  UPLOADED,
-  FAILED
-}
+class ResourceNotFoundException(type: String, id: String) :
+  Exception("Resource not found with type $type and id $id!")

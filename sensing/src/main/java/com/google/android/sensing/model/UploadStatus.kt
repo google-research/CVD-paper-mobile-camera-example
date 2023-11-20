@@ -16,21 +16,9 @@
 
 package com.google.android.sensing.model
 
-import java.util.Date
-import java.util.UUID
-
-/** Data class equivalent to UploadRequestEntity for usage outside database. */
-data class UploadRequest(
-  val requestUuid: UUID,
-  val resourceMetaInfoId: String,
-  val zipFile: String,
-  val fileSize: Long,
-  var fileOffset: Long,
-  val bucketName: String,
-  val uploadRelativeURL: String,
-  val isMultiPart: Boolean,
-  var nextPart: Int,
-  var uploadId: String? = null,
-  var status: UploadStatus,
-  var lastUpdatedTime: Date,
-)
+enum class UploadStatus {
+  PENDING,
+  UPLOADING,
+  UPLOADED,
+  FAILED
+}
