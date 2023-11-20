@@ -77,7 +77,6 @@ internal fun UploadRequestEntity.toUploadRequest() =
 
 internal fun UploadRequest.toUploadRequestEntity() =
   UploadRequestEntity(
-    id = 0,
     requestUuid = requestUuid,
     resourceInfoId = resourceInfoId,
     zipFile = zipFile,

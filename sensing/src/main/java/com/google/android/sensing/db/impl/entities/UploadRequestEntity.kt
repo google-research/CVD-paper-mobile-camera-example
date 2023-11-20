@@ -25,7 +25,7 @@ import java.time.Instant
 import java.util.UUID
 
 @Entity(
-  indices = [Index(value = ["status"]), Index(value = ["requestUuid"], unique = true)],
+  indices = [Index(value = ["status"])],
   foreignKeys =
     [
       ForeignKey(
@@ -41,10 +41,9 @@ import java.util.UUID
  * of this is responsible to upload. Relevantly it requires other file information.
  */
 internal data class UploadRequestEntity(
-  @PrimaryKey(autoGenerate = true) val id: Long,
 
   /** UUID for this record. */
-  val requestUuid: UUID,
+  @PrimaryKey val requestUuid: UUID,
 
   /** Unique key in [ResourceInfoEntity]: Required to update upload status of the resource. */
   val resourceInfoId: String,
