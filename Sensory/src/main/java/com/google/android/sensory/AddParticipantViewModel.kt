@@ -82,6 +82,10 @@ class AddParticipantViewModel(application: Application, private val state: Saved
   }
 
   private fun getQuestionnaireString(): String {
+    viewModelScope.launch {
+      SensingApplication.sensingEngine(getApplication())
+        .deleteDataInCapture("3cc82afe-7a6a-4ee9-9268-c8832763224b")
+    }
     return readFileFromAssets(state[AddParticipantFragment.QUESTIONNAIRE_FILE_PATH_KEY]!!)
   }
 
