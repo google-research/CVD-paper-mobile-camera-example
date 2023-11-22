@@ -50,7 +50,7 @@ internal data class ResourceInfoEntity(
   /** Resource extension */
   val fileType: String,
 
-  /** Absolute android folder location of the captured data from a sensor. */
+  /** Relative android folder location of the captured data from a sensor. */
   val resourceFolderRelativePath: String,
 
   /** Absolute and immutable upload url. */
