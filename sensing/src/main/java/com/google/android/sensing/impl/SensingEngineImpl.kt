@@ -196,11 +196,7 @@ internal class SensingEngineImpl(
     // Step 1: Delete db records
     database.deleteRecordsInCapture(captureId)
     // Step 2: delete the captureFolder
-    val captureFile =
-      File(
-        Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
-        captureInfo.captureFolder
-      )
+    val captureFile = File(context.filesDir, captureInfo.captureFolder)
     val parentFile = captureFile.parentFile
     val deleted: Boolean
     withContext(Dispatchers.IO) {
