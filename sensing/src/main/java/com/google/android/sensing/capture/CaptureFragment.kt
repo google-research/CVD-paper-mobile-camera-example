@@ -72,7 +72,7 @@ import kotlinx.coroutines.flow.Flow
 class CaptureFragment : Fragment() {
 
   private val captureViewModel by viewModels<CaptureViewModel>()
-  private lateinit var sensorCaptureResultCollector: suspend ((Flow<SensorCaptureResult>) -> Unit)
+  private lateinit var callback: suspend ((Flow<SensorCaptureResult>) -> Unit)
   private var captureInfo: CaptureInfo? = null
 
   private var camera: Camera2InteropSensor? = null
@@ -87,21 +87,19 @@ class CaptureFragment : Fragment() {
   private lateinit var btnTakePhoto: AppCompatImageView
 
   /**
-   * A setter function: Callback defined by the application developers that collects
-   * [SensorCaptureResult] emitted from [CaptureViewModel] and
-   * [SensingEngine.onCaptureCompleteCallback].
+   * Set application layer callback to receive [SensorCaptureResult]s emitted while Capturing (from
+   * [CaptureViewModel]) and Record-Keeping (from [SensingEngine])
    */
-  fun setSensorCaptureResultCollector(
-    sensorCaptureResultCollector: suspend ((Flow<SensorCaptureResult>) -> Unit),
+  fun setResultCallback(
+    callback: suspend ((Flow<SensorCaptureResult>) -> Unit),
   ) {
-    this.sensorCaptureResultCollector = sensorCaptureResultCollector
+    this.callback = callback
   }
 
   /**
-   * A setter function: All details about the capture. Not passing via arguments as it requires API
-   * >= 33.
+   * Set [CaptureInfo] for this capture. Not passing via arguments as it requires API >= 33.
    *
-   * If [captureInfo.retake] is true then [captureInfo.captureId] must not be null
+   * If [captureInfo.recapture] is true then [captureInfo.captureId] must not be null
    */
   fun setCaptureInfo(captureInfo: CaptureInfo) {
     if (captureInfo.captureId == null) {
@@ -110,13 +108,9 @@ class CaptureFragment : Fragment() {
     this.captureInfo = captureInfo
   }
 
-  @SuppressLint("UseRequireInsteadOfGet")
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
-    captureViewModel.setupCaptureResultFlow(
-      captureInfo = captureInfo!!,
-      captureResultCollector = sensorCaptureResultCollector
-    )
+    captureViewModel.setupCaptureAndCallback(captureInfo = captureInfo!!, callback = callback)
   }
 
   override fun onCreateView(
@@ -160,7 +154,7 @@ class CaptureFragment : Fragment() {
             }
           )
         recordTimer.text = "00 : ${captureViewModel.captureInfo.captureSettings!!.ppgTimer}"
-        recordFab.setOnClickListener { captureViewModel.processRecord(camera!!) }
+        recordFab.setOnClickListener { captureViewModel.processRecordClick(camera!!) }
         toggleFlashFab.setOnClickListener {
           CaptureUtil.toggleFlashWithView(camera!!, toggleFlashFab, requireContext())
         }

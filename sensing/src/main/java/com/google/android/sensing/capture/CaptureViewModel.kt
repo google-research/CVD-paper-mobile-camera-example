@@ -73,16 +73,14 @@ class CaptureViewModel(application: Application) : AndroidViewModel(application)
   val timerLiveData = MutableLiveData<Long>()
   private var frameNumber = 0
 
-  fun setupCaptureResultFlow(
+  fun setupCaptureAndCallback(
     captureInfo: CaptureInfo,
-    captureResultCollector: suspend ((Flow<SensorCaptureResult>) -> Unit)
+    callback: suspend ((Flow<SensorCaptureResult>) -> Unit)
   ) {
     this.captureInfo = captureInfo
-    CoroutineScope(context = Dispatchers.IO).launch {
-      captureResultCollector(captureResultLiveData.asFlow())
-    }
+    CoroutineScope(context = Dispatchers.IO).launch { callback(captureResultLiveData.asFlow()) }
   }
-  fun processRecord(camera: Camera2InteropSensor) {
+  fun processRecordClick(camera: Camera2InteropSensor) {
     if (this::recordingGate.isInitialized && recordingGate.isOpen) {
       completeCapture()
       return
@@ -225,11 +223,13 @@ class CaptureViewModel(application: Application) : AndroidViewModel(application)
   }
 
   /**
-   * This invokes [SensingEngine.onCaptureCompleteCallback] which emits [SensorCaptureResult] upon
-   * saving resources to database. Happens in [CoroutineScope] and not [viewModelScope] because the
-   * fragment and its viewModel can get destroyed before resources are saved into the database.
-   * Emitted [SensorCaptureResult] are collected here arnd re-emitted to the [_captureResultFlow]
-   * which in turn is collected by the application developers via [captureResultCollector]
+   * This invokes [SensingEngine.onCaptureComplete] which emits [SensorCaptureResult]. Invocation
+   * scope is a new [CoroutineScope] and not [viewModelScope] because [viewModelScope] will be
+   * cancelled when ViewModel will be cleared. And hence it will also cancel further emit of
+   * [SensorCaptureResult].
+   *
+   * Emitted [SensorCaptureResult] are collected here and posted to [captureResultLiveData] which in
+   * turn is collected by the application callback.
    */
   fun invokeCaptureCompleteCallback() {
     CoroutineScope(context = Dispatchers.IO).launch {
