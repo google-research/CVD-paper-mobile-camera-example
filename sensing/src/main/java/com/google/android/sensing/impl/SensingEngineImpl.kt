@@ -18,7 +18,6 @@ package com.google.android.sensing.impl
 
 import android.content.Context
 import android.content.Intent
-import android.os.Environment
 import androidx.camera.camera2.interop.ExperimentalCamera2Interop
 import com.google.android.sensing.SensingEngine
 import com.google.android.sensing.ServerConfiguration
@@ -72,25 +71,18 @@ internal class SensingEngineImpl(
           participantId = captureInfo.participantId,
           captureTitle = captureInfo.captureSettings.captureTitle,
           fileType = resourceInfoFileType(it, captureInfo),
-          resourceFolderPath =
-            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-              .absolutePath + "/$resourceFolderRelativePath",
+          resourceFolderRelativePath = resourceFolderRelativePath,
           uploadURL = serverConfiguration.getBucketUrl() + uploadRelativeUrl,
           status = RequestStatus.PENDING
         )
       database.addResourceInfo(resourceInfo)
       emit(SensorCaptureResult.StateChange(resourceInfo.resourceInfoId))
-      /** Zipping logic from: https://stackoverflow.com/a/63828765 */
-      /**
-       * [CaptureFragment] stores files in:
-       * Downloads/Sensory/Participant_<participantId>/<captureType>/<sensorType>
-       */
-      val resourceFolder =
-        File(
-          Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
-          resourceFolderRelativePath
-        )
+
+      /** [CaptureFragment] stores files in app's internal storage directory */
+      val resourceFolder = File(context.filesDir, resourceFolderRelativePath)
       val outputZipFile = resourceFolder.absolutePath + ".zip"
+
+      /** Zipping logic from: https://stackoverflow.com/a/63828765 */
       val zipOutputStream = ZipOutputStream(BufferedOutputStream(FileOutputStream(outputZipFile)))
       zipOutputStream.use { zos ->
         resourceFolder.walkTopDown().forEach { file ->

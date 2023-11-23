@@ -103,7 +103,7 @@ internal fun ResourceInfoEntity.toResourceInfo() =
     participantId = participantId,
     captureTitle = captureTitle,
     fileType = fileType,
-    resourceFolderPath = resourceFolderPath,
+    resourceFolderRelativePath = resourceFolderRelativePath,
     uploadURL = uploadURL,
     status = status
   )
@@ -116,7 +116,7 @@ internal fun ResourceInfo.toResourceInfoEntity() =
     participantId = participantId,
     captureTitle = captureTitle,
     fileType = fileType,
-    resourceFolderPath = resourceFolderPath,
+    resourceFolderRelativePath = resourceFolderRelativePath,
     uploadURL = uploadURL,
     status = status
   )

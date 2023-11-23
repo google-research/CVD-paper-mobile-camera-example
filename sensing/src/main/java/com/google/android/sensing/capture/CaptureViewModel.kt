@@ -23,7 +23,6 @@ import android.hardware.camera2.CaptureResult
 import android.hardware.camera2.params.ColorSpaceTransform
 import android.hardware.camera2.params.RggbChannelVector
 import android.os.CountDownTimer
-import android.os.Environment
 import androidx.camera.camera2.interop.CaptureRequestOptions
 import androidx.camera.camera2.interop.ExperimentalCamera2Interop
 import androidx.core.content.ContextCompat
@@ -72,6 +71,9 @@ class CaptureViewModel(application: Application) : AndroidViewModel(application)
   private var frameNumber = 0
   val captured = MutableLiveData<Boolean?>(null)
 
+  private val internalStorageFolder: File
+    get() = getApplication<Application>().filesDir
+
   fun setupCaptureResultFlow(
     captureInfo: CaptureInfo,
     captureResultCollector: suspend ((Flow<SensorCaptureResult>) -> Unit)
@@ -79,11 +81,7 @@ class CaptureViewModel(application: Application) : AndroidViewModel(application)
     viewModelScope.launch {
       if (captureInfo.captureId != null) {
         // delete everything in folder associated with this captureId to re-capture
-        val file =
-          File(
-            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
-            captureInfo.captureFolder
-          )
+        val file = File(internalStorageFolder, captureInfo.captureFolder)
         file.deleteRecursively()
       } else {
         captureInfo.apply { captureId = UUID.randomUUID().toString() }
@@ -167,8 +165,7 @@ class CaptureViewModel(application: Application) : AndroidViewModel(application)
       "Participant${captureInfo.participantId}_${captureInfo.captureSettings.captureTitle}_${frameNumber}_${System.currentTimeMillis()}_${captureInfo.captureSettings.contextMap[SensorType.CAMERA]}.${captureInfo.captureSettings.fileTypeMap[SensorType.CAMERA]}"
     frameNumber++
     val filePath = "$folder/$filename"
-    val fileFolder = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-    return File(fileFolder, filePath)
+    return File(internalStorageFolder, filePath)
   }
 
   private fun getCameraMetadataFile(): File {
@@ -176,8 +173,7 @@ class CaptureViewModel(application: Application) : AndroidViewModel(application)
     val filename =
       "Participant_${captureInfo.participantId}_${captureInfo.captureSettings.captureTitle}_${System.currentTimeMillis()}_${captureInfo.captureSettings.contextMap[SensorType.CAMERA]}.${captureInfo.captureSettings.metaDataTypeMap[SensorType.CAMERA]}"
     val filePath = "$folder/$filename"
-    val fileFolder = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-    return File(fileFolder, filePath)
+    return File(internalStorageFolder, filePath)
   }
 
   private suspend fun startTimer() {
