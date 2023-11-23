@@ -104,11 +104,12 @@ object PhotoCaptureViewHolderFactory :
           val captureId = code.code
           val livePath = MutableLiveData<Uri>()
           CoroutineScope(Dispatchers.IO).launch {
-            val resourceInfo = sensingEngine.listResourceInfoInCapture(captureId)[0]
+            val resourceInfoList = sensingEngine.listResourceInfoInCapture(captureId)
             livePath.postValue(
               ViewHolderFactoryUtil.getFirstOrNullImageUri(
-                resourceInfo.resourceFolderPath,
-                resourceInfo.fileType
+                context.filesDir,
+                resourceInfoList[0].resourceFolderRelativePath,
+                resourceInfoList[0].fileType
               )!!
             )
           }
