@@ -109,6 +109,7 @@ object Dependencies {
 
   const val androidJunitRunner = "androidx.test.runner.AndroidJUnitRunner"
   const val junit = "junit:junit:${Versions.junit}"
+  const val gson = "com.google.code.gson:gson:${Versions.gson}"
 
   object Versions {
     object Androidx {
@@ -150,5 +151,6 @@ object Dependencies {
 
     const val espresso = "3.4.0"
     const val junit = "4.13.2"
+    const val gson = "2.9.1"
   }
 }

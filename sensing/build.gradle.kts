@@ -48,6 +48,7 @@ dependencies {
   implementation(Dependencies.CameraX.cameraLifecycle)
   implementation(Dependencies.CameraX.cameraVideo)
   implementation(Dependencies.CameraX.cameraView)
+  implementation(Dependencies.gson)
 
   implementation(Dependencies.ReactiveStreams.reactiveStreams)
   implementation(Dependencies.ReactiveStreams.lifecycle)

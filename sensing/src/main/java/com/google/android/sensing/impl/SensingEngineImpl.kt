@@ -25,6 +25,7 @@ import com.google.android.sensing.capture.CaptureFragment
 import com.google.android.sensing.capture.CaptureUtil
 import com.google.android.sensing.capture.SensorCaptureResult
 import com.google.android.sensing.db.Database
+import com.google.android.sensing.db.ResourceNotFoundException
 import com.google.android.sensing.model.CaptureInfo
 import com.google.android.sensing.model.CaptureType
 import com.google.android.sensing.model.RequestStatus
@@ -40,8 +41,10 @@ import java.util.Date
 import java.util.UUID
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.withContext
 
 /**
  * @param database Interface to interact with room database.
@@ -176,6 +179,34 @@ internal class SensingEngineImpl(
 
   override suspend fun getUploadRequest(resourceInfoId: String): UploadRequest? {
     TODO("Not yet implemented")
+  }
+
+  override suspend fun getCaptureInfo(captureId: String): CaptureInfo {
+    return database.getCaptureInfo(captureId)
+  }
+
+  override suspend fun deleteDataInCapture(captureId: String): Boolean {
+    val captureInfo =
+      try {
+        getCaptureInfo(captureId)
+      } catch (e: ResourceNotFoundException) {
+        null
+      } ?: return true
+
+    // Step 1: Delete db records
+    database.deleteRecordsInCapture(captureId)
+    // Step 2: delete the captureFolder
+    val captureFile = File(context.filesDir, captureInfo.captureFolder)
+    val parentFile = captureFile.parentFile
+    val deleted: Boolean
+    withContext(Dispatchers.IO) {
+      deleted = captureFile.deleteRecursively()
+      // delete Participant's folder if there are no data
+      if (parentFile?.list()?.isEmpty() == true) {
+        parentFile.delete()
+      }
+    }
+    return deleted
   }
 
   override suspend fun deleteSensorData(uploadURL: String) {

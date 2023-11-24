@@ -20,6 +20,7 @@ import android.content.Context
 import androidx.room.Room
 import com.google.android.sensing.DatabaseErrorStrategy
 import com.google.android.sensing.db.Database
+import com.google.android.sensing.db.ResourceNotFoundException
 import com.google.android.sensing.model.CaptureInfo
 import com.google.android.sensing.model.RequestStatus
 import com.google.android.sensing.model.ResourceInfo
@@ -76,6 +77,16 @@ internal class DatabaseImpl(context: Context, databaseConfig: DatabaseConfig) : 
 
   override suspend fun getResourceInfo(resourceInfoId: String): ResourceInfo {
     return resourceInfoDao.getResourceInfo(resourceInfoId)
+  }
+
+  override suspend fun getCaptureInfo(captureId: String): CaptureInfo {
+    return captureInfoDao.getCaptureInfo(captureId)
+      ?: throw ResourceNotFoundException("CaptureInfo", captureId)
+  }
+
+  override suspend fun deleteRecordsInCapture(captureId: String): Boolean {
+    /* We only need to delete CaptureInfo record as we CASCADE it. */
+    return captureInfoDao.deleteCaptureInfo(captureId) == 1
   }
 
   companion object {

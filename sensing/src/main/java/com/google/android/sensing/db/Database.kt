@@ -32,4 +32,6 @@ internal interface Database {
   suspend fun updateUploadRequest(uploadRequest: UploadRequest)
   suspend fun updateResourceInfo(resourceInfo: ResourceInfo)
   suspend fun getResourceInfo(resourceInfoId: String): ResourceInfo?
+  suspend fun getCaptureInfo(captureId: String): CaptureInfo
+  suspend fun deleteRecordsInCapture(captureId: String): Boolean
 }

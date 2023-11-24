@@ -17,6 +17,7 @@
 package com.google.android.sensing.db.impl.entities
 
 import androidx.room.Entity
+import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
 import com.google.android.sensing.model.RequestStatus
@@ -26,9 +27,17 @@ import com.google.android.sensing.model.RequestStatus
     [
       Index(value = ["resourceFolderRelativePath"], unique = true),
       Index(value = ["resourceInfoId"], unique = true),
-      Index(value = ["captureId"]),
       Index(value = ["participantId"]),
       Index(value = ["captureTitle"])
+    ],
+  foreignKeys =
+    [
+      ForeignKey(
+        entity = CaptureInfoEntity::class,
+        parentColumns = ["captureId"],
+        childColumns = ["captureId"],
+        onDelete = ForeignKey.CASCADE
+      )
     ]
 )
 /** Information about the resource collected per capture. This is not involved in uploading. */
