@@ -316,7 +316,7 @@ class CaptureFragment : Fragment() {
 
   override fun onPause() {
     super.onPause()
-    captureViewModel.completePpgCapture()
+    captureViewModel.endPPGCapture()
     (requireActivity() as AppCompatActivity).supportActionBar?.show()
   }
 

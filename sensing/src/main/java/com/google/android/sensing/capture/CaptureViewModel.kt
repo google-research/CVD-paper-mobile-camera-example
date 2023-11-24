@@ -84,7 +84,7 @@ class CaptureViewModel(application: Application) : AndroidViewModel(application)
   }
   fun processRecord(camera: Camera2InteropSensor) {
     if (this::recordingGate.isInitialized && recordingGate.isOpen) {
-      completePpgCapture()
+      endPPGCapture()
       return
     }
     recordingGate = FlowGate.createClosed()
@@ -245,7 +245,7 @@ class CaptureViewModel(application: Application) : AndroidViewModel(application)
     }
   }
 
-  fun completePpgCapture() {
+  fun endPPGCapture() {
     if (this::recordingGate.isInitialized && recordingGate.isOpen) {
       recordingGate.completeAndClose()
       countDownTimer.cancel()
