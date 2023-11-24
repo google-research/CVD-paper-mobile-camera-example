@@ -7,6 +7,7 @@
     android:layout_height="match_parent"
     android:keepScreenOn="true"
     tools:ignore="contentDescription"
+    android:background="@android:color/white"
 >
 
   <include

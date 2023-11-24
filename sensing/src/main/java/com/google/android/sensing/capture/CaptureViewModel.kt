@@ -28,6 +28,7 @@ import androidx.camera.camera2.interop.ExperimentalCamera2Interop
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.asFlow
 import androidx.lifecycle.viewModelScope
 import com.google.android.fitbit.research.sensing.common.libraries.camera.Camera2InteropActions
 import com.google.android.fitbit.research.sensing.common.libraries.camera.Camera2InteropSensor
@@ -42,12 +43,11 @@ import com.google.android.sensing.model.SensorType
 import com.google.common.util.concurrent.FutureCallback
 import com.google.common.util.concurrent.Futures
 import java.io.File
-import java.util.UUID
+import java.util.Date
 import java.util.concurrent.Executors
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.launch
 
 /**
@@ -60,43 +60,31 @@ import kotlinx.coroutines.launch
 class CaptureViewModel(application: Application) : AndroidViewModel(application) {
   lateinit var captureInfo: CaptureInfo
 
-  private val _captureResultFlow = MutableSharedFlow<SensorCaptureResult>()
-  val captureResultFlow: Flow<SensorCaptureResult>
-    get() = _captureResultFlow
+  val captureResultLiveData = MutableLiveData<SensorCaptureResult>()
 
   lateinit var recordingGate: FlowGate
   val isPhoneSafeToUse = MutableLiveData<Boolean>(false)
   private lateinit var countDownTimer: CountDownTimer
-  val timerLiveData = MutableLiveData<Long?>(null)
+  val timerLiveData = MutableLiveData<Long>()
   private var frameNumber = 0
-  val captured = MutableLiveData<Boolean?>(null)
 
   private val internalStorageFolder: File
-    get() = getApplication<Application>().filesDir
+    get() =
+      if (captureInfo.recapture == true) getApplication<Application>().cacheDir
+      else getApplication<Application>().filesDir
 
   fun setupCaptureResultFlow(
     captureInfo: CaptureInfo,
     captureResultCollector: suspend ((Flow<SensorCaptureResult>) -> Unit)
   ) {
-    viewModelScope.launch {
-      if (captureInfo.captureId != null) {
-        // delete everything in folder associated with this captureId to re-capture
-        val file = File(internalStorageFolder, captureInfo.captureFolder)
-        file.deleteRecursively()
-      } else {
-        captureInfo.apply { captureId = UUID.randomUUID().toString() }
-      }
-    }
     this.captureInfo = captureInfo
-    CoroutineScope(context = Dispatchers.IO).launch { captureResultCollector(captureResultFlow) }
+    CoroutineScope(context = Dispatchers.IO).launch {
+      captureResultCollector(captureResultLiveData.asFlow())
+    }
   }
   fun processRecord(camera: Camera2InteropSensor) {
     if (this::recordingGate.isInitialized && recordingGate.isOpen) {
-      recordingGate.completeAndClose()
-      countDownTimer.cancel()
-      viewModelScope.launch {
-        _captureResultFlow.emit(SensorCaptureResult.CaptureComplete(captureInfo.captureId!!))
-      }
+      endPPGCapture()
       return
     }
     recordingGate = FlowGate.createClosed()
@@ -124,15 +112,14 @@ class CaptureViewModel(application: Application) : AndroidViewModel(application)
 
     // Open the recording stream
     recordingGate.open()
-    viewModelScope.launch {
-      _captureResultFlow.emit(SensorCaptureResult.Started(captureInfo.captureId!!))
-      // timer in a different coroutine
-      startTimer()
-    }
+    captureResultLiveData.postValue(SensorCaptureResult.Started(captureInfo.captureId!!))
+    captureInfo.captureTime = Date()
+    startTimer()
   }
 
   // Safe to ignore CameraControl futures
   fun capturePhoto(camera: Camera2InteropSensor, context: Context) {
+    captureResultLiveData.postValue(SensorCaptureResult.Started(captureInfo.captureId!!))
     Futures.addCallback(
       Camera2InteropActions.captureSingleJpegWithMetadata(
         camera,
@@ -142,11 +129,13 @@ class CaptureViewModel(application: Application) : AndroidViewModel(application)
       ),
       object : FutureCallback<Boolean?> {
         override fun onSuccess(success: Boolean?) {
-          captured.postValue(true)
+          captureResultLiveData.postValue(
+            SensorCaptureResult.CaptureComplete(captureInfo.captureId!!)
+          )
         }
 
         override fun onFailure(t: Throwable) {
-          captured.postValue(false)
+          captureResultLiveData.postValue(SensorCaptureResult.Failed(captureInfo.captureId!!, t))
         }
       },
       ContextCompat.getMainExecutor(context)
@@ -176,24 +165,29 @@ class CaptureViewModel(application: Application) : AndroidViewModel(application)
     return File(internalStorageFolder, filePath)
   }
 
-  private suspend fun startTimer() {
-    countDownTimer =
-      object : CountDownTimer(1000L * captureInfo.captureSettings.ppgTimer, 1000) {
-          override fun onTick(millisUntilFinished: Long) {
-            timerLiveData.postValue(millisUntilFinished)
-          }
+  private fun startTimer() {
+    // timer in a different coroutine
+    viewModelScope.launch {
+      countDownTimer =
+        object : CountDownTimer(1000L * captureInfo.captureSettings.ppgTimer, 1000) {
+            override fun onTick(millisUntilFinished: Long) {
+              timerLiveData.postValue(millisUntilFinished)
+            }
 
-          override fun onFinish() {
-            if (recordingGate.isOpen) {
-              viewModelScope.launch {
-                _captureResultFlow.emit(
-                  SensorCaptureResult.CaptureComplete(captureInfo.captureId!!)
-                )
+            override fun onFinish() {
+              if (recordingGate.isOpen) {
+                viewModelScope.launch {
+                  if (recordingGate.isOpen) {
+                    captureResultLiveData.postValue(
+                      SensorCaptureResult.CaptureComplete(captureInfo.captureId!!)
+                    )
+                  }
+                }
               }
             }
           }
-        }
-        .start()
+          .start()
+    }
   }
 
   fun getCaptureRequestOptions(lockExposure: Boolean): CaptureRequestOptions {
@@ -235,17 +229,27 @@ class CaptureViewModel(application: Application) : AndroidViewModel(application)
   }
 
   /**
-   * This invokes [SensingEngine.onCaptureCompleteCallback] which emits [SensorCaptureResult] upon
-   * saving resources to database. Happens in [CoroutineScope] and not [viewModelScope] because the
-   * fragment and its viewModel can get destroyed before resources are saved into the database.
-   * Emitted [SensorCaptureResult] are collected here arnd re-emitted to the [_captureResultFlow]
-   * which in turn is collected by the application developers via [captureResultCollector]
+   * This invokes [SensingEngine.onCaptureComplete] which emits [SensorCaptureResult]. Invocation
+   * scope is a new [CoroutineScope] and not [viewModelScope] because [viewModelScope] will be
+   * cancelled when ViewModel will be cleared. And hence it will also cancel further emit of
+   * [SensorCaptureResult].
+   *
+   * Emitted [SensorCaptureResult] are collected here and posted to [captureResultLiveData] which in
+   * turn is collected by the application callback.
    */
-  fun captureComplete() {
+  fun invokeCaptureCompleteCallback() {
     CoroutineScope(context = Dispatchers.IO).launch {
       SensingEngineProvider.getOrCreateSensingEngine(getApplication())
         .onCaptureCompleteCallback(captureInfo)
-        .collect { _captureResultFlow.emit(it) }
+        .collect { captureResultLiveData.postValue(it) }
+    }
+  }
+
+  fun endPPGCapture() {
+    if (this::recordingGate.isInitialized && recordingGate.isOpen) {
+      recordingGate.completeAndClose()
+      countDownTimer.cancel()
+      captureResultLiveData.postValue(SensorCaptureResult.CaptureComplete(captureInfo.captureId!!))
     }
   }
 
