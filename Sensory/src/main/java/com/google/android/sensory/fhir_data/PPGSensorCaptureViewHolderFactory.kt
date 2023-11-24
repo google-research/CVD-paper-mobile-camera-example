@@ -25,8 +25,11 @@ import androidx.annotation.DrawableRes
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.os.bundleOf
+import androidx.fragment.app.findFragment
 import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.lifecycleScope
 import com.bumptech.glide.Glide
+import com.google.android.fhir.datacapture.QuestionnaireFragment
 import com.google.android.fhir.datacapture.tryUnwrapContext
 import com.google.android.fhir.datacapture.views.QuestionnaireViewItem
 import com.google.android.fhir.datacapture.views.factories.QuestionnaireItemViewHolderDelegate
@@ -41,8 +44,6 @@ import com.google.android.sensing.model.SensorType
 import com.google.android.sensory.InstructionsFragment
 import com.google.android.sensory.R
 import com.google.android.sensory.SensingApplication
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.hl7.fhir.r4.model.Coding
 import org.hl7.fhir.r4.model.Questionnaire
@@ -105,8 +106,13 @@ object PPGSensorCaptureViewHolderFactory :
         answer.valueCoding?.let { code ->
           val captureId = code.code
           val livePath = MutableLiveData<String>()
-          CoroutineScope(Dispatchers.IO).launch {
-            livePath.postValue(sensingEngine.listResourceInfoInCapture(captureId)[0].captureTitle)
+          context.lifecycleScope.launch {
+            val resourceMetaInfoList = sensingEngine.listResourceInfoInCapture(captureId)
+            if (resourceMetaInfoList.isEmpty()) {
+              clearFilePreview()
+              return@launch
+            }
+            livePath.postValue(resourceMetaInfoList[0].captureTitle)
           }
           livePath.observe(context) {
             loadFilePreview(com.google.android.fhir.datacapture.R.drawable.ic_document_file, it)
@@ -118,11 +124,26 @@ object PPGSensorCaptureViewHolderFactory :
         view: View,
         questionnaireViewItem: QuestionnaireViewItem,
       ) {
-        context.supportFragmentManager.setFragmentResultListener(
+        val parentFragmentsChildFragmentManager =
+          view.findFragment<QuestionnaireFragment>().parentFragmentManager
+        parentFragmentsChildFragmentManager.setFragmentResultListener(
+          CaptureFragment.TAG,
+          context
+        ) { _, result ->
+          if (result.getBoolean(CaptureFragment.CAPTURED)) {
+            // Following condition arises when user presses back button from CaptureFragment and the
+            // fragment is removed from backstack by the BackPressCallback defined in
+            // ScreenerFragment
+            if (parentFragmentsChildFragmentManager.backStackEntryCount >= 1) {
+              parentFragmentsChildFragmentManager.popBackStack()
+            }
+          }
+        }
+        parentFragmentsChildFragmentManager.setFragmentResultListener(
           InstructionsFragment.INSTRUCTION_FRAGMENT_RESULT,
           context,
         ) { _, result ->
-          context.supportFragmentManager.popBackStack()
+          parentFragmentsChildFragmentManager.popBackStack()
           val instructionsUnderstood =
             result.getBoolean(InstructionsFragment.INSTRUCTION_UNDERSTOOD)
           if (!instructionsUnderstood) {
@@ -148,6 +169,7 @@ object PPGSensorCaptureViewHolderFactory :
                       captureTitle = QUESTION_TITLE,
                       ppgTimer = 30
                     ),
+                  recapture = captureId != null,
                   captureId = captureId,
                 )
               )
@@ -167,33 +189,33 @@ object PPGSensorCaptureViewHolderFactory :
                 }
               }
             }
-          context.supportFragmentManager
+          parentFragmentsChildFragmentManager
             .beginTransaction()
-            .replace(R.id.nav_host_fragment, captureFragment)
-            .setReorderingAllowed(true)
-            .addToBackStack(null)
+            .add(R.id.screener_container, captureFragment, CaptureFragment.TAG)
+            .addToBackStack(CaptureFragment.TAG)
             .commit()
         }
-        context.supportFragmentManager
+        parentFragmentsChildFragmentManager
           .beginTransaction()
-          .replace(
-            R.id.nav_host_fragment,
+          .add(
+            R.id.screener_container,
             InstructionsFragment().apply {
               arguments = bundleOf(InstructionsFragment.TITLE to QUESTION_TITLE)
             }
           )
-          .setReorderingAllowed(true)
           .addToBackStack(null)
           .commit()
       }
 
       private fun loadFilePreview(@DrawableRes iconResource: Int, title: String) {
+        takePhotoButton.text = "Retake Video"
         filePreview.visibility = View.VISIBLE
         Glide.with(context).load(iconResource).into(fileIcon)
         fileTitle.text = title
       }
 
       private fun clearFilePreview() {
+        takePhotoButton.text = "Capture Video"
         filePreview.visibility = View.GONE
         Glide.with(context).clear(fileIcon)
         fileTitle.text = ""
@@ -203,4 +225,5 @@ object PPGSensorCaptureViewHolderFactory :
   const val WIDGET_EXTENSION = "http://external-api-call/sensing-backbone"
   const val WIDGET_TYPE = "ppg-capture"
   const val CAPTURE_TEXT = "Capture Video"
+  const val TAG = "PPGSensorCaptureViewHolderFactory"
 }

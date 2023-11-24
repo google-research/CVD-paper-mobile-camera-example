@@ -28,4 +28,5 @@ data class CaptureInfo(
   var captureId: String? = null,
   /** This is not persisted in database for now */
   val captureSettings: CaptureSettings,
+  val recapture: Boolean? = false,
 )

@@ -60,7 +60,16 @@ internal class SensingEngineImpl(
 ) : SensingEngine {
 
   override suspend fun onCaptureCompleteCallback(captureInfo: CaptureInfo) = flow {
+    if (captureInfo.recapture == true) {
+      try {
+        val inRecordCaptureInfo = getCaptureInfo(captureInfo.captureId!!)
+        deleteDataInCapture(inRecordCaptureInfo.captureId!!)
+        moveDataFromCacheToFiles(inRecordCaptureInfo.captureFolder)
+      } catch (_: ResourceNotFoundException) {}
+    } // else we don't need to worry about it because the capture module stored data in the
+    // internal filesDir
     database.addCaptureInfo(captureInfo)
+    emit(SensorCaptureResult.CaptureInfoCreated(captureInfo.captureId!!))
     CaptureUtil.sensorsInvolved(captureInfo.captureType).forEach {
       val resourceFolderRelativePath = getResourceFolderRelativePath(it, captureInfo)
       val uploadRelativeUrl = "/$resourceFolderRelativePath.zip"
@@ -76,7 +85,7 @@ internal class SensingEngineImpl(
           status = RequestStatus.PENDING
         )
       database.addResourceInfo(resourceInfo)
-      emit(SensorCaptureResult.StateChange(resourceInfo.resourceInfoId))
+      emit(SensorCaptureResult.ResourceMetaInfoCreated(resourceInfo.resourceInfoId))
 
       /** [CaptureFragment] stores files in app's internal storage directory */
       val resourceFolder = File(context.filesDir, resourceFolderRelativePath)
@@ -111,8 +120,18 @@ internal class SensingEngineImpl(
           lastUpdatedTime = Date.from(Instant.now())
         )
       database.addUploadRequest(uploadRequest)
+      emit(SensorCaptureResult.UploadRequestCreated(uploadRequest.requestUuid.toString()))
     }
     emit(SensorCaptureResult.ResourcesStored(captureInfo.captureId!!))
+  }
+
+  private suspend fun moveDataFromCacheToFiles(captureFolder: String) {
+    withContext(Dispatchers.IO) {
+      val sourceFile = File(context.cacheDir, captureFolder)
+      val destFile = File(context.filesDir, captureFolder)
+      destFile.mkdirs()
+      return@withContext sourceFile.renameTo(destFile)
+    }
   }
 
   override suspend fun captureSensorData(pendingIntent: Intent) {
