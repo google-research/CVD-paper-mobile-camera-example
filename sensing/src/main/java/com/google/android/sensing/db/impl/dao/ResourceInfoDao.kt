@@ -89,11 +89,6 @@ internal abstract class ResourceInfoDao {
     return getResourceInfoEntity(resourceInfoId)?.toResourceInfo()
       ?: throw Exception("ResourceInfo with resourceInfoId = $resourceInfoId not found!")
   }
-
-  @Query("""
-    DELETE FROM ResourceInfoEntity WHERE resourceInfoId=:resourceMetaInfoId
-  """)
-  abstract suspend fun deleteResourceInfo(resourceMetaInfoId: String): Int
 }
 
 internal fun ResourceInfoEntity.toResourceInfo() =

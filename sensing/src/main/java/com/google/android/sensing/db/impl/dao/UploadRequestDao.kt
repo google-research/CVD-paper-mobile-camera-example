@@ -49,11 +49,6 @@ internal abstract class UploadRequestDao {
   open suspend fun listUploadRequests(status: RequestStatus): List<UploadRequest> {
     return listUploadRequestEntities(status).map { it.toUploadRequest() }
   }
-
-  @Query("""
-    DELETE FROM UploadRequestEntity WHERE resourceInfoId=:resourceInfoId
-  """)
-  abstract suspend fun deleteUploadRequest(resourceInfoId: String): Int
 }
 
 internal fun UploadRequestEntity.toUploadRequest() =
