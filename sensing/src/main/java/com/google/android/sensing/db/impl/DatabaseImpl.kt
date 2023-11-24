@@ -84,26 +84,9 @@ internal class DatabaseImpl(context: Context, databaseConfig: DatabaseConfig) : 
       ?: throw ResourceNotFoundException("CaptureInfo", captureId)
   }
 
-  override suspend fun deleteCaptureInfo(captureId: String): Boolean {
-    return captureInfoDao.deleteCaptureInfo(captureId) == 1
-  }
-
-  override suspend fun deleteResourceInfo(resourceInfoId: String): Boolean {
-    return resourceInfoDao.deleteResourceInfo(resourceInfoId) == 1
-  }
-
-  override suspend fun deleteUploadRequest(resourceInfoId: String): Boolean {
-    return uploadRequestDao.deleteUploadRequest(resourceInfoId) == 1
-  }
-
   override suspend fun deleteRecordsInCapture(captureId: String): Boolean {
-    var deleted = true
-    listResourceInfoInCapture(captureId).forEach {
-      deleted = deleted and deleteUploadRequest(it.resourceInfoId)
-      deleted = deleted and deleteResourceInfo(it.resourceInfoId)
-    }
-    deleted = deleted and deleteCaptureInfo(captureId)
-    return deleted
+    /* We only need to delete CaptureInfo record as we CASCADE it. */
+    return captureInfoDao.deleteCaptureInfo(captureId) == 1
   }
 
   companion object {
