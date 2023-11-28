@@ -75,11 +75,8 @@ interface SensingEngine {
    */
   suspend fun syncUpload(upload: (suspend (List<UploadRequest>) -> Flow<UploadResult>))
 
-  /**
-   * Get [UploadRequest] corresponding to the [ResourceInfo] given [ResourceInfo.resourceInfoId].
-   * Application developers can use this API to monitor not just upload status but also progress.
-   */
-  suspend fun getUploadRequest(resourceInfoId: String): UploadRequest?
+  /** Get List of [UploadRequest] with a given [status]. */
+  fun getUploadRequest(status: RequestStatus): Flow<List<UploadRequest>>
 
   /** Delete data stored in blobstore */
   suspend fun deleteSensorData(uploadURL: String)

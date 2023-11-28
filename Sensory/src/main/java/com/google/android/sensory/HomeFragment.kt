@@ -24,8 +24,12 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
+import com.google.android.sensing.model.RequestStatus
 import com.google.android.sensory.databinding.FragmentHomeBinding
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.launch
 
 class HomeFragment : Fragment() {
   private var _binding: FragmentHomeBinding? = null
@@ -47,6 +51,7 @@ class HomeFragment : Fragment() {
   override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
     setUpActionBar()
     setupListeners()
+    setupUploadProgressBar()
   }
 
   private fun setUpActionBar() {
@@ -63,6 +68,35 @@ class HomeFragment : Fragment() {
         goToParticipantRegistration()
       } else {
         showAcknowledgementDialog()
+      }
+    }
+  }
+
+  private fun setupUploadProgressBar() {
+    lifecycleScope.launch {
+      SensingApplication.sensingEngine(requireContext()).apply {
+        getUploadRequest(RequestStatus.UPLOADING).collect {
+          it.forEach { uploadRequest ->
+            /* We assume only 1 UploadRequest has status = UPLOADING.*/
+            with(uploadRequest) {
+              val uploadPercentVal = fileOffset / fileSize * 100
+              binding.uploadLayout.apply {
+                uploadPercent.text = "Uploading $uploadPercentVal %"
+                uploadProgress.apply {
+                  max = fileSize.toInt()
+                  progress = fileOffset.toInt()
+                }
+                linearLayoutUploadStatus.visibility = View.VISIBLE
+              }
+            }
+          }
+        }
+        getUploadRequest(RequestStatus.UPLOADED).collect {
+          it.forEach { _ ->
+            binding.uploadLayout.uploadPercent.text = "Uploaded"
+            binding.uploadLayout.linearLayoutUploadStatus.visibility = View.GONE
+          }
+        }
       }
     }
   }

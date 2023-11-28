@@ -20,6 +20,7 @@ import com.google.android.sensing.model.CaptureInfo
 import com.google.android.sensing.model.RequestStatus
 import com.google.android.sensing.model.ResourceInfo
 import com.google.android.sensing.model.UploadRequest
+import kotlinx.coroutines.flow.Flow
 
 /** The interface for the sensor resources database. */
 internal interface Database {
@@ -34,4 +35,5 @@ internal interface Database {
   suspend fun getResourceInfo(resourceInfoId: String): ResourceInfo?
   suspend fun getCaptureInfo(captureId: String): CaptureInfo
   suspend fun deleteRecordsInCapture(captureId: String): Boolean
+  fun getUploadRequest(status: RequestStatus): Flow<List<UploadRequest>>
 }

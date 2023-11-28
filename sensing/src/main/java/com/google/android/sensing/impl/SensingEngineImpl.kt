@@ -33,6 +33,7 @@ import com.google.android.sensing.model.ResourceInfo
 import com.google.android.sensing.model.SensorType
 import com.google.android.sensing.model.UploadRequest
 import com.google.android.sensing.model.UploadResult
+import com.google.gson.Gson
 import java.io.BufferedOutputStream
 import java.io.File
 import java.io.FileOutputStream
@@ -187,6 +188,7 @@ internal class SensingEngineImpl(
         }
       }
       database.updateUploadRequest(uploadRequest)
+      println("UploadRequest updated into the DB: " + Gson().toJson(uploadRequest))
       /** Update status of ResourceInfo only when UploadRequest.status changes */
       if (requestsPreviousStatus != uploadRequest.status) {
         val resourceInfo = database.getResourceInfo(uploadRequest.resourceInfoId)!!
@@ -196,8 +198,8 @@ internal class SensingEngineImpl(
     }
   }
 
-  override suspend fun getUploadRequest(resourceInfoId: String): UploadRequest? {
-    TODO("Not yet implemented")
+  override fun getUploadRequest(status: RequestStatus): Flow<List<UploadRequest>> {
+    return database.getUploadRequest(status)
   }
 
   override suspend fun getCaptureInfo(captureId: String): CaptureInfo {

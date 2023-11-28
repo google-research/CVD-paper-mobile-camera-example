@@ -25,6 +25,8 @@ import com.google.android.sensing.db.impl.entities.UploadRequestEntity
 import com.google.android.sensing.model.RequestStatus
 import com.google.android.sensing.model.UploadRequest
 import java.util.Date
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.transform
 
 @Dao
 internal abstract class UploadRequestDao {
@@ -48,6 +50,15 @@ internal abstract class UploadRequestDao {
   @Transaction
   open suspend fun listUploadRequests(status: RequestStatus): List<UploadRequest> {
     return listUploadRequestEntities(status).map { it.toUploadRequest() }
+  }
+
+  @Query("SELECT * FROM UploadRequestEntity WHERE status=:status")
+  abstract fun getUploadRequestEntity(status: RequestStatus): Flow<List<UploadRequestEntity>>
+
+  fun getUploadRequest(status: RequestStatus): Flow<List<UploadRequest>> {
+    return getUploadRequestEntity(status).transform {
+      it.map { uploadRequestEntity -> uploadRequestEntity.toUploadRequest() }
+    }
   }
 }
 

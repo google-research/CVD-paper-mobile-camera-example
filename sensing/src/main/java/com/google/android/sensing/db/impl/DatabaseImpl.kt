@@ -25,6 +25,7 @@ import com.google.android.sensing.model.CaptureInfo
 import com.google.android.sensing.model.RequestStatus
 import com.google.android.sensing.model.ResourceInfo
 import com.google.android.sensing.model.UploadRequest
+import kotlinx.coroutines.flow.Flow
 import net.sqlcipher.database.SQLiteDatabase
 import net.sqlcipher.database.SupportFactory
 
@@ -87,6 +88,10 @@ internal class DatabaseImpl(context: Context, databaseConfig: DatabaseConfig) : 
   override suspend fun deleteRecordsInCapture(captureId: String): Boolean {
     /* We only need to delete CaptureInfo record as we CASCADE it. */
     return captureInfoDao.deleteCaptureInfo(captureId) == 1
+  }
+
+  override fun getUploadRequest(status: RequestStatus): Flow<List<UploadRequest>> {
+    return uploadRequestDao.getUploadRequest(status)
   }
 
   companion object {
