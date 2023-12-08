@@ -20,15 +20,16 @@ import android.content.Context
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import androidx.work.workDataOf
-import com.google.android.sensing.OffsetDateTimeTypeAdapter
 import com.google.android.sensing.SensingEngineProvider
-import com.google.android.sensing.model.UploadResult
 import com.google.gson.ExclusionStrategy
 import com.google.gson.FieldAttributes
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
-import kotlinx.coroutines.flow.flow
 import java.time.OffsetDateTime
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import timber.log.Timber
 
 /** A WorkManager Worker that handles onetime and periodic requests to upload. */
 class SensorDataUploadWorker(appContext: Context, workerParams: WorkerParameters) :
@@ -48,34 +49,37 @@ class SensorDataUploadWorker(appContext: Context, workerParams: WorkerParameters
   override suspend fun doWork(): Result {
     var failed = false
 
-    sensingEngine.syncUploadProgressFlow.collect {
-      setProgress(workDataOf(
-        "ProgressType" to it::class.java.name,
-        "Progress" to gson.toJson(it)
-      ))
-    }
-
-    sensingEngine.syncUpload { list ->
-      flow {
-        uploader.upload(list).collect {
-          emit(it)
-          if (it is UploadResult.Failure) {
-            failed = true
-            return@collect
+    val job =
+      CoroutineScope(Dispatchers.IO).launch {
+        sensingEngine.syncUploadProgressFlow.collect {
+          setProgress(
+            workDataOf("ProgressType" to it::class.java.name, "Progress" to gson.toJson(it))
+          )
+          when (it) {
+            is SyncUploadProgress.Completed -> return@collect
+            is SyncUploadProgress.Failed -> {
+              failed = false
+              return@collect
+            }
           }
         }
       }
-    }
+
+    sensingEngine.syncUpload(uploader::upload)
+
+    // await/join is needed to collect states completely
+    kotlin.runCatching { job.join() }.onFailure(Timber::w)
+
     return if (failed) Result.retry() else Result.success()
   }
 
   /**
-   * Exclusion strategy for [Gson] that handles field exclusions for [SyncUploadProgress] returned by
-   * FhirEngine. It should skip serializing the exceptions to avoid exceeding WorkManager
+   * Exclusion strategy for [Gson] that handles field exclusions for [SyncUploadProgress] returned
+   * by FhirEngine. It should skip serializing the exceptions to avoid exceeding WorkManager
    * WorkData limit
    *
    * @see <a
-   *   href="https://github.com/google/android-fhir/issues/707">https://github.com/google/android-fhir/issues/707</a>
+   * href="https://github.com/google/android-fhir/issues/707">https://github.com/google/android-fhir/issues/707</a>
    */
   internal class StateExclusionStrategy : ExclusionStrategy {
     override fun shouldSkipField(field: FieldAttributes) = field.name.equals("exceptions")

@@ -18,9 +18,9 @@
     >
 
     <include
-        layout="@layout/layout_upload_status"
-        android:id="@+id/upload_layout"
-        android:visibility="gone"
+            layout="@layout/layout_upload_status"
+            android:id="@+id/upload_layout"
+            android:visibility="gone"
         />
 
     <Button

@@ -25,16 +25,13 @@ import androidx.work.OneTimeWorkRequest
 import androidx.work.PeriodicWorkRequest
 import androidx.work.WorkManager
 import androidx.work.hasKeyWithValueOfType
-import com.google.android.sensing.OffsetDateTimeTypeAdapter
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
+import java.time.OffsetDateTime
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.flatMapConcat
-import kotlinx.coroutines.flow.flattenMerge
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.mapNotNull
-import java.time.OffsetDateTime
 
 object SensingUploadSync {
 
@@ -43,37 +40,20 @@ object SensingUploadSync {
       .registerTypeAdapter(OffsetDateTime::class.java, OffsetDateTimeTypeAdapter().nullSafe())
       .create()
 
-  private val uniqueWorkName = "Unique_" + SensorDataUploadWorker::class.java.name
-  private val periodicWorkName = "Periodic_" + SensorDataUploadWorker::class.java.name
-
-  fun getSyncUploadProgressFlow(context: Context): Flow<SyncUploadProgress> {
-    val oneTimeSyncFlow = WorkManager.getInstance(context)
-      .getWorkInfosForUniqueWorkLiveData(uniqueWorkName).asFlow().flatMapConcat { it.asFlow() }
-
-    val periodicSyncFlow = WorkManager.getInstance(context)
-      .getWorkInfosForUniqueWorkLiveData(periodicWorkName).asFlow().flatMapConcat { it.asFlow() }
-
-    return flowOf(oneTimeSyncFlow, periodicSyncFlow).flattenMerge().mapNotNull { workInfo ->
-      workInfo.progress
-        .takeIf { it.keyValueMap.isNotEmpty() && it.hasKeyWithValueOfType<String>("ProgressType") }
-        ?.let {
-          val state = it.getString("ProgressType")!!
-          val stateData = it.getString("Progress")
-          gson.fromJson(stateData, Class.forName(state)) as SyncUploadProgress
-        }
-    }
-  }
+  private val oneTimeWorkUniqueName = "Unique_" + SensorDataUploadWorker::class.java.name
+  private val periodicWorkUniqueName = "Periodic_" + SensorDataUploadWorker::class.java.name
 
   fun oneTimeSyncUpload(
     context: Context,
     retryConfiguration: RetryConfiguration = defaultRetryConfiguration,
-  ) {
+  ): Flow<SyncUploadProgress> {
     WorkManager.getInstance(context)
       .enqueueUniqueWork(
-        uniqueWorkName,
+        oneTimeWorkUniqueName,
         ExistingWorkPolicy.KEEP,
         createOneTimeWorkRequest(retryConfiguration)
       )
+    return getUploadProgressFlow(context, oneTimeWorkUniqueName)
   }
 
   @PublishedApi
@@ -97,13 +77,14 @@ object SensingUploadSync {
   fun periodicSyncUpload(
     context: Context,
     periodicSyncConfiguration: PeriodicSyncConfiguration = defaultPeriodicSyncConfiguration,
-  ) {
+  ): Flow<SyncUploadProgress> {
     WorkManager.getInstance(context)
       .enqueueUniquePeriodicWork(
-        periodicWorkName,
+        periodicWorkUniqueName,
         ExistingPeriodicWorkPolicy.KEEP,
         createPeriodicWorkRequest(periodicSyncConfiguration)
       )
+    return getUploadProgressFlow(context, periodicWorkUniqueName)
   }
 
   @PublishedApi
@@ -130,4 +111,21 @@ object SensingUploadSync {
     }
     return periodicWorkRequestBuilder.build()
   }
+
+  private fun getUploadProgressFlow(context: Context, uniqueWorkerName: String) =
+    WorkManager.getInstance(context)
+      .getWorkInfosForUniqueWorkLiveData(uniqueWorkerName)
+      .asFlow()
+      .flatMapConcat { it.asFlow() }
+      .mapNotNull {
+        it.progress
+          .takeIf {
+            it.keyValueMap.isNotEmpty() && it.hasKeyWithValueOfType<String>("ProgressType")
+          }
+          ?.let {
+            val state = it.getString("ProgressType")!!
+            val stateData = it.getString("Progress")
+            SensingUploadSync.gson.fromJson(stateData, Class.forName(state)) as SyncUploadProgress
+          }
+      }
 }

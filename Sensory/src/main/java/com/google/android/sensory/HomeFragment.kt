@@ -71,27 +71,6 @@ class HomeFragment : Fragment() {
     }
   }
 
-  private fun setupSyncUploadProgress() {
-    lifecycleScope.launch {
-      mainActivityViewModel.syncUploadProgress.collect {
-        when(it) {
-          is SyncUploadProgress.Started -> {
-
-          }
-          is SyncUploadProgress.InProgress -> {
-
-          }
-          is SyncUploadProgress.Completed -> {
-
-          }
-          is SyncUploadProgress.Failed -> {
-
-          }
-        }
-      }
-    }
-  }
-
   private fun showAcknowledgementDialog() {
     val builder: AlertDialog.Builder = AlertDialog.Builder(requireActivity())
     builder
@@ -105,6 +84,52 @@ class HomeFragment : Fragment() {
     val dialog: AlertDialog = builder.create()
     dialog.show()
   }
+
+  private fun setupSyncUploadProgress() {
+    lifecycleScope.launch {
+      mainActivityViewModel.syncUploadProgress.collect {
+        when (it) {
+          is SyncUploadProgress.Started,
+          is SyncUploadProgress.InProgress -> showSyncBanner(it)
+          is SyncUploadProgress.Completed -> hideSyncBanner(it)
+          is SyncUploadProgress.Failed -> {}
+        }
+      }
+    }
+  }
+
+  private fun showSyncBanner(syncUploadProgress: SyncUploadProgress) {
+    with(binding.uploadLayout) {
+      if (linearLayoutUploadStatus.visibility != View.VISIBLE) {
+        // may add fade in animation here later
+        linearLayoutUploadStatus.visibility = View.VISIBLE
+      } else if (syncUploadProgress is SyncUploadProgress.InProgress) {
+        updateUploadPercent(syncUploadProgress.completedRequests, syncUploadProgress.totalRequests)
+      }
+    }
+  }
+
+  private fun hideSyncBanner(syncUploadProgress: SyncUploadProgress.Completed) {
+    updateUploadPercent(syncUploadProgress.completedRequests, syncUploadProgress.totalRequests)
+    if (syncUploadProgress.completedRequests == syncUploadProgress.totalRequests) {
+      binding.uploadLayout.uploadPercent.text = "Uploaded"
+      binding.uploadLayout.linearLayoutUploadStatus.visibility = View.GONE
+    }
+  }
+
+  private fun updateUploadPercent(completed: Int, total: Int) {
+    binding.uploadLayout.apply {
+      val uploadPercentVal = percentOf(completed, total) * 100
+      uploadPercent.text = "Uploading $uploadPercentVal %"
+      uploadProgress.apply {
+        max = total
+        progress = completed
+      }
+    }
+  }
+
+  private fun percentOf(value: Number, total: Number) =
+    if (total == 0) 0.0 else value.toDouble() / total.toDouble()
 
   private fun goToParticipantRegistration() {
     findNavController()

@@ -16,21 +16,16 @@
 
 package com.google.android.sensing.upload
 
+import com.google.gson.TypeAdapter
+import com.google.gson.stream.JsonReader
+import com.google.gson.stream.JsonWriter
 import java.time.OffsetDateTime
+import java.time.format.DateTimeFormatter
 
-open class SyncUploadProgress {
-  val timestamp: OffsetDateTime = OffsetDateTime.now()
+class OffsetDateTimeTypeAdapter : TypeAdapter<OffsetDateTime>() {
+  override fun write(out: JsonWriter, value: OffsetDateTime) {
+    out.value(DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(value))
+  }
 
-  data class Started(val totalRequests: Int) : SyncUploadProgress()
-
-  data class InProgress(
-    val totalRequests: Int,
-    val completedRequests: Int,
-    val currentTotalBytes: Long,
-    val currentCompletedBytes: Long,
-  ) : SyncUploadProgress()
-
-  data class Completed(val completedRequests: Int, val totalRequests: Int) : SyncUploadProgress()
-
-  data class Failed(val exceptions: Exception) : SyncUploadProgress()
+  override fun read(input: JsonReader): OffsetDateTime = OffsetDateTime.parse(input.nextString())
 }

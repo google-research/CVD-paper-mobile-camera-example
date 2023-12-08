@@ -42,7 +42,9 @@ class MainActivityViewModel(application: Application) : AndroidViewModel(applica
 
   init {
     viewModelScope.launch {
-      SensingUploadSync.periodicSyncUpload(application.applicationContext)
+      SensingUploadSync.periodicSyncUpload(application.applicationContext).collect {
+        _syncUploadProgressFlow.emit(it)
+      }
       Sync.periodicSync<FhirSyncWorker>(
         application.applicationContext,
         PeriodicSyncConfiguration(
@@ -50,15 +52,14 @@ class MainActivityViewModel(application: Application) : AndroidViewModel(applica
           repeat = RepeatInterval(interval = 15, timeUnit = TimeUnit.MINUTES)
         )
       )
-      SensingUploadSync.getSyncUploadProgressFlow(application.applicationContext).collect {
-        _syncUploadProgressFlow.emit(it)
-      }
     }
   }
 
   fun triggerOneTimeSync() {
     viewModelScope.launch {
-      SensingUploadSync.oneTimeSyncUpload(getApplication())
+      SensingUploadSync.oneTimeSyncUpload(getApplication()).collect {
+        _syncUploadProgressFlow.emit(it)
+      }
       Sync.oneTimeSync<FhirSyncWorker>(getApplication())
     }
   }
