@@ -196,7 +196,6 @@ internal class SensingEngineImpl(
         }
       }
       database.updateUploadRequest(uploadRequest)
-      println("UploadRequest updated into the DB: " + Gson().toJson(uploadRequest))
       /** Update status of ResourceInfo only when UploadRequest.status changes */
       if (requestsPreviousStatus != uploadRequest.status) {
         val resourceInfo = database.getResourceInfo(uploadRequest.resourceInfoId)!!
