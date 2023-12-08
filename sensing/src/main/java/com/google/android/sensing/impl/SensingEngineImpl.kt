@@ -33,12 +33,14 @@ import com.google.android.sensing.model.ResourceInfo
 import com.google.android.sensing.model.SensorType
 import com.google.android.sensing.model.UploadRequest
 import com.google.android.sensing.model.UploadResult
+import com.google.gson.Gson
 import java.io.BufferedOutputStream
 import java.io.File
 import java.io.FileOutputStream
 import java.time.Instant
 import java.util.Date
 import java.util.UUID
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 import kotlinx.coroutines.Dispatchers
@@ -58,6 +60,8 @@ internal class SensingEngineImpl(
   private val context: Context,
   private val serverConfiguration: ServerConfiguration,
 ) : SensingEngine {
+
+  val syncInProgress = AtomicBoolean(false)
 
   override suspend fun onCaptureCompleteCallback(captureInfo: CaptureInfo) = flow {
     if (captureInfo.recapture == true) {
@@ -146,7 +150,12 @@ internal class SensingEngineImpl(
     return database.listResourceInfoInCapture(captureId)
   }
 
-  override suspend fun syncUpload(upload: suspend (List<UploadRequest>) -> Flow<UploadResult>) {
+  override suspend fun syncUpload(
+    upload: suspend (List<UploadRequest>) -> Flow<UploadResult>
+  ): Boolean {
+    if (!syncInProgress.compareAndSet(false, true)) {
+      return false
+    }
     val uploadRequestsList =
       database.listUploadRequests(RequestStatus.UPLOADING) +
         database.listUploadRequests(RequestStatus.PENDING)
@@ -187,6 +196,7 @@ internal class SensingEngineImpl(
         }
       }
       database.updateUploadRequest(uploadRequest)
+      println("UploadRequest updated into the DB: " + Gson().toJson(uploadRequest))
       /** Update status of ResourceInfo only when UploadRequest.status changes */
       if (requestsPreviousStatus != uploadRequest.status) {
         val resourceInfo = database.getResourceInfo(uploadRequest.resourceInfoId)!!
@@ -194,10 +204,11 @@ internal class SensingEngineImpl(
         database.updateResourceInfo(resourceInfo)
       }
     }
+    return syncInProgress.compareAndSet(true, false)
   }
 
-  override suspend fun getUploadRequest(resourceInfoId: String): UploadRequest? {
-    TODO("Not yet implemented")
+  override fun getUploadRequest(status: RequestStatus): Flow<List<UploadRequest>> {
+    return database.getUploadRequest(status)
   }
 
   override suspend fun getCaptureInfo(captureId: String): CaptureInfo {
