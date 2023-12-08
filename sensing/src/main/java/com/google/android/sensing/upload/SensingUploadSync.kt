@@ -17,21 +17,60 @@
 package com.google.android.sensing.upload
 
 import android.content.Context
+import androidx.lifecycle.asFlow
 import androidx.work.Data
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequest
 import androidx.work.PeriodicWorkRequest
 import androidx.work.WorkManager
+import androidx.work.hasKeyWithValueOfType
+import com.google.android.sensing.OffsetDateTimeTypeAdapter
+import com.google.gson.Gson
+import com.google.gson.GsonBuilder
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.asFlow
+import kotlinx.coroutines.flow.flatMapConcat
+import kotlinx.coroutines.flow.flattenMerge
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.mapNotNull
+import java.time.OffsetDateTime
 
 object SensingUploadSync {
-  fun enqueueUploadUniqueWork(
+
+  val gson: Gson =
+    GsonBuilder()
+      .registerTypeAdapter(OffsetDateTime::class.java, OffsetDateTimeTypeAdapter().nullSafe())
+      .create()
+
+  private val uniqueWorkName = "Unique_" + SensorDataUploadWorker::class.java.name
+  private val periodicWorkName = "Periodic_" + SensorDataUploadWorker::class.java.name
+
+  fun getSyncUploadProgressFlow(context: Context): Flow<SyncUploadProgress> {
+    val oneTimeSyncFlow = WorkManager.getInstance(context)
+      .getWorkInfosForUniqueWorkLiveData(uniqueWorkName).asFlow().flatMapConcat { it.asFlow() }
+
+    val periodicSyncFlow = WorkManager.getInstance(context)
+      .getWorkInfosForUniqueWorkLiveData(periodicWorkName).asFlow().flatMapConcat { it.asFlow() }
+
+    return flowOf(oneTimeSyncFlow, periodicSyncFlow).flattenMerge().mapNotNull { workInfo ->
+      workInfo.progress
+        .takeIf { it.keyValueMap.isNotEmpty() && it.hasKeyWithValueOfType<String>("ProgressType") }
+        ?.let {
+          val state = it.getString("ProgressType")!!
+          val stateData = it.getString("Progress")
+          gson.fromJson(stateData, Class.forName(state)) as SyncUploadProgress
+        }
+    }
+  }
+
+  fun oneTimeSyncUpload(
     context: Context,
     retryConfiguration: RetryConfiguration = defaultRetryConfiguration,
   ) {
     WorkManager.getInstance(context)
       .enqueueUniqueWork(
-        "Unique_" + SensorDataUploadWorker::class.java.name,
+        uniqueWorkName,
         ExistingWorkPolicy.KEEP,
         createOneTimeWorkRequest(retryConfiguration)
       )
@@ -55,13 +94,13 @@ object SensingUploadSync {
     return oneTimeWorkRequestBuilder.build()
   }
 
-  fun enqueueUploadPeriodicWork(
+  fun periodicSyncUpload(
     context: Context,
     periodicSyncConfiguration: PeriodicSyncConfiguration = defaultPeriodicSyncConfiguration,
   ) {
     WorkManager.getInstance(context)
       .enqueueUniquePeriodicWork(
-        "Periodic_" + SensorDataUploadWorker::class.java.name,
+        periodicWorkName,
         ExistingPeriodicWorkPolicy.KEEP,
         createPeriodicWorkRequest(periodicSyncConfiguration)
       )

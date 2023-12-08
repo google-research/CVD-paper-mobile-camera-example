@@ -24,16 +24,25 @@ import com.google.android.fhir.sync.PeriodicSyncConfiguration
 import com.google.android.fhir.sync.RepeatInterval
 import com.google.android.fhir.sync.Sync
 import com.google.android.sensing.upload.SensingUploadSync
+import com.google.android.sensing.upload.SyncUploadProgress
 import com.google.android.sensory.fhir_data.FhirSyncWorker
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class MainActivityViewModel(application: Application) : AndroidViewModel(application) {
+
+  private val _syncUploadProgressFlow = MutableSharedFlow<SyncUploadProgress>()
+
+  val syncUploadProgress: Flow<SyncUploadProgress>
+    get() = _syncUploadProgressFlow
+
   init {
     viewModelScope.launch {
-      SensingUploadSync.enqueueUploadPeriodicWork(application.applicationContext)
+      SensingUploadSync.periodicSyncUpload(application.applicationContext)
       Sync.periodicSync<FhirSyncWorker>(
         application.applicationContext,
         PeriodicSyncConfiguration(
@@ -41,12 +50,15 @@ class MainActivityViewModel(application: Application) : AndroidViewModel(applica
           repeat = RepeatInterval(interval = 15, timeUnit = TimeUnit.MINUTES)
         )
       )
+      SensingUploadSync.getSyncUploadProgressFlow(application.applicationContext).collect {
+        _syncUploadProgressFlow.emit(it)
+      }
     }
   }
 
   fun triggerOneTimeSync() {
     viewModelScope.launch {
-      SensingUploadSync.enqueueUploadUniqueWork(getApplication())
+      SensingUploadSync.oneTimeSyncUpload(getApplication())
       Sync.oneTimeSync<FhirSyncWorker>(getApplication())
     }
   }

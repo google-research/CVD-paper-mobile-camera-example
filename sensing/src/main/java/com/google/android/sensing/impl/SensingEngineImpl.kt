@@ -33,6 +33,7 @@ import com.google.android.sensing.model.ResourceInfo
 import com.google.android.sensing.model.SensorType
 import com.google.android.sensing.model.UploadRequest
 import com.google.android.sensing.model.UploadResult
+import com.google.android.sensing.upload.SyncUploadProgress
 import java.io.BufferedOutputStream
 import java.io.File
 import java.io.FileOutputStream
@@ -44,6 +45,7 @@ import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.withContext
 
@@ -60,7 +62,11 @@ internal class SensingEngineImpl(
   private val serverConfiguration: ServerConfiguration,
 ) : SensingEngine {
 
-  val syncInProgress = AtomicBoolean(false)
+  private val _syncUploadProgressFlow = MutableSharedFlow<SyncUploadProgress>()
+  override val syncUploadProgressFlow: Flow<SyncUploadProgress>
+    get() = _syncUploadProgressFlow
+
+  private val syncInProgress = AtomicBoolean(false)
 
   override suspend fun onCaptureCompleteCallback(captureInfo: CaptureInfo) = flow {
     if (captureInfo.recapture == true) {
@@ -158,9 +164,12 @@ internal class SensingEngineImpl(
     val uploadRequestsList =
       database.listUploadRequests(RequestStatus.UPLOADING) +
         database.listUploadRequests(RequestStatus.PENDING)
+    val total = uploadRequestsList.size
+    var completed = 0
     upload(uploadRequestsList).collect { result ->
       val uploadRequest = result.uploadRequest
       val requestsPreviousStatus = uploadRequest.status
+      lateinit var progress: SyncUploadProgress
       when (result) {
         is UploadResult.Started -> {
           uploadRequest.apply {
@@ -170,6 +179,7 @@ internal class SensingEngineImpl(
             uploadId = result.uploadId
             nextPart = 1
           }
+          progress = SyncUploadProgress.Started(total)
         }
         is UploadResult.Success -> {
           uploadRequest.apply {
@@ -177,6 +187,11 @@ internal class SensingEngineImpl(
             fileOffset = uploadRequest.fileOffset + result.bytesUploaded
             nextPart = uploadRequest.nextPart + 1
           }
+          progress = SyncUploadProgress.InProgress(
+            totalRequests = total,
+            completedRequests = completed,
+            currentTotalBytes = uploadRequest.fileSize,
+            currentCompletedBytes = uploadRequest.fileOffset,)
         }
         is UploadResult.Completed -> {
           assert(uploadRequest.fileOffset == uploadRequest.fileSize)
@@ -186,15 +201,21 @@ internal class SensingEngineImpl(
           }
           /** Delete the zipped file as its no longer required. */
           File(uploadRequest.zipFile).delete()
+          completed++
+          progress = SyncUploadProgress.Completed(
+            totalCompletedRequests = completed
+          )
         }
         is UploadResult.Failure -> {
           uploadRequest.apply {
             lastUpdatedTime = uploadRequest.lastUpdatedTime
             status = RequestStatus.FAILED
           }
+          progress = SyncUploadProgress.Failed(result.uploadError)
         }
       }
       database.updateUploadRequest(uploadRequest)
+      _syncUploadProgressFlow.emit(progress)
       /** Update status of ResourceInfo only when UploadRequest.status changes */
       if (requestsPreviousStatus != uploadRequest.status) {
         val resourceInfo = database.getResourceInfo(uploadRequest.resourceInfoId)!!

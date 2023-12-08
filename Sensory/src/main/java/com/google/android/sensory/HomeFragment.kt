@@ -24,8 +24,11 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
+import com.google.android.sensing.upload.SyncUploadProgress
 import com.google.android.sensory.databinding.FragmentHomeBinding
+import kotlinx.coroutines.launch
 
 class HomeFragment : Fragment() {
   private var _binding: FragmentHomeBinding? = null
@@ -47,6 +50,7 @@ class HomeFragment : Fragment() {
   override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
     setUpActionBar()
     setupListeners()
+    setupSyncUploadProgress()
   }
 
   private fun setUpActionBar() {
@@ -63,6 +67,27 @@ class HomeFragment : Fragment() {
         goToParticipantRegistration()
       } else {
         showAcknowledgementDialog()
+      }
+    }
+  }
+
+  private fun setupSyncUploadProgress() {
+    lifecycleScope.launch {
+      mainActivityViewModel.syncUploadProgress.collect {
+        when(it) {
+          is SyncUploadProgress.Started -> {
+
+          }
+          is SyncUploadProgress.InProgress -> {
+
+          }
+          is SyncUploadProgress.Completed -> {
+
+          }
+          is SyncUploadProgress.Failed -> {
+
+          }
+        }
       }
     }
   }
