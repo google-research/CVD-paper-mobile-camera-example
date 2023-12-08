@@ -207,8 +207,8 @@ internal class SensingEngineImpl(
     return syncInProgress.compareAndSet(true, false)
   }
 
-  override fun getUploadRequest(status: RequestStatus): Flow<List<UploadRequest>> {
-    return database.getUploadRequest(status)
+  override suspend fun getUploadRequest(resourceInfoId: String): UploadRequest? {
+    TODO("Not yet implemented")
   }
 
   override suspend fun getCaptureInfo(captureId: String): CaptureInfo {
