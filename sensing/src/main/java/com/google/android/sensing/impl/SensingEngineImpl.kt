@@ -33,7 +33,6 @@ import com.google.android.sensing.model.ResourceInfo
 import com.google.android.sensing.model.SensorType
 import com.google.android.sensing.model.UploadRequest
 import com.google.android.sensing.model.UploadResult
-import com.google.gson.Gson
 import java.io.BufferedOutputStream
 import java.io.File
 import java.io.FileOutputStream
