@@ -38,9 +38,6 @@ import timber.log.Timber
  */
 class Uploader(private val blobstoreService: BlobstoreService) {
   /**
-   * Having 1 Flow for List of [UploadRequest]s is more efficient than constructing multiple flows
-   * for each request.
-   *
    * TODO: Ideally this should not be hardcode 6MB (6291456L) bytes as part size. Instead this
    * should be a function of network strength. Note: Min upload part size of MinioAsyncClient is
    * 5MB.
