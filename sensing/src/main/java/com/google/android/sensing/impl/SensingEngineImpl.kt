@@ -43,14 +43,11 @@ import java.util.UUID
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import timber.log.Timber
 
 /**
  * @param database Interface to interact with room database.
@@ -151,101 +148,102 @@ internal class SensingEngineImpl(
     return database.listResourceInfoInCapture(captureId)
   }
 
-  private val _syncUploadProgressFlow = MutableSharedFlow<SyncUploadProgress>()
-  override val syncUploadProgressFlow: Flow<SyncUploadProgress>
-    get() = _syncUploadProgressFlow
-
   private val syncInProgress = AtomicBoolean(false)
 
   /**
-   * TODO Each upload cycle should run until there are no upload requests. Change implementation
-   * such that this keeps running until all requests are processed.
+   * TODO Upload until there is no upload requests in the database. TODO Persist the last
+   * SyncUploadProgress due to this [issue](https://github.com/google/android-fhir/issues/2119).
+   * TODO Make this implementation modular
    */
   override suspend fun syncUpload(
     upload: suspend (List<UploadRequest>) -> Flow<UploadResult>
-  ): Boolean {
+  ): Flow<SyncUploadProgress> = flow {
     if (!syncInProgress.compareAndSet(false, true)) {
-      return false
+      emit(SyncUploadProgress.NoOp)
+      awaitCancellation()
     }
     val uploadRequestsList =
       database.listUploadRequests(RequestStatus.UPLOADING) +
         database.listUploadRequests(RequestStatus.PENDING)
 
-    val total = uploadRequestsList.size
-    var completed = 0
-
     // https://stackoverflow.com/questions/60761812/unable-to-execute-code-after-kotlin-flow-collect
     if (uploadRequestsList.isNotEmpty()) {
-      val job =
-        CoroutineScope(Dispatchers.IO).launch {
-          upload(uploadRequestsList).collect { result ->
-            val uploadRequest = result.uploadRequest
-            val requestsPreviousStatus = uploadRequest.status
-            lateinit var progress: SyncUploadProgress
-            when (result) {
-              is UploadResult.Started -> {
-                uploadRequest.apply {
-                  lastUpdatedTime = result.startTime
-                  fileOffset = 0
-                  status = RequestStatus.UPLOADING
-                  uploadId = result.uploadId
-                  nextPart = 1
-                }
-                progress = SyncUploadProgress.Started(total)
-              }
-              is UploadResult.Success -> {
-                uploadRequest.apply {
-                  lastUpdatedTime = result.lastUploadTime
-                  fileOffset = uploadRequest.fileOffset + result.bytesUploaded
-                  nextPart = uploadRequest.nextPart + 1
-                }
-                progress =
-                  SyncUploadProgress.InProgress(
-                    totalRequests = total,
-                    completedRequests = completed,
-                    currentTotalBytes = uploadRequest.fileSize,
-                    currentCompletedBytes = uploadRequest.fileOffset
-                  )
-              }
-              is UploadResult.Completed -> {
-                assert(uploadRequest.fileOffset == uploadRequest.fileSize)
-                uploadRequest.apply {
-                  lastUpdatedTime = result.completeTime
-                  status = RequestStatus.UPLOADED
-                }
-                /** Delete the zipped file as its no longer required. */
-                File(uploadRequest.zipFile).delete()
-                completed++
-                progress =
-                  SyncUploadProgress.Completed(
-                    completedRequests = completed,
-                    totalRequests = total,
-                  )
-              }
-              is UploadResult.Failure -> {
-                uploadRequest.apply {
-                  lastUpdatedTime = uploadRequest.lastUpdatedTime
-                  status = RequestStatus.FAILED
-                }
-                progress = SyncUploadProgress.Failed(result.uploadError)
-              }
+      val total = uploadRequestsList.size
+      var completed = 0
+      emit(SyncUploadProgress.Started(total))
+
+      upload(uploadRequestsList).collect { result ->
+        val uploadRequest = result.uploadRequest
+        val requestsPreviousStatus = uploadRequest.status
+        lateinit var progress: SyncUploadProgress
+        when (result) {
+          is UploadResult.Started -> {
+            uploadRequest.apply {
+              lastUpdatedTime = result.startTime
+              fileOffset = 0
+              status = RequestStatus.UPLOADING
+              uploadId = result.uploadId
+              nextPart = 1
             }
-            database.updateUploadRequest(uploadRequest)
-            _syncUploadProgressFlow.emit(progress)
-            /** Update status of ResourceInfo only when UploadRequest.status changes */
-            if (requestsPreviousStatus != uploadRequest.status) {
-              val resourceInfo = database.getResourceInfo(uploadRequest.resourceInfoId)!!
-              resourceInfo.apply { status = uploadRequest.status }
-              database.updateResourceInfo(resourceInfo)
+            progress =
+              SyncUploadProgress.InProgress(
+                totalRequests = total,
+                completedRequests = completed,
+                currentTotalBytes = uploadRequest.fileSize,
+                currentCompletedBytes = uploadRequest.fileOffset
+              )
+          }
+          is UploadResult.Success -> {
+            uploadRequest.apply {
+              lastUpdatedTime = result.lastUploadTime
+              fileOffset = uploadRequest.fileOffset + result.bytesUploaded
+              nextPart = uploadRequest.nextPart + 1
             }
-            if (completed == total) return@collect
+            progress =
+              SyncUploadProgress.InProgress(
+                totalRequests = total,
+                completedRequests = completed,
+                currentTotalBytes = uploadRequest.fileSize,
+                currentCompletedBytes = uploadRequest.fileOffset
+              )
+          }
+          is UploadResult.Completed -> {
+            assert(uploadRequest.fileOffset == uploadRequest.fileSize)
+            uploadRequest.apply {
+              lastUpdatedTime = result.completeTime
+              status = RequestStatus.UPLOADED
+            }
+            /** Delete the zipped file as its no longer required. */
+            File(uploadRequest.zipFile).delete()
+            completed++
+            progress =
+              SyncUploadProgress.InProgress(
+                completedRequests = completed,
+                totalRequests = total,
+                currentCompletedBytes = uploadRequest.fileOffset,
+                currentTotalBytes = uploadRequest.fileSize
+              )
+          }
+          is UploadResult.Failure -> {
+            uploadRequest.apply {
+              lastUpdatedTime = uploadRequest.lastUpdatedTime
+              status = RequestStatus.FAILED
+            }
+            progress = SyncUploadProgress.Failed(result.uploadError)
           }
         }
-      // await/join is needed to collect states completely
-      kotlin.runCatching { job.join() }.onFailure(Timber::w)
+        database.updateUploadRequest(uploadRequest)
+        emit(progress)
+        /** Update status of ResourceInfo only when UploadRequest.status changes */
+        if (requestsPreviousStatus != uploadRequest.status) {
+          val resourceInfo = database.getResourceInfo(uploadRequest.resourceInfoId)!!
+          resourceInfo.apply { status = uploadRequest.status }
+          database.updateResourceInfo(resourceInfo)
+        }
+      }
     }
-
-    return syncInProgress.compareAndSet(true, false)
+    syncInProgress.compareAndSet(true, false)
+    emit(SyncUploadProgress.Completed(uploadRequestsList.size))
   }
 
   override suspend fun getUploadRequest(resourceInfoId: String): UploadRequest? {

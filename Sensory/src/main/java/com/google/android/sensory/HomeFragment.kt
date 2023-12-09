@@ -92,7 +92,7 @@ class HomeFragment : Fragment() {
           is SyncUploadProgress.Started,
           is SyncUploadProgress.InProgress -> showSyncBanner(it)
           is SyncUploadProgress.Completed -> hideSyncBanner(it)
-          is SyncUploadProgress.Failed -> {}
+          is SyncUploadProgress.Failed -> hideSyncBanner(it)
         }
       }
     }
@@ -109,10 +109,13 @@ class HomeFragment : Fragment() {
     }
   }
 
-  private fun hideSyncBanner(syncUploadProgress: SyncUploadProgress.Completed) {
-    updateUploadPercent(syncUploadProgress.completedRequests, syncUploadProgress.totalRequests)
-    if (syncUploadProgress.completedRequests == syncUploadProgress.totalRequests) {
+  private fun hideSyncBanner(syncUploadProgress: SyncUploadProgress) {
+    if (syncUploadProgress is SyncUploadProgress.Completed) {
+      updateUploadPercent(syncUploadProgress.totalRequests, syncUploadProgress.totalRequests)
       binding.uploadLayout.uploadPercent.text = "Uploaded"
+      binding.uploadLayout.linearLayoutUploadStatus.visibility = View.GONE
+    } else if (syncUploadProgress is SyncUploadProgress.Failed) {
+      binding.uploadLayout.uploadPercent.text = "Failed"
       binding.uploadLayout.linearLayoutUploadStatus.visibility = View.GONE
     }
   }

@@ -28,6 +28,8 @@ import com.google.gson.GsonBuilder
 import java.time.OffsetDateTime
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.cancellable
 import kotlinx.coroutines.launch
 import timber.log.Timber
 
@@ -44,28 +46,28 @@ class SensorDataUploadWorker(appContext: Context, workerParams: WorkerParameters
       .setExclusionStrategies(StateExclusionStrategy())
       .create()
 
-  private val sensingEngine = SensingEngineProvider.getOrCreateSensingEngine(applicationContext)
-
   override suspend fun doWork(): Result {
     var failed = false
 
     val job =
       CoroutineScope(Dispatchers.IO).launch {
-        sensingEngine.syncUploadProgressFlow.collect {
-          setProgress(
-            workDataOf("ProgressType" to it::class.java.name, "Progress" to gson.toJson(it))
-          )
-          when (it) {
-            is SyncUploadProgress.Completed -> return@collect
-            is SyncUploadProgress.Failed -> {
-              failed = false
-              return@collect
+        SensingEngineProvider.getOrCreateSensingEngine(applicationContext)
+          .syncUpload(uploader::upload)
+          .cancellable()
+          .collect {
+            setProgress(
+              workDataOf("ProgressType" to it::class.java.name, "Progress" to gson.toJson(it))
+            )
+            when (it) {
+              is SyncUploadProgress.NoOp,
+              is SyncUploadProgress.Completed -> this@launch.cancel()
+              is SyncUploadProgress.Failed -> {
+                failed = true
+                this@launch.cancel()
+              }
             }
           }
-        }
       }
-
-    sensingEngine.syncUpload(uploader::upload)
 
     // await/join is needed to collect states completely
     kotlin.runCatching { job.join() }.onFailure(Timber::w)

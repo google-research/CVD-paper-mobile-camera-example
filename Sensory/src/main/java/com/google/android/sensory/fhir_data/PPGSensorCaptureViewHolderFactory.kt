@@ -167,7 +167,7 @@ object PPGSensorCaptureViewHolderFactory :
                       metaDataTypeMap = mapOf(SensorType.CAMERA to "tsv"),
                       contextMap = mapOf(SensorType.CAMERA to SensingApplication.APP_VERSION),
                       captureTitle = QUESTION_TITLE,
-                      ppgTimer = 60
+                      ppgTimer = 30
                     ),
                   recapture = captureId != null,
                   captureId = captureId,

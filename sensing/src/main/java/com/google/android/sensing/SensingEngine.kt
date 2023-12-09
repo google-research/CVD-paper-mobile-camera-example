@@ -68,9 +68,6 @@ interface SensingEngine {
   /** To support 3P apps */
   suspend fun captureSensorData(pendingIntent: Intent)
 
-  /** This flow is used by the syncUpload API to emit progresses. */
-  val syncUploadProgressFlow: Flow<SyncUploadProgress>
-
   /**
    * Upload API that orchestrates record fetching, invoking upload, collecting [UploadResult]s,
    * updating records, emitting of [SyncUploadProgress]es. Additionally, it also deletes captured
@@ -78,7 +75,9 @@ interface SensingEngine {
    *
    * [SensorDataUploadWorker] invokes this API.
    */
-  suspend fun syncUpload(upload: (suspend (List<UploadRequest>) -> Flow<UploadResult>)): Boolean
+  suspend fun syncUpload(
+    upload: (suspend (List<UploadRequest>) -> Flow<UploadResult>)
+  ): Flow<SyncUploadProgress>
 
   /**
    * Get [UploadRequest] corresponding to the [ResourceInfo] given [ResourceInfo.resourceInfoId].

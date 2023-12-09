@@ -30,7 +30,9 @@ open class SyncUploadProgress {
     val currentCompletedBytes: Long,
   ) : SyncUploadProgress()
 
-  data class Completed(val completedRequests: Int, val totalRequests: Int) : SyncUploadProgress()
+  data class Completed(val totalRequests: Int) : SyncUploadProgress()
 
   data class Failed(val exceptions: Exception) : SyncUploadProgress()
+
+  object NoOp : SyncUploadProgress()
 }
