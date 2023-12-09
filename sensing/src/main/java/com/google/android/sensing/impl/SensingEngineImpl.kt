@@ -61,6 +61,7 @@ internal class SensingEngineImpl(
   private val context: Context,
   private val serverConfiguration: ServerConfiguration,
 ) : SensingEngine {
+
   override suspend fun onCaptureCompleteCallback(captureInfo: CaptureInfo) = flow {
     if (captureInfo.recapture == true) {
       try {
@@ -151,9 +152,12 @@ internal class SensingEngineImpl(
   private val syncInProgress = AtomicBoolean(false)
 
   /**
-   * TODO Upload until there is no upload requests in the database. TODO Persist the last
-   * SyncUploadProgress due to this [issue](https://github.com/google/android-fhir/issues/2119).
-   * TODO Make this implementation modular
+   * TODO Upload until there is no upload requests in the database.
+   *
+   * TODO Persist the last SyncUploadProgress due to this
+   * [issue](https://github.com/google/android-fhir/issues/2119).
+   *
+   * TODO Make this implementation modular.
    */
   override suspend fun syncUpload(
     upload: suspend (List<UploadRequest>) -> Flow<UploadResult>
