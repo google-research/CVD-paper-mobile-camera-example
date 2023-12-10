@@ -18,21 +18,23 @@ package com.google.android.sensing.upload
 
 import java.time.OffsetDateTime
 
-open class SyncUploadProgress {
+/**
+ */
+open class SyncUploadState {
   val timestamp: OffsetDateTime = OffsetDateTime.now()
 
-  data class Started(val totalRequests: Int) : SyncUploadProgress()
+  data class Started(val totalRequests: Int) : SyncUploadState()
 
   data class InProgress(
     val totalRequests: Int,
     val completedRequests: Int,
     val currentTotalBytes: Long,
     val currentCompletedBytes: Long,
-  ) : SyncUploadProgress()
+  ) : SyncUploadState()
 
-  data class Completed(val totalRequests: Int) : SyncUploadProgress()
+  data class Completed(val totalRequests: Int) : SyncUploadState()
 
-  data class Failed(val exceptions: Exception) : SyncUploadProgress()
+  data class Failed(val exceptions: Exception) : SyncUploadState()
 
-  object NoOp : SyncUploadProgress()
+  object NoOp : SyncUploadState()
 }

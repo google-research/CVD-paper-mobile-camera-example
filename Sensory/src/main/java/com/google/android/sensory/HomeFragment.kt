@@ -26,7 +26,7 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
-import com.google.android.sensing.upload.SyncUploadProgress
+import com.google.android.sensing.upload.SyncUploadState
 import com.google.android.sensory.databinding.FragmentHomeBinding
 import kotlinx.coroutines.launch
 
@@ -87,34 +87,34 @@ class HomeFragment : Fragment() {
 
   private fun setupSyncUploadProgress() {
     lifecycleScope.launch {
-      mainActivityViewModel.syncUploadProgress.collect {
+      mainActivityViewModel.syncUploadState.collect {
         when (it) {
-          is SyncUploadProgress.Started,
-          is SyncUploadProgress.InProgress -> showSyncBanner(it)
-          is SyncUploadProgress.Completed -> hideSyncBanner(it)
-          is SyncUploadProgress.Failed -> hideSyncBanner(it)
+          is SyncUploadState.Started,
+          is SyncUploadState.InProgress -> showSyncBanner(it)
+          is SyncUploadState.Completed -> hideSyncBanner(it)
+          is SyncUploadState.Failed -> hideSyncBanner(it)
         }
       }
     }
   }
 
-  private fun showSyncBanner(syncUploadProgress: SyncUploadProgress) {
+  private fun showSyncBanner(syncUploadState: SyncUploadState) {
     with(binding.uploadLayout) {
       if (linearLayoutUploadStatus.visibility != View.VISIBLE) {
         // may add fade in animation here later
         linearLayoutUploadStatus.visibility = View.VISIBLE
-      } else if (syncUploadProgress is SyncUploadProgress.InProgress) {
-        updateUploadPercent(syncUploadProgress.completedRequests, syncUploadProgress.totalRequests)
+      } else if (syncUploadState is SyncUploadState.InProgress) {
+        updateUploadPercent(syncUploadState.completedRequests, syncUploadState.totalRequests)
       }
     }
   }
 
-  private fun hideSyncBanner(syncUploadProgress: SyncUploadProgress) {
-    if (syncUploadProgress is SyncUploadProgress.Completed) {
-      updateUploadPercent(syncUploadProgress.totalRequests, syncUploadProgress.totalRequests)
+  private fun hideSyncBanner(syncUploadState: SyncUploadState) {
+    if (syncUploadState is SyncUploadState.Completed) {
+      updateUploadPercent(syncUploadState.totalRequests, syncUploadState.totalRequests)
       binding.uploadLayout.uploadPercent.text = "Uploaded"
       binding.uploadLayout.linearLayoutUploadStatus.visibility = View.GONE
-    } else if (syncUploadProgress is SyncUploadProgress.Failed) {
+    } else if (syncUploadState is SyncUploadState.Failed) {
       binding.uploadLayout.uploadPercent.text = "Failed"
       binding.uploadLayout.linearLayoutUploadStatus.visibility = View.GONE
     }

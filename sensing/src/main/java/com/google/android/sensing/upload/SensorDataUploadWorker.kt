@@ -59,9 +59,9 @@ class SensorDataUploadWorker(appContext: Context, workerParams: WorkerParameters
               workDataOf("ProgressType" to it::class.java.name, "Progress" to gson.toJson(it))
             )
             when (it) {
-              is SyncUploadProgress.NoOp,
-              is SyncUploadProgress.Completed -> this@launch.cancel()
-              is SyncUploadProgress.Failed -> {
+              is SyncUploadState.NoOp,
+              is SyncUploadState.Completed -> this@launch.cancel()
+              is SyncUploadState.Failed -> {
                 failed = true
                 this@launch.cancel()
               }
@@ -76,9 +76,9 @@ class SensorDataUploadWorker(appContext: Context, workerParams: WorkerParameters
   }
 
   /**
-   * Exclusion strategy for [Gson] that handles field exclusions for [SyncUploadProgress] returned
-   * by FhirEngine. It should skip serializing the exceptions to avoid exceeding WorkManager
-   * WorkData limit
+   * Exclusion strategy for [Gson] that handles field exclusions for [SyncUploadState] returned by
+   * FhirEngine. It should skip serializing the exceptions to avoid exceeding WorkManager WorkData
+   * limit
    *
    * @see <a
    * href="https://github.com/google/android-fhir/issues/707">https://github.com/google/android-fhir/issues/707</a>

@@ -22,7 +22,7 @@ import com.google.android.sensing.model.CaptureInfo
 import com.google.android.sensing.model.ResourceInfo
 import com.google.android.sensing.model.UploadRequest
 import com.google.android.sensing.model.UploadResult
-import com.google.android.sensing.upload.SyncUploadProgress
+import com.google.android.sensing.upload.SyncUploadState
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -70,14 +70,14 @@ interface SensingEngine {
 
   /**
    * Upload API that orchestrates record fetching, invoking upload, collecting [UploadResult]s,
-   * updating records, emitting of [SyncUploadProgress]es. Additionally, it also deletes captured
-   * files and folders after successful upload.
+   * updating records, emitting of [SyncUploadState]es. Additionally, it also deletes captured files
+   * and folders after successful upload.
    *
    * [SensorDataUploadWorker] invokes this API.
    */
   suspend fun syncUpload(
     upload: (suspend (List<UploadRequest>) -> Flow<UploadResult>)
-  ): Flow<SyncUploadProgress>
+  ): Flow<SyncUploadState>
 
   /**
    * Get [UploadRequest] corresponding to the [ResourceInfo] given [ResourceInfo.resourceInfoId].

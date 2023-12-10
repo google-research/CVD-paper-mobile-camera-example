@@ -33,7 +33,7 @@ import com.google.android.sensing.model.ResourceInfo
 import com.google.android.sensing.model.SensorType
 import com.google.android.sensing.model.UploadRequest
 import com.google.android.sensing.model.UploadResult
-import com.google.android.sensing.upload.SyncUploadProgress
+import com.google.android.sensing.upload.SyncUploadState
 import java.io.BufferedOutputStream
 import java.io.File
 import java.io.FileOutputStream
@@ -161,9 +161,9 @@ internal class SensingEngineImpl(
    */
   override suspend fun syncUpload(
     upload: suspend (List<UploadRequest>) -> Flow<UploadResult>
-  ): Flow<SyncUploadProgress> = flow {
+  ): Flow<SyncUploadState> = flow {
     if (!syncInProgress.compareAndSet(false, true)) {
-      emit(SyncUploadProgress.NoOp)
+      emit(SyncUploadState.NoOp)
       awaitCancellation()
     }
     val uploadRequestsList =
@@ -174,12 +174,12 @@ internal class SensingEngineImpl(
     if (uploadRequestsList.isNotEmpty()) {
       val total = uploadRequestsList.size
       var completed = 0
-      emit(SyncUploadProgress.Started(total))
+      emit(SyncUploadState.Started(total))
 
       upload(uploadRequestsList).collect { result ->
         val uploadRequest = result.uploadRequest
         val requestsPreviousStatus = uploadRequest.status
-        lateinit var progress: SyncUploadProgress
+        lateinit var progress: SyncUploadState
         when (result) {
           is UploadResult.Started -> {
             uploadRequest.apply {
@@ -190,7 +190,7 @@ internal class SensingEngineImpl(
               nextPart = 1
             }
             progress =
-              SyncUploadProgress.InProgress(
+              SyncUploadState.InProgress(
                 totalRequests = total,
                 completedRequests = completed,
                 currentTotalBytes = uploadRequest.fileSize,
@@ -204,7 +204,7 @@ internal class SensingEngineImpl(
               nextPart = uploadRequest.nextPart + 1
             }
             progress =
-              SyncUploadProgress.InProgress(
+              SyncUploadState.InProgress(
                 totalRequests = total,
                 completedRequests = completed,
                 currentTotalBytes = uploadRequest.fileSize,
@@ -221,7 +221,7 @@ internal class SensingEngineImpl(
             File(uploadRequest.zipFile).delete()
             completed++
             progress =
-              SyncUploadProgress.InProgress(
+              SyncUploadState.InProgress(
                 completedRequests = completed,
                 totalRequests = total,
                 currentCompletedBytes = uploadRequest.fileOffset,
@@ -233,21 +233,25 @@ internal class SensingEngineImpl(
               lastUpdatedTime = uploadRequest.lastUpdatedTime
               status = RequestStatus.FAILED
             }
-            progress = SyncUploadProgress.Failed(result.uploadError)
+            progress = SyncUploadState.Failed(result.uploadError)
           }
         }
         database.updateUploadRequest(uploadRequest)
-        emit(progress)
         /** Update status of ResourceInfo only when UploadRequest.status changes */
         if (requestsPreviousStatus != uploadRequest.status) {
           val resourceInfo = database.getResourceInfo(uploadRequest.resourceInfoId)!!
           resourceInfo.apply { status = uploadRequest.status }
           database.updateResourceInfo(resourceInfo)
         }
+        /**
+         * In case [SyncUploadState.Failed] is emitted the worker cancels the job and there is no
+         * further processing.
+         */
+        emit(progress)
       }
     }
     syncInProgress.compareAndSet(true, false)
-    emit(SyncUploadProgress.Completed(uploadRequestsList.size))
+    emit(SyncUploadState.Completed(uploadRequestsList.size))
   }
 
   override suspend fun getUploadRequest(resourceInfoId: String): UploadRequest? {

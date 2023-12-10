@@ -46,7 +46,7 @@ object SensingUploadSync {
   fun oneTimeSyncUpload(
     context: Context,
     retryConfiguration: RetryConfiguration = defaultRetryConfiguration,
-  ): Flow<SyncUploadProgress> {
+  ): Flow<SyncUploadState> {
     WorkManager.getInstance(context)
       .enqueueUniqueWork(
         oneTimeWorkUniqueName,
@@ -77,7 +77,7 @@ object SensingUploadSync {
   fun periodicSyncUpload(
     context: Context,
     periodicSyncConfiguration: PeriodicSyncConfiguration = defaultPeriodicSyncConfiguration,
-  ): Flow<SyncUploadProgress> {
+  ): Flow<SyncUploadState> {
     WorkManager.getInstance(context)
       .enqueueUniquePeriodicWork(
         periodicWorkUniqueName,
@@ -125,7 +125,7 @@ object SensingUploadSync {
           ?.let {
             val state = it.getString("ProgressType")!!
             val stateData = it.getString("Progress")
-            SensingUploadSync.gson.fromJson(stateData, Class.forName(state)) as SyncUploadProgress
+            SensingUploadSync.gson.fromJson(stateData, Class.forName(state)) as SyncUploadState
           }
       }
 }
