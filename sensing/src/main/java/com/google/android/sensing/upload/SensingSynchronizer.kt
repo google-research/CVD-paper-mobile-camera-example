@@ -38,7 +38,7 @@ class SensingSynchronizer(
       override suspend fun process(uploadResult: UploadResult) {}
     }
 
-  suspend fun synchronizer(): Flow<SyncUploadState> = flow {
+  suspend fun synchronize(): Flow<SyncUploadState> = flow {
     emit(SyncUploadState.Started)
     sensingEngine.syncUpload(uploader::upload).cancellable().collect {
       val state = calculateSyncStateForGivenProgress(it)

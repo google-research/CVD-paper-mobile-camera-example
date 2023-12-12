@@ -66,7 +66,7 @@ class SensorDataUploadWorker(appContext: Context, workerParams: WorkerParameters
             sensingEngine = SensingEngineProvider.getOrCreateSensingEngine(applicationContext),
             uploader = uploader
           )
-          .synchronizer()
+          .synchronize()
           .collect {
             setProgress(workDataOf("StateType" to it::class.java.name, "State" to gson.toJson(it)))
             when (it) {
