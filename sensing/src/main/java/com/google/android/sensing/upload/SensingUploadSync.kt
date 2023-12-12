@@ -112,7 +112,10 @@ object SensingUploadSync {
     return periodicWorkRequestBuilder.build()
   }
 
-  private fun getUploadProgressFlow(context: Context, uniqueWorkerName: String) =
+  private fun getUploadProgressFlow(
+    context: Context,
+    uniqueWorkerName: String
+  ): Flow<SyncUploadState> =
     WorkManager.getInstance(context)
       .getWorkInfosForUniqueWorkLiveData(uniqueWorkerName)
       .asFlow()

@@ -33,7 +33,8 @@ import com.google.android.sensing.model.ResourceInfo
 import com.google.android.sensing.model.SensorType
 import com.google.android.sensing.model.UploadRequest
 import com.google.android.sensing.model.UploadResult
-import com.google.android.sensing.upload.SyncUploadState
+import com.google.android.sensing.upload.DefaultUploadResultProcessor
+import com.google.android.sensing.upload.SyncUploadProgress
 import java.io.BufferedOutputStream
 import java.io.File
 import java.io.FileOutputStream
@@ -44,7 +45,6 @@ import java.util.concurrent.atomic.AtomicBoolean
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.withContext
@@ -154,104 +154,68 @@ internal class SensingEngineImpl(
   /**
    * TODO Upload until there is no upload requests in the database.
    *
-   * TODO Persist the last SyncUploadProgress due to this
+   * TODO Persist the terminal SyncUploadState due to this
    * [issue](https://github.com/google/android-fhir/issues/2119).
-   *
-   * TODO Make this implementation modular.
    */
   override suspend fun syncUpload(
     upload: suspend (List<UploadRequest>) -> Flow<UploadResult>
-  ): Flow<SyncUploadState> = flow {
-    if (!syncInProgress.compareAndSet(false, true)) {
-      emit(SyncUploadState.NoOp)
-      awaitCancellation()
-    }
+  ): Flow<SyncUploadProgress> = flow {
+    val uploadResultProcessor = DefaultUploadResultProcessor(database)
+
     val uploadRequestsList =
       database.listUploadRequests(RequestStatus.UPLOADING) +
         database.listUploadRequests(RequestStatus.PENDING)
 
-    // https://stackoverflow.com/questions/60761812/unable-to-execute-code-after-kotlin-flow-collect
     if (uploadRequestsList.isNotEmpty()) {
-      val total = uploadRequestsList.size
-      var completed = 0
-      emit(SyncUploadState.Started(total))
+      var lastSyncUploadProgress = SyncUploadProgress(totalRequests = uploadRequestsList.size)
 
-      upload(uploadRequestsList).collect { result ->
-        val uploadRequest = result.uploadRequest
-        val requestsPreviousStatus = uploadRequest.status
-        lateinit var progress: SyncUploadState
-        when (result) {
-          is UploadResult.Started -> {
-            uploadRequest.apply {
-              lastUpdatedTime = result.startTime
-              fileOffset = 0
-              status = RequestStatus.UPLOADING
-              uploadId = result.uploadId
-              nextPart = 1
-            }
-            progress =
-              SyncUploadState.InProgress(
-                totalRequests = total,
-                completedRequests = completed,
-                currentTotalBytes = uploadRequest.fileSize,
-                currentCompletedBytes = uploadRequest.fileOffset
-              )
-          }
-          is UploadResult.Success -> {
-            uploadRequest.apply {
-              lastUpdatedTime = result.lastUploadTime
-              fileOffset = uploadRequest.fileOffset + result.bytesUploaded
-              nextPart = uploadRequest.nextPart + 1
-            }
-            progress =
-              SyncUploadState.InProgress(
-                totalRequests = total,
-                completedRequests = completed,
-                currentTotalBytes = uploadRequest.fileSize,
-                currentCompletedBytes = uploadRequest.fileOffset
-              )
-          }
-          is UploadResult.Completed -> {
-            assert(uploadRequest.fileOffset == uploadRequest.fileSize)
-            uploadRequest.apply {
-              lastUpdatedTime = result.completeTime
-              status = RequestStatus.UPLOADED
-            }
-            /** Delete the zipped file as its no longer required. */
-            File(uploadRequest.zipFile).delete()
-            completed++
-            progress =
-              SyncUploadState.InProgress(
-                completedRequests = completed,
-                totalRequests = total,
-                currentCompletedBytes = uploadRequest.fileOffset,
-                currentTotalBytes = uploadRequest.fileSize
-              )
-          }
-          is UploadResult.Failure -> {
-            uploadRequest.apply {
-              lastUpdatedTime = uploadRequest.lastUpdatedTime
-              status = RequestStatus.FAILED
-            }
-            progress = SyncUploadState.Failed(result.uploadError)
-          }
-        }
-        database.updateUploadRequest(uploadRequest)
-        /** Update status of ResourceInfo only when UploadRequest.status changes */
-        if (requestsPreviousStatus != uploadRequest.status) {
-          val resourceInfo = database.getResourceInfo(uploadRequest.resourceInfoId)!!
-          resourceInfo.apply { status = uploadRequest.status }
-          database.updateResourceInfo(resourceInfo)
-        }
-        /**
-         * In case [SyncUploadState.Failed] is emitted the worker cancels the job and there is no
-         * further processing.
-         */
-        emit(progress)
+      // https://stackoverflow.com/questions/60761812/unable-to-execute-code-after-kotlin-flow-collect
+      upload(uploadRequestsList).collect {
+        uploadResultProcessor.process(it)
+        val newSyncUploadProgress = calculateSyncUploadProgress(lastSyncUploadProgress, it)
+        emit(newSyncUploadProgress)
+        lastSyncUploadProgress = newSyncUploadProgress
       }
     }
-    syncInProgress.compareAndSet(true, false)
-    emit(SyncUploadState.Completed(uploadRequestsList.size))
+  }
+
+  private fun calculateSyncUploadProgress(
+    lastSyncUploadProgress: SyncUploadProgress,
+    uploadResult: UploadResult
+  ): SyncUploadProgress {
+    with(lastSyncUploadProgress) {
+      return when (uploadResult) {
+        is UploadResult.Started ->
+          SyncUploadProgress(
+            totalRequests = totalRequests,
+            completedRequests = completedRequests,
+            currentTotalBytes = uploadResult.uploadRequest.fileSize,
+            currentCompletedBytes = 0
+          )
+        is UploadResult.Success ->
+          SyncUploadProgress(
+            totalRequests = totalRequests,
+            completedRequests = completedRequests,
+            currentTotalBytes = currentTotalBytes,
+            currentCompletedBytes = currentCompletedBytes + uploadResult.bytesUploaded
+          )
+        is UploadResult.Completed ->
+          SyncUploadProgress(
+            totalRequests = totalRequests,
+            completedRequests = completedRequests + 1,
+            currentTotalBytes = currentTotalBytes,
+            currentCompletedBytes = currentCompletedBytes
+          )
+        is UploadResult.Failure ->
+          SyncUploadProgress(
+            totalRequests = totalRequests,
+            completedRequests = completedRequests,
+            currentTotalBytes = currentTotalBytes,
+            currentCompletedBytes = currentCompletedBytes,
+            uploadError = uploadResult.uploadError
+          )
+      }
+    }
   }
 
   override suspend fun getUploadRequest(resourceInfoId: String): UploadRequest? {

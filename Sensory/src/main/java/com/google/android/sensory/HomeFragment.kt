@@ -93,6 +93,9 @@ class HomeFragment : Fragment() {
           is SyncUploadState.InProgress -> showSyncBanner(it)
           is SyncUploadState.Completed -> hideSyncBanner(it)
           is SyncUploadState.Failed -> hideSyncBanner(it)
+          is SyncUploadState.NoOp -> {
+            println("No operation required. Sync is in progress")
+          }
         }
       }
     }
@@ -116,6 +119,7 @@ class HomeFragment : Fragment() {
       binding.uploadLayout.linearLayoutUploadStatus.visibility = View.GONE
     } else if (syncUploadState is SyncUploadState.Failed) {
       binding.uploadLayout.uploadPercent.text = "Failed"
+      // we can add some animation here
       binding.uploadLayout.linearLayoutUploadStatus.visibility = View.GONE
     }
   }

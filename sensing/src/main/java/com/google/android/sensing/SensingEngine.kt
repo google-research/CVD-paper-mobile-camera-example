@@ -22,6 +22,7 @@ import com.google.android.sensing.model.CaptureInfo
 import com.google.android.sensing.model.ResourceInfo
 import com.google.android.sensing.model.UploadRequest
 import com.google.android.sensing.model.UploadResult
+import com.google.android.sensing.upload.SyncUploadProgress
 import com.google.android.sensing.upload.SyncUploadState
 import kotlinx.coroutines.flow.Flow
 
@@ -77,7 +78,7 @@ interface SensingEngine {
    */
   suspend fun syncUpload(
     upload: (suspend (List<UploadRequest>) -> Flow<UploadResult>)
-  ): Flow<SyncUploadState>
+  ): Flow<SyncUploadProgress>
 
   /**
    * Get [UploadRequest] corresponding to the [ResourceInfo] given [ResourceInfo.resourceInfoId].

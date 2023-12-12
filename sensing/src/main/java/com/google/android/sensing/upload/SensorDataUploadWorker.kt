@@ -26,10 +26,10 @@ import com.google.gson.FieldAttributes
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import java.time.OffsetDateTime
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.flow.cancellable
 import kotlinx.coroutines.launch
 import timber.log.Timber
 
@@ -46,18 +46,29 @@ class SensorDataUploadWorker(appContext: Context, workerParams: WorkerParameters
       .setExclusionStrategies(StateExclusionStrategy())
       .create()
 
+  private fun tryAcquiringLock(): Boolean {
+    return isAnyWorkerSynchronizing.compareAndSet(false, true)
+  }
+
+  private fun releaseLock(): Boolean {
+    return isAnyWorkerSynchronizing.compareAndSet(true, false)
+  }
+
   override suspend fun doWork(): Result {
+    if (!tryAcquiringLock()) {
+      return Result.success(workDataOf("State" to SyncUploadState.NoOp::class.java))
+    }
     var failed = false
 
     val job =
       CoroutineScope(Dispatchers.IO).launch {
-        SensingEngineProvider.getOrCreateSensingEngine(applicationContext)
-          .syncUpload(uploader::upload)
-          .cancellable()
+        SensingSynchronizer(
+            sensingEngine = SensingEngineProvider.getOrCreateSensingEngine(applicationContext),
+            uploader = uploader
+          )
+          .synchronizer()
           .collect {
-            setProgress(
-              workDataOf("ProgressType" to it::class.java.name, "Progress" to gson.toJson(it))
-            )
+            setProgress(workDataOf("StateType" to it::class.java.name, "State" to gson.toJson(it)))
             when (it) {
               is SyncUploadState.NoOp,
               is SyncUploadState.Completed -> this@launch.cancel()
@@ -72,6 +83,7 @@ class SensorDataUploadWorker(appContext: Context, workerParams: WorkerParameters
     // await/join is needed to collect states completely
     kotlin.runCatching { job.join() }.onFailure(Timber::w)
 
+    releaseLock()
     return if (failed) Result.retry() else Result.success()
   }
 
@@ -87,5 +99,9 @@ class SensorDataUploadWorker(appContext: Context, workerParams: WorkerParameters
     override fun shouldSkipField(field: FieldAttributes) = field.name.equals("exceptions")
 
     override fun shouldSkipClass(clazz: Class<*>?) = false
+  }
+
+  companion object {
+    private val isAnyWorkerSynchronizing = AtomicBoolean(false)
   }
 }
