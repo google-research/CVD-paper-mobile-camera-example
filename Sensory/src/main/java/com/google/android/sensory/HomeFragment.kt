@@ -20,6 +20,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
@@ -106,6 +107,7 @@ class HomeFragment : Fragment() {
       if (linearLayoutUploadStatus.visibility != View.VISIBLE) {
         // may add fade in animation here later
         linearLayoutUploadStatus.visibility = View.VISIBLE
+        updateUploadPercent(0, (syncUploadState as SyncUploadState.Started).totalRequests)
       } else if (syncUploadState is SyncUploadState.InProgress) {
         updateUploadPercent(syncUploadState.completedRequests, syncUploadState.totalRequests)
       }
@@ -121,6 +123,7 @@ class HomeFragment : Fragment() {
       binding.uploadLayout.uploadPercent.text = "Failed"
       // we can add some animation here
       binding.uploadLayout.linearLayoutUploadStatus.visibility = View.GONE
+      Toast.makeText(requireContext(), "Upload Failed!", Toast.LENGTH_LONG)
     }
   }
 
