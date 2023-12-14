@@ -16,7 +16,7 @@
 
 package com.google.android.sensing.upload
 
-import com.google.android.sensing.db.Database
+import com.google.android.sensing.SensingEngine
 import com.google.android.sensing.model.RequestStatus
 import com.google.android.sensing.model.UploadResult
 import java.io.File
@@ -30,7 +30,7 @@ interface UploadResultProcessor {
   suspend fun process(uploadResult: UploadResult)
 }
 
-internal class DefaultUploadResultProcessor(private val database: Database) :
+internal class DefaultUploadResultProcessor(private val sensingEngine: SensingEngine) :
   UploadResultProcessor {
   override suspend fun process(uploadResult: UploadResult) {
     val uploadRequest = uploadResult.uploadRequest
@@ -68,12 +68,12 @@ internal class DefaultUploadResultProcessor(private val database: Database) :
         }
       }
     }
-    database.updateUploadRequest(uploadRequest)
+    sensingEngine.updateUploadRequest(uploadRequest)
     /** Update status of ResourceInfo only when UploadRequest.status changes */
     if (requestsPreviousStatus != uploadRequest.status) {
-      val resourceInfo = database.getResourceInfo(uploadRequest.resourceInfoId)!!
+      val resourceInfo = sensingEngine.getResourceInfo(uploadRequest.resourceInfoId)!!
       resourceInfo.apply { status = uploadRequest.status }
-      database.updateResourceInfo(resourceInfo)
+      sensingEngine.updateResourceInfo(resourceInfo)
     }
   }
 }

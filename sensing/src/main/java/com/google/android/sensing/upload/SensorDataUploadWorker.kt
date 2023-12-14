@@ -40,6 +40,10 @@ class SensorDataUploadWorker(appContext: Context, workerParams: WorkerParameters
   // Each new upload work will use a new instance of uploader
   private val uploader = Uploader(SensingEngineProvider.getBlobStoreService())
 
+  private val sensingEngine = SensingEngineProvider.getOrCreateSensingEngine(applicationContext)
+
+  private val uploadResultProcessor = DefaultUploadResultProcessor(sensingEngine)
+
   private val gson =
     GsonBuilder()
       .registerTypeAdapter(OffsetDateTime::class.java, OffsetDateTimeTypeAdapter().nullSafe())
@@ -63,8 +67,9 @@ class SensorDataUploadWorker(appContext: Context, workerParams: WorkerParameters
     val job =
       CoroutineScope(Dispatchers.IO).launch {
         SensingSynchronizer(
-            sensingEngine = SensingEngineProvider.getOrCreateSensingEngine(applicationContext),
-            uploader = uploader
+            sensingEngine = sensingEngine,
+            uploader = uploader,
+            uploadResultProcessor = uploadResultProcessor
           )
           .synchronize()
           .collect {

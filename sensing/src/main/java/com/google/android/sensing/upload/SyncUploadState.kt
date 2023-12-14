@@ -23,7 +23,7 @@ open class SyncUploadState {
   val timestamp: OffsetDateTime = OffsetDateTime.now()
 
   /** The sync has started but nothing has progressed so far. */
-  object Started : SyncUploadState()
+  data class Started(val totalRequests: Int) : SyncUploadState()
 
   /**
    * There is some progress represented by this state. It could be resource-level progress in case
@@ -40,7 +40,7 @@ open class SyncUploadState {
   ) : SyncUploadState()
 
   /** The full sync has completed and there are are no further requests to be processed. */
-  object Completed : SyncUploadState()
+  data class Completed(val totalRequests: Int) : SyncUploadState()
 
   /** The sync failed for some [exception]. */
   data class Failed(val exception: Exception) : SyncUploadState()

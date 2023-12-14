@@ -122,12 +122,10 @@ object SensingUploadSync {
       .flatMapConcat { it.asFlow() }
       .mapNotNull {
         it.progress
-          .takeIf {
-            it.keyValueMap.isNotEmpty() && it.hasKeyWithValueOfType<String>("ProgressType")
-          }
+          .takeIf { it.keyValueMap.isNotEmpty() && it.hasKeyWithValueOfType<String>("StateType") }
           ?.let {
-            val state = it.getString("ProgressType")!!
-            val stateData = it.getString("Progress")
+            val state = it.getString("StateType")!!
+            val stateData = it.getString("State")
             SensingUploadSync.gson.fromJson(stateData, Class.forName(state)) as SyncUploadState
           }
       }

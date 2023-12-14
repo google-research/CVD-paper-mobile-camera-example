@@ -17,49 +17,98 @@
 package com.google.android.sensing.upload
 
 import com.google.android.sensing.SensingEngine
+import com.google.android.sensing.model.RequestStatus
 import com.google.android.sensing.model.UploadResult
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.SharedFlow
-import kotlinx.coroutines.flow.cancellable
 import kotlinx.coroutines.flow.flow
 
 class SensingSynchronizer(
   private val sensingEngine: SensingEngine,
-  private val uploader: Uploader
+  private val uploader: Uploader,
+  private val uploadResultProcessor: UploadResultProcessor
 ) {
 
-  private val _syncState = MutableSharedFlow<SyncUploadState>()
-  val syncState: SharedFlow<SyncUploadState> = _syncState
-
-  private val uploadResultProcessor =
-    object : UploadResultProcessor {
-      override suspend fun process(uploadResult: UploadResult) {}
-    }
-
+  /**
+   * Sync Upload API. It fetches [UploadRequest]s, invokes [uploader], collects [UploadResult]s
+   * processes them using [UploadResult]s by [uploadResultProcessor]. At each stage it emits
+   * [SyncUploadState]s.
+   *
+   * TODO Upload until there is no upload requests in the database. Use UploadRequestPublisher
+   *
+   * TODO Persist the terminal SyncUploadState due to this
+   * [issue](https://github.com/google/android-fhir/issues/2119).
+   */
   suspend fun synchronize(): Flow<SyncUploadState> = flow {
-    emit(SyncUploadState.Started)
-    sensingEngine.syncUpload(uploader::upload).cancellable().collect {
-      val state = calculateSyncStateForGivenProgress(it)
-      emit(state)
-      if (state is SyncUploadState.Failed) awaitCancellation()
+    val uploadRequestList =
+      (sensingEngine.listUploadRequest(status = RequestStatus.UPLOADING) +
+        sensingEngine.listUploadRequest(status = RequestStatus.PENDING))
+
+    var lastSyncUploadState = SyncUploadState.Started(uploadRequestList.size) as SyncUploadState
+    emit(lastSyncUploadState)
+    if (uploadRequestList.isNotEmpty()) {
+      // Following line is a workaround to calculate new states based on previous "InProgress"
+      // states.
+      lastSyncUploadState =
+        SyncUploadState.InProgress(
+          totalRequests = uploadRequestList.size,
+          completedRequests = 0,
+          currentTotalBytes = 0,
+          currentCompletedBytes = 0
+        )
+      // https://stackoverflow.com/questions/60761812/unable-to-execute-code-after-kotlin-flow-collect
+      uploader.upload(uploadRequestList).collect {
+        uploadResultProcessor.process(it)
+        val newSyncUploadState =
+          calculateSyncUploadState(lastSyncUploadState as SyncUploadState.InProgress, it)
+        emit(newSyncUploadState)
+        lastSyncUploadState = newSyncUploadState
+        if (newSyncUploadState.isTerminalState()) awaitCancellation()
+      }
     }
-    emit(SyncUploadState.Completed)
   }
 
-  private fun calculateSyncStateForGivenProgress(
-    syncUploadProgress: SyncUploadProgress
+  private fun calculateSyncUploadState(
+    lastSyncUploadState: SyncUploadState.InProgress,
+    uploadResult: UploadResult
   ): SyncUploadState {
-    with(syncUploadProgress) {
-      return if (uploadError != null) SyncUploadState.Failed(uploadError)
-      else
-        SyncUploadState.InProgress(
-          totalRequests = totalRequests,
-          completedRequests = completedRequests,
-          currentTotalBytes = currentTotalBytes,
-          currentCompletedBytes = currentCompletedBytes,
-        )
+    /**
+     * The last states cannot be terminal states like Completed, Failed, NoOp. Hence the only
+     * possible last states are [SyncUploadState.Started] & [SyncUploadState.InProgress].
+     */
+    with(lastSyncUploadState) {
+      return when (uploadResult) {
+        is UploadResult.Started -> {
+          SyncUploadState.InProgress(
+            totalRequests = totalRequests,
+            completedRequests = completedRequests,
+            currentTotalBytes = uploadResult.uploadRequest.fileSize,
+            currentCompletedBytes = 0
+          )
+        }
+        is UploadResult.Success ->
+          SyncUploadState.InProgress(
+            totalRequests = totalRequests,
+            completedRequests = completedRequests,
+            currentTotalBytes = currentTotalBytes,
+            currentCompletedBytes = currentCompletedBytes + uploadResult.bytesUploaded
+          )
+        is UploadResult.Completed ->
+          if (completedRequests + 1 == totalRequests) SyncUploadState.Completed(totalRequests)
+          else
+            SyncUploadState.InProgress(
+              totalRequests = totalRequests,
+              completedRequests = completedRequests + 1,
+              currentTotalBytes = currentTotalBytes,
+              currentCompletedBytes = currentCompletedBytes
+            )
+        is UploadResult.Failure -> SyncUploadState.Failed(exception = uploadResult.uploadError)
+      }
     }
   }
 }
+
+internal fun SyncUploadState.isTerminalState() =
+  (this is SyncUploadState.Completed ||
+    this is SyncUploadState.Failed ||
+    this is SyncUploadState.NoOp)

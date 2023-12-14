@@ -32,20 +32,15 @@ import com.google.android.sensing.model.RequestStatus
 import com.google.android.sensing.model.ResourceInfo
 import com.google.android.sensing.model.SensorType
 import com.google.android.sensing.model.UploadRequest
-import com.google.android.sensing.model.UploadResult
-import com.google.android.sensing.upload.DefaultUploadResultProcessor
-import com.google.android.sensing.upload.SyncUploadProgress
 import java.io.BufferedOutputStream
 import java.io.File
 import java.io.FileOutputStream
 import java.time.Instant
 import java.util.Date
 import java.util.UUID
-import java.util.concurrent.atomic.AtomicBoolean
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.withContext
 
@@ -149,77 +144,24 @@ internal class SensingEngineImpl(
     return database.listResourceInfoInCapture(captureId)
   }
 
-  private val syncInProgress = AtomicBoolean(false)
-
-  /**
-   * TODO Upload until there is no upload requests in the database.
-   *
-   * TODO Persist the terminal SyncUploadState due to this
-   * [issue](https://github.com/google/android-fhir/issues/2119).
-   */
-  override suspend fun syncUpload(
-    upload: suspend (List<UploadRequest>) -> Flow<UploadResult>
-  ): Flow<SyncUploadProgress> = flow {
-    val uploadResultProcessor = DefaultUploadResultProcessor(database)
-
-    val uploadRequestsList =
-      database.listUploadRequests(RequestStatus.UPLOADING) +
-        database.listUploadRequests(RequestStatus.PENDING)
-
-    if (uploadRequestsList.isNotEmpty()) {
-      var lastSyncUploadProgress = SyncUploadProgress(totalRequests = uploadRequestsList.size)
-
-      // https://stackoverflow.com/questions/60761812/unable-to-execute-code-after-kotlin-flow-collect
-      upload(uploadRequestsList).collect {
-        uploadResultProcessor.process(it)
-        val newSyncUploadProgress = calculateSyncUploadProgress(lastSyncUploadProgress, it)
-        emit(newSyncUploadProgress)
-        lastSyncUploadProgress = newSyncUploadProgress
-      }
+  override suspend fun getResourceInfo(resourceInfoId: String): ResourceInfo? {
+    return try {
+      database.getResourceInfo(resourceInfoId)
+    } catch (e: ResourceNotFoundException) {
+      null
     }
   }
 
-  private fun calculateSyncUploadProgress(
-    lastSyncUploadProgress: SyncUploadProgress,
-    uploadResult: UploadResult
-  ): SyncUploadProgress {
-    with(lastSyncUploadProgress) {
-      return when (uploadResult) {
-        is UploadResult.Started ->
-          SyncUploadProgress(
-            totalRequests = totalRequests,
-            completedRequests = completedRequests,
-            currentTotalBytes = uploadResult.uploadRequest.fileSize,
-            currentCompletedBytes = 0
-          )
-        is UploadResult.Success ->
-          SyncUploadProgress(
-            totalRequests = totalRequests,
-            completedRequests = completedRequests,
-            currentTotalBytes = currentTotalBytes,
-            currentCompletedBytes = currentCompletedBytes + uploadResult.bytesUploaded
-          )
-        is UploadResult.Completed ->
-          SyncUploadProgress(
-            totalRequests = totalRequests,
-            completedRequests = completedRequests + 1,
-            currentTotalBytes = currentTotalBytes,
-            currentCompletedBytes = currentCompletedBytes
-          )
-        is UploadResult.Failure ->
-          SyncUploadProgress(
-            totalRequests = totalRequests,
-            completedRequests = completedRequests,
-            currentTotalBytes = currentTotalBytes,
-            currentCompletedBytes = currentCompletedBytes,
-            uploadError = uploadResult.uploadError
-          )
-      }
-    }
+  override suspend fun updateResourceInfo(resourceInfo: ResourceInfo) {
+    database.updateResourceInfo(resourceInfo)
   }
 
-  override suspend fun getUploadRequest(resourceInfoId: String): UploadRequest? {
-    TODO("Not yet implemented")
+  override suspend fun updateUploadRequest(uploadRequest: UploadRequest) {
+    return database.updateUploadRequest(uploadRequest)
+  }
+
+  override suspend fun listUploadRequest(status: RequestStatus): List<UploadRequest> {
+    return database.listUploadRequests(status)
   }
 
   override suspend fun getCaptureInfo(captureId: String): CaptureInfo {
