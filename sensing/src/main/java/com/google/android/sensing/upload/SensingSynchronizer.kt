@@ -44,12 +44,12 @@ class SensingSynchronizer(
       (sensingEngine.listUploadRequest(status = RequestStatus.UPLOADING) +
         sensingEngine.listUploadRequest(status = RequestStatus.PENDING))
 
-    var lastSyncUploadState = SyncUploadState.Started(uploadRequestList.size) as SyncUploadState
-    emit(lastSyncUploadState)
+    var syncUploadState = SyncUploadState.Started(uploadRequestList.size) as SyncUploadState
+    emit(syncUploadState)
     if (uploadRequestList.isNotEmpty()) {
       // Following line is a workaround to calculate new states based on previous "InProgress"
       // states.
-      lastSyncUploadState =
+      syncUploadState =
         SyncUploadState.InProgress(
           totalRequests = uploadRequestList.size,
           completedRequests = 0,
@@ -59,12 +59,14 @@ class SensingSynchronizer(
       // https://stackoverflow.com/questions/60761812/unable-to-execute-code-after-kotlin-flow-collect
       uploader.upload(uploadRequestList).collect {
         uploadResultProcessor.process(it)
-        val newSyncUploadState =
-          calculateSyncUploadState(lastSyncUploadState as SyncUploadState.InProgress, it)
-        emit(newSyncUploadState)
-        lastSyncUploadState = newSyncUploadState
-        if (newSyncUploadState.isTerminalState()) awaitCancellation()
+        syncUploadState =
+          calculateSyncUploadState(syncUploadState as SyncUploadState.InProgress, it)
+        emit(syncUploadState)
+        // For terminal state we cancel the coroutine job that is collecting these states.
+        if (syncUploadState.isTerminalState()) awaitCancellation()
       }
+    } else { // no requests to process
+      emit(SyncUploadState.Completed(0))
     }
   }
 

@@ -31,6 +31,8 @@ open class SyncUploadState {
    * [currentCompletedBytes]. This state can also be used to indicate a change in [totalRequests]
    * being processed. This is possible when new [UploadRequest]s are created while current batch of
    * requests are being processed.
+   *
+   * TODO Add a state that helps to distinguish between different batches of upload.
    */
   data class InProgress(
     val totalRequests: Int,
