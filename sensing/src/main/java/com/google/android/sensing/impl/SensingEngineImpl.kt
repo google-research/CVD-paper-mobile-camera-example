@@ -32,7 +32,6 @@ import com.google.android.sensing.model.RequestStatus
 import com.google.android.sensing.model.ResourceInfo
 import com.google.android.sensing.model.SensorType
 import com.google.android.sensing.model.UploadRequest
-import com.google.android.sensing.model.UploadResult
 import java.io.BufferedOutputStream
 import java.io.File
 import java.io.FileOutputStream
@@ -42,7 +41,6 @@ import java.util.UUID
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.withContext
 
@@ -146,58 +144,24 @@ internal class SensingEngineImpl(
     return database.listResourceInfoInCapture(captureId)
   }
 
-  override suspend fun syncUpload(upload: suspend (List<UploadRequest>) -> Flow<UploadResult>) {
-    val uploadRequestsList =
-      database.listUploadRequests(RequestStatus.UPLOADING) +
-        database.listUploadRequests(RequestStatus.PENDING)
-    upload(uploadRequestsList).collect { result ->
-      val uploadRequest = result.uploadRequest
-      val requestsPreviousStatus = uploadRequest.status
-      when (result) {
-        is UploadResult.Started -> {
-          uploadRequest.apply {
-            lastUpdatedTime = result.startTime
-            fileOffset = 0
-            status = RequestStatus.UPLOADING
-            uploadId = result.uploadId
-            nextPart = 1
-          }
-        }
-        is UploadResult.Success -> {
-          uploadRequest.apply {
-            lastUpdatedTime = result.lastUploadTime
-            fileOffset = uploadRequest.fileOffset + result.bytesUploaded
-            nextPart = uploadRequest.nextPart + 1
-          }
-        }
-        is UploadResult.Completed -> {
-          assert(uploadRequest.fileOffset == uploadRequest.fileSize)
-          uploadRequest.apply {
-            lastUpdatedTime = result.completeTime
-            status = RequestStatus.UPLOADED
-          }
-          /** Delete the zipped file as its no longer required. */
-          File(uploadRequest.zipFile).delete()
-        }
-        is UploadResult.Failure -> {
-          uploadRequest.apply {
-            lastUpdatedTime = uploadRequest.lastUpdatedTime
-            status = RequestStatus.FAILED
-          }
-        }
-      }
-      database.updateUploadRequest(uploadRequest)
-      /** Update status of ResourceInfo only when UploadRequest.status changes */
-      if (requestsPreviousStatus != uploadRequest.status) {
-        val resourceInfo = database.getResourceInfo(uploadRequest.resourceInfoId)!!
-        resourceInfo.apply { status = uploadRequest.status }
-        database.updateResourceInfo(resourceInfo)
-      }
+  override suspend fun getResourceInfo(resourceInfoId: String): ResourceInfo? {
+    return try {
+      database.getResourceInfo(resourceInfoId)
+    } catch (e: ResourceNotFoundException) {
+      null
     }
   }
 
-  override suspend fun getUploadRequest(resourceInfoId: String): UploadRequest? {
-    TODO("Not yet implemented")
+  override suspend fun updateResourceInfo(resourceInfo: ResourceInfo) {
+    database.updateResourceInfo(resourceInfo)
+  }
+
+  override suspend fun updateUploadRequest(uploadRequest: UploadRequest) {
+    return database.updateUploadRequest(uploadRequest)
+  }
+
+  override suspend fun listUploadRequest(status: RequestStatus): List<UploadRequest> {
+    return database.listUploadRequests(status)
   }
 
   override suspend fun getCaptureInfo(captureId: String): CaptureInfo {

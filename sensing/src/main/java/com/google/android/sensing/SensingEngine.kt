@@ -22,12 +22,14 @@ import com.google.android.sensing.model.CaptureInfo
 import com.google.android.sensing.model.RequestStatus
 import com.google.android.sensing.model.ResourceInfo
 import com.google.android.sensing.model.UploadRequest
-import com.google.android.sensing.model.UploadResult
 import kotlinx.coroutines.flow.Flow
 
 /**
- * The Sensing Engine interface that handles the local storage of captured resources. TODO: CRUD
- * APIs for UploadRequest to use only the upload mechanism this Engine provides.
+ * The Sensing Engine interface that handles the local storage of captured resources.
+ *
+ * TODO: CRUD APIs for UploadRequest to use only the upload mechanism this Engine provides.
+ *
+ * TODO: Order APIs nicely
  */
 interface SensingEngine {
 
@@ -65,21 +67,21 @@ interface SensingEngine {
    */
   suspend fun listResourceInfoInCapture(captureId: String): List<ResourceInfo>
 
+  suspend fun getResourceInfo(resourceInfoId: String): ResourceInfo?
+
+  suspend fun updateResourceInfo(resourceInfo: ResourceInfo)
+
   /** To support 3P apps */
   suspend fun captureSensorData(pendingIntent: Intent)
 
-  /**
-   * [SensorDataUploadWorker] invokes this API to fetch [RequestStatus.PENDING] records to upload
-   * and then update thos records on collecting [UploadResult]s. Additionally, it also deletes
-   * captured files and folders after successful upload.
-   */
-  suspend fun syncUpload(upload: (suspend (List<UploadRequest>) -> Flow<UploadResult>))
+  /** Update given [uploadRequest] in database. */
+  suspend fun updateUploadRequest(uploadRequest: UploadRequest)
 
   /**
    * Get [UploadRequest] corresponding to the [ResourceInfo] given [ResourceInfo.resourceInfoId].
    * Application developers can use this API to monitor not just upload status but also progress.
    */
-  suspend fun getUploadRequest(resourceInfoId: String): UploadRequest?
+  suspend fun listUploadRequest(status: RequestStatus): List<UploadRequest>
 
   /** Delete data stored in blobstore */
   suspend fun deleteSensorData(uploadURL: String)

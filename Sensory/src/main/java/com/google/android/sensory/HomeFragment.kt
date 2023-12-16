@@ -20,12 +20,16 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
+import com.google.android.sensing.upload.SyncUploadState
 import com.google.android.sensory.databinding.FragmentHomeBinding
+import kotlinx.coroutines.launch
 
 class HomeFragment : Fragment() {
   private var _binding: FragmentHomeBinding? = null
@@ -47,6 +51,7 @@ class HomeFragment : Fragment() {
   override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
     setUpActionBar()
     setupListeners()
+    setupSyncUploadProgress()
   }
 
   private fun setUpActionBar() {
@@ -80,6 +85,61 @@ class HomeFragment : Fragment() {
     val dialog: AlertDialog = builder.create()
     dialog.show()
   }
+
+  private fun setupSyncUploadProgress() {
+    lifecycleScope.launch {
+      mainActivityViewModel.syncUploadState.collect {
+        when (it) {
+          is SyncUploadState.Started,
+          is SyncUploadState.InProgress -> showSyncBanner(it)
+          is SyncUploadState.Completed -> hideSyncBanner(it)
+          is SyncUploadState.Failed -> hideSyncBanner(it)
+          is SyncUploadState.NoOp -> {
+            println("No operation required. Sync is in progress")
+          }
+        }
+      }
+    }
+  }
+
+  private fun showSyncBanner(syncUploadState: SyncUploadState) {
+    with(binding.uploadLayout) {
+      if (linearLayoutUploadStatus.visibility != View.VISIBLE) {
+        // may add fade in animation here later
+        linearLayoutUploadStatus.visibility = View.VISIBLE
+        updateUploadPercent(0, (syncUploadState as SyncUploadState.Started).totalRequests)
+      } else if (syncUploadState is SyncUploadState.InProgress) {
+        updateUploadPercent(syncUploadState.completedRequests, syncUploadState.totalRequests)
+      }
+    }
+  }
+
+  private fun hideSyncBanner(syncUploadState: SyncUploadState) {
+    if (syncUploadState is SyncUploadState.Completed) {
+      updateUploadPercent(syncUploadState.totalRequests, syncUploadState.totalRequests)
+      binding.uploadLayout.uploadPercent.text = "Uploaded"
+      binding.uploadLayout.linearLayoutUploadStatus.visibility = View.GONE
+    } else if (syncUploadState is SyncUploadState.Failed) {
+      binding.uploadLayout.uploadPercent.text = "Failed"
+      // we can add some animation here
+      binding.uploadLayout.linearLayoutUploadStatus.visibility = View.GONE
+      Toast.makeText(requireContext(), "Upload Failed!", Toast.LENGTH_LONG)
+    }
+  }
+
+  private fun updateUploadPercent(completed: Int, total: Int) {
+    binding.uploadLayout.apply {
+      val uploadPercentVal = percentOf(completed, total) * 100
+      uploadPercent.text = "Uploading $uploadPercentVal %"
+      uploadProgress.apply {
+        max = total
+        progress = completed
+      }
+    }
+  }
+
+  private fun percentOf(value: Number, total: Number) =
+    if (total == 0) 0.0 else value.toDouble() / total.toDouble()
 
   private fun goToParticipantRegistration() {
     findNavController()
