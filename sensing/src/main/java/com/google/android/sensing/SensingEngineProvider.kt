@@ -22,6 +22,7 @@ import com.google.android.sensing.db.impl.DatabaseConfig
 import com.google.android.sensing.db.impl.DatabaseImpl
 import com.google.android.sensing.impl.SensingEngineImpl
 import com.google.android.sensing.upload.BlobstoreService
+import com.google.android.sensing.upload.CustomTokenIdentityProvider
 import io.minio.MinioAsyncClient
 import java.util.concurrent.TimeUnit
 import okhttp3.OkHttpClient
@@ -55,19 +56,25 @@ object SensingEngineProvider {
   fun getBlobStoreService(): BlobstoreService {
     if (blobstoreService == null) {
       with(sensingEngineConfiguration!!.serverConfiguration) {
-        blobstoreService =
-          BlobstoreService(
-            MinioAsyncClient.builder()
-              .endpoint(baseUrl)
-              .credentials(authenticator!!.getUserName(), authenticator.getPassword())
-              .httpClient(
-                OkHttpClient.Builder()
-                  .connectTimeout(networkConfiguration.connectionTimeOut, TimeUnit.SECONDS)
-                  .writeTimeout(networkConfiguration.writeTimeOut, TimeUnit.SECONDS)
-                  .build()
-              )
-              .build()
+        val okHttpClient =
+          OkHttpClient.Builder()
+            .connectTimeout(networkConfiguration.connectionTimeOut, TimeUnit.SECONDS)
+            .writeTimeout(networkConfiguration.writeTimeOut, TimeUnit.SECONDS)
+            .build()
+        val minioClientBuilder = MinioAsyncClient.builder().endpoint(baseUrl)
+        if (authenticator is BasicAuthenticator) {
+          minioClientBuilder.credentials(authenticator.getUserName(), authenticator.getPassword())
+        } else if (authenticator is TokenAuthenticator) {
+          minioClientBuilder.credentialsProvider(
+            CustomTokenIdentityProvider(
+              okHttpClient = okHttpClient,
+              authenticator = authenticator,
+              stsEndpoint = baseUrl
+            )
           )
+        }
+        minioClientBuilder.httpClient(okHttpClient).build()
+        blobstoreService = BlobstoreService(minioClientBuilder.build())
       }
     }
     return blobstoreService!!

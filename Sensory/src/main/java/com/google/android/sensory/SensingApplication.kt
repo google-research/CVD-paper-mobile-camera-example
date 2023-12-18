@@ -24,7 +24,7 @@ import com.google.android.fhir.FhirEngineConfiguration
 import com.google.android.fhir.FhirEngineProvider
 import com.google.android.fhir.datacapture.DataCaptureConfig
 import com.google.android.fhir.datacapture.QuestionnaireFragment
-import com.google.android.sensing.Authenticator
+import com.google.android.sensing.BasicAuthenticator
 import com.google.android.sensing.SensingEngine
 import com.google.android.sensing.SensingEngineConfiguration
 import com.google.android.sensing.SensingEngineProvider
@@ -57,11 +57,12 @@ class SensingApplication : Application(), DataCaptureConfig.Provider {
             baseAccessUrl = properties.getProperty("BLOBSTORE_BASE_ACCESS_URL"),
             bucketName = properties.getProperty("BLOBSTORE_BUCKET_NAME"),
             authenticator =
-              object : Authenticator {
+              object : BasicAuthenticator {
                 override fun getUserName() = properties.getProperty("BLOBSTORE_USER")
                 override fun getPassword() = properties.getProperty("BLOBSTORE_PASSWORD")
               }
-          )
+            /* Use TokenAuthenticator when using external IDP. */
+            )
       )
     SensingEngineProvider.init(sensingEngineConfiguration)
     /**
