@@ -16,7 +16,7 @@
 
 package com.google.android.sensing.upload
 
-import com.google.android.sensing.TokenAuthenticator
+import com.google.android.sensing.CustomIDPAuthenticator
 import io.minio.credentials.AssumeRoleBaseProvider
 import io.minio.credentials.Credentials
 import java.util.Objects
@@ -38,7 +38,7 @@ import org.simpleframework.xml.Root
  */
 class CustomTokenIdentityProvider(
   okHttpClient: OkHttpClient?,
-  private val authenticator: TokenAuthenticator,
+  private val authenticator: CustomIDPAuthenticator,
   private val stsEndpoint: String
 ) : AssumeRoleBaseProvider(okHttpClient) {
 

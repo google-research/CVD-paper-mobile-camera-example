@@ -17,16 +17,20 @@
 package com.google.android.sensing
 
 import androidx.annotation.WorkerThread
+import io.minio.credentials.Provider
 
 @WorkerThread
 /**
  * [SensingEngine] depends on the developer app to handle user's authentication. The developer
  * application may provide the implementation during the [SensingEngine] initial setup.
  *
- * We provide 2 interfaces:
+ * We provide 3 interfaces:
  * 1. BasicAuthenticator: Accepts access-key (username) and secret-key (password) directly
- * 2. TokenAuthenticator: Accepts token and other details required for minio server to generate
- * temporary credentials, ie access and secret keys.
+ * 2. CredentialProviderAuthenticator: Accepts io.minio.credentials.Provider which already has
+ * implementations like io.minio.credentials.LdapIdentityProvider
+ * 3. CustomIDPAuthenticator: Accepts token and other details required for minio server to generate
+ * temporary credentials, ie access and secret keys. Supports a custom external identity manager
+ * using the MinIO Authentication Plugin extension.
  */
 interface Authenticator
 
@@ -38,7 +42,11 @@ interface BasicAuthenticator : Authenticator {
   fun getPassword(): String
 }
 
-interface TokenAuthenticator : Authenticator {
+interface CredentialProviderAuthenticator : Authenticator {
+  fun getCredentialsProvider(): Provider
+}
+
+interface CustomIDPAuthenticator : Authenticator {
   fun getToken(): String
 
   fun getRoleArn(): String

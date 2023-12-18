@@ -61,7 +61,8 @@ class SensingApplication : Application(), DataCaptureConfig.Provider {
                 override fun getUserName() = properties.getProperty("BLOBSTORE_USER")
                 override fun getPassword() = properties.getProperty("BLOBSTORE_PASSWORD")
               }
-            /* Use TokenAuthenticator when using external IDP. */
+            /* Use CredentialProviderAuthenticator when external IDP is OpenIDP or LDAP. */
+            /* Use CustomIDPAuthenticator when external IDP is a custom one. */
             )
       )
     SensingEngineProvider.init(sensingEngineConfiguration)

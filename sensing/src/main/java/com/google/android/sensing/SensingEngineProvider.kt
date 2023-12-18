@@ -64,7 +64,7 @@ object SensingEngineProvider {
         val minioClientBuilder = MinioAsyncClient.builder().endpoint(baseUrl)
         if (authenticator is BasicAuthenticator) {
           minioClientBuilder.credentials(authenticator.getUserName(), authenticator.getPassword())
-        } else if (authenticator is TokenAuthenticator) {
+        } else if (authenticator is CustomIDPAuthenticator) {
           minioClientBuilder.credentialsProvider(
             CustomTokenIdentityProvider(
               okHttpClient = okHttpClient,
@@ -72,6 +72,8 @@ object SensingEngineProvider {
               stsEndpoint = baseUrl
             )
           )
+        } else if (authenticator is CredentialProviderAuthenticator) {
+          minioClientBuilder.credentialsProvider(authenticator.getCredentialsProvider())
         }
         minioClientBuilder.httpClient(okHttpClient).build()
         blobstoreService = BlobstoreService(minioClientBuilder.build())
