@@ -16,7 +16,7 @@
 
 package com.google.android.sensing.upload
 
-import com.google.android.sensing.CustomIDPAuthenticator
+import com.google.android.sensing.MinioIDPPluginAuthenticator
 import io.minio.credentials.AssumeRoleBaseProvider
 import io.minio.credentials.Credentials
 import java.util.Objects
@@ -33,32 +33,34 @@ import org.simpleframework.xml.Path
 import org.simpleframework.xml.Root
 
 /**
- * Credential Provider using AssumeRoleWithCustomToken API. Extends and implements
- * AssumeRoleBaseProvider.
+ * Implementation of [io.minio.credentials.Provider] using AssumeRoleWithCustomToken API. Extends
+ * and implements [io.minio.credentials.AssumeRoleBaseProvider].
  */
-class CustomTokenIdentityProvider(
+class AssumeRoleWithCustomTokenBasedCredentialProvider(
   okHttpClient: OkHttpClient?,
-  private val authenticator: CustomIDPAuthenticator,
-  private val stsEndpoint: String
+  private val stsEndpoint: String,
+  private val tokenProvider: MinioIDPPluginAuthenticator.TokenProvider,
+  private val roleArn: String,
+  private val durationSeconds: Int,
 ) : AssumeRoleBaseProvider(okHttpClient) {
 
   init {
     Objects.requireNonNull(stsEndpoint, "STS endpoint cannot be empty")
   }
 
-  /** This API is called whenever new temporary credentials are needed. */
+  /** This API is called whenever new credentials are needed. */
   override fun getRequest(): Request {
     val stsHttpUrl = Objects.requireNonNull(stsEndpoint.toHttpUrl(), "Invalid STS endpoint")
     val url =
       newUrlBuilder(
           stsHttpUrl,
           "AssumeRoleWithCustomToken",
-          getValidDurationSeconds(authenticator.getDurationSeconds()),
+          getValidDurationSeconds(durationSeconds),
           null,
-          authenticator.getRoleArn(),
+          roleArn,
           null
         )
-        .addQueryParameter("Token", authenticator.getToken())
+        .addQueryParameter("Token", tokenProvider.getToken())
         .build()
 
     val emptyRequestBody =
@@ -78,7 +80,7 @@ class CustomTokenIdentityProvider(
   }
 
   /** Object representation of response XML of AssumeRoleWithCustomToken API. */
-  @Root(name = "AssumeRoleWithLDAPIdentityResponse", strict = false)
+  @Root(name = "AssumeRoleWithCustomTokenResponse", strict = false)
   @Namespace(
     reference =
       "https://min.io/docs/minio/linux/developers/security-token-service/AssumeRoleWithCustomToken.html#id3"
