@@ -107,9 +107,9 @@ class HomeFragment : Fragment() {
       if (linearLayoutUploadStatus.visibility != View.VISIBLE) {
         // may add fade in animation here later
         linearLayoutUploadStatus.visibility = View.VISIBLE
-        updateUploadPercent(0, (syncUploadState as SyncUploadState.Started).totalRequests)
+        updateUploadPercent(0, (syncUploadState as SyncUploadState.Started).initialTotalRequests)
       } else if (syncUploadState is SyncUploadState.InProgress) {
-        updateUploadPercent(syncUploadState.completedRequests, syncUploadState.totalRequests)
+        updateUploadPercent(syncUploadState.completedRequests, syncUploadState.currentTotalRequests)
       }
     }
   }
