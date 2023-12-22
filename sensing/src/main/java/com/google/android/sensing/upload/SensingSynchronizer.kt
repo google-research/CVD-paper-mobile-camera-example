@@ -21,7 +21,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.flow.scan
+import kotlinx.coroutines.flow.runningFold
 
 class SensingSynchronizer(
   private val uploadRequestFetcher: UploadRequestFetcher,
@@ -50,7 +50,7 @@ class SensingSynchronizer(
       uploader
         .upload(uploadRequestList)
         .onEach { uploadResultProcessor.process(it) }
-        .scan(initialSyncUploadState, ::calculateSyncUploadState)
+        .runningFold(initialSyncUploadState, ::calculateSyncUploadState)
         .drop(1)
         .collect { emit(it) }
       totalRequests += uploadRequestList.size
@@ -94,7 +94,11 @@ class SensingSynchronizer(
               currentRequestTotalBytes = currentRequestTotalBytes,
               currentRequestCompletedBytes = currentRequestCompletedBytes
             )
-        is UploadResult.Failure -> SyncUploadState.Failed(exception = uploadResult.uploadError)
+        is UploadResult.Failure ->
+          SyncUploadState.Failed(
+            uploadResult.uploadRequest.resourceInfoId,
+            exception = uploadResult.uploadError
+          )
       }
     }
   }

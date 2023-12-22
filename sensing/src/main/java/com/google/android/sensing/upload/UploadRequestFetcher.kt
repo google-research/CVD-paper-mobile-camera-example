@@ -25,7 +25,8 @@ interface UploadRequestFetcher {
   suspend fun fetchForUpload(): List<UploadRequest>
 }
 
-class DefaultUploadRequestFetcher(private val sensingEngine: SensingEngine) : UploadRequestFetcher {
+internal class DefaultUploadRequestFetcher(private val sensingEngine: SensingEngine) :
+  UploadRequestFetcher {
   override suspend fun fetchForUpload(): List<UploadRequest> {
     return (sensingEngine.listUploadRequest(status = RequestStatus.UPLOADING) +
       sensingEngine.listUploadRequest(status = RequestStatus.PENDING))

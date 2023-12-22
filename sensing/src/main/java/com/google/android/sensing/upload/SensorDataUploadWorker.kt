@@ -27,11 +27,6 @@ import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import java.time.OffsetDateTime
 import java.util.concurrent.atomic.AtomicBoolean
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.launch
-import timber.log.Timber
 
 /** A WorkManager Worker that handles onetime and periodic requests to upload. */
 class SensorDataUploadWorker(appContext: Context, workerParams: WorkerParameters) :
@@ -53,7 +48,7 @@ class SensorDataUploadWorker(appContext: Context, workerParams: WorkerParameters
 
   override suspend fun doWork(): Result {
     if (!tryAcquiringLock()) {
-      return Result.success(workDataOf("State" to SyncUploadState.NoOp::class.java))
+      return Result.retry()
     }
     val uploadRequestFetcher: UploadRequestFetcher
     val uploadResultProcessor: UploadResultProcessor
@@ -64,29 +59,18 @@ class SensorDataUploadWorker(appContext: Context, workerParams: WorkerParameters
     val uploader = Uploader(SensingEngineProvider.getBlobStoreService())
 
     var failed = false
-    val job =
-      CoroutineScope(Dispatchers.IO).launch {
-        SensingSynchronizer(
-            uploadRequestFetcher = uploadRequestFetcher,
-            uploader = uploader,
-            uploadResultProcessor = uploadResultProcessor
-          )
-          .synchronize()
-          .collect {
-            setProgress(workDataOf("StateType" to it::class.java.name, "State" to gson.toJson(it)))
-            when (it) {
-              is SyncUploadState.NoOp,
-              is SyncUploadState.Completed -> this@launch.cancel()
-              is SyncUploadState.Failed -> {
-                failed = true
-                this@launch.cancel()
-              }
-            }
-          }
+    SensingSynchronizer(
+        uploadRequestFetcher = uploadRequestFetcher,
+        uploader = uploader,
+        uploadResultProcessor = uploadResultProcessor
+      )
+      .synchronize()
+      .collect {
+        setProgress(workDataOf("StateType" to it::class.java.name, "State" to gson.toJson(it)))
+        if (it is SyncUploadState.Failed) {
+          failed = true
+        }
       }
-
-    // await/join is needed to collect states completely
-    kotlin.runCatching { job.join() }.onFailure(Timber::w)
 
     releaseLock()
     return if (failed) Result.retry() else Result.success()
