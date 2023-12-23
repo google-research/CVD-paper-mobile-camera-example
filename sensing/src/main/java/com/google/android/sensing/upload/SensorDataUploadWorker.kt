@@ -48,7 +48,8 @@ class SensorDataUploadWorker(appContext: Context, workerParams: WorkerParameters
 
   override suspend fun doWork(): Result {
     if (!tryAcquiringLock()) {
-      return Result.retry()
+      return Result.success(buildWorkData(SyncUploadState.NoOp))
+
     }
     val uploadRequestFetcher: UploadRequestFetcher
     val uploadResultProcessor: UploadResultProcessor
@@ -66,7 +67,7 @@ class SensorDataUploadWorker(appContext: Context, workerParams: WorkerParameters
       )
       .synchronize()
       .collect {
-        setProgress(workDataOf("StateType" to it::class.java.name, "State" to gson.toJson(it)))
+        setProgress(buildWorkData(it))
         if (it is SyncUploadState.Failed) {
           failed = true
         }
@@ -75,6 +76,8 @@ class SensorDataUploadWorker(appContext: Context, workerParams: WorkerParameters
     releaseLock()
     return if (failed) Result.retry() else Result.success()
   }
+
+  private fun buildWorkData(syncUploadState: SyncUploadState) = workDataOf("StateType" to syncUploadState::class.java.name, "State" to gson.toJson(syncUploadState))
 
   /**
    * Exclusion strategy for [Gson] that handles field exclusions for [SyncUploadState] returned by
