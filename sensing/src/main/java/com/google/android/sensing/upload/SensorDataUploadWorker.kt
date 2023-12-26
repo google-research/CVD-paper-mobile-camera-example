@@ -58,8 +58,8 @@ class SensorDataUploadWorker(appContext: Context, workerParams: WorkerParameters
     if (!tryAcquiringLock()) {
       return Result.success(buildWorkData(SyncUploadState.NoOp))
     }
-    var failed = false
     try {
+      var failed = false
       SensingSynchronizer(
           sensingEngine = sensingEngine,
           uploader = uploader,
@@ -70,14 +70,14 @@ class SensorDataUploadWorker(appContext: Context, workerParams: WorkerParameters
           setProgress(buildWorkData(it))
           failed = it is SyncUploadState.Failed
         }
+      return if (failed) Result.retry() else Result.success()
     } catch (exception: Exception) {
-      failed = true
       setProgress(buildWorkData(SyncUploadState.Failed(exception)))
       Timber.e("Synchronization Exception: $exception")
+      return Result.retry()
     } finally {
       releaseLock()
     }
-    return if (failed) Result.retry() else Result.success()
   }
 
   private fun buildWorkData(syncUploadState: SyncUploadState) =
