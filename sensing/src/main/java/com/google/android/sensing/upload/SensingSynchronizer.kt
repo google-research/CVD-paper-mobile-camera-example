@@ -30,12 +30,9 @@ class SensingSynchronizer(
 ) {
 
   /**
-   * Sync Upload API. It fetches [UploadRequest]s, invokes [uploader], collects [UploadResult]s
-   * processes them using [UploadResult]s by [uploadResultProcessor]. At each stage it emits
-   * [SyncUploadState]s.
-   *
-   * TODO Persist the terminal SyncUploadState due to this
-   * [issue](https://github.com/google/android-fhir/issues/2119).
+   * Sync Upload API. It fetches [UploadRequest]s using [uploadRequestFetcher], invokes [uploader],
+   * collects [UploadResult]s and processes them using [uploadResultProcessor]. At each stage it
+   * emits [SyncUploadState]s.
    */
   suspend fun synchronize(): Flow<SyncUploadState> = flow {
     var uploadRequestList = uploadRequestFetcher.fetchForUpload()
