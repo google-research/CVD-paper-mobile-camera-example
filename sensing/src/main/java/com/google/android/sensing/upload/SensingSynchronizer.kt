@@ -48,6 +48,7 @@ class SensingSynchronizer(
         .upload(uploadRequestList)
         .onEach { uploadResultProcessor.process(it) }
         .runningFold(initialSyncUploadState, ::calculateSyncUploadState)
+        // initialSyncUploadState is dropped
         .drop(1)
         .collect { emit(it) }
       totalRequests += uploadRequestList.size
