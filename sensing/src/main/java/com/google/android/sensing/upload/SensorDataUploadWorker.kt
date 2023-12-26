@@ -55,6 +55,7 @@ class SensorDataUploadWorker(appContext: Context, workerParams: WorkerParameters
   }
 
   override suspend fun doWork(): Result {
+    if (runAttemptCount == inputData.getInt(MAX_RETRIES_ALLOWED, 0)) return Result.failure()
     if (!tryAcquiringLock()) {
       return Result.success(buildWorkData(SyncUploadState.NoOp))
     }
@@ -68,7 +69,10 @@ class SensorDataUploadWorker(appContext: Context, workerParams: WorkerParameters
         .synchronize()
         .collect {
           setProgress(buildWorkData(it))
-          failed = it is SyncUploadState.Failed
+          if (it is SyncUploadState.Failed) {
+            failed = true
+            Timber.e("Synchronization Exception: ${it.exception}")
+          }
         }
       return if (failed) Result.retry() else Result.success()
     } catch (exception: Exception) {
