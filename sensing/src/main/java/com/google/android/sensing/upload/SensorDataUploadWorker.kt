@@ -33,6 +33,14 @@ import timber.log.Timber
 class SensorDataUploadWorker(appContext: Context, workerParams: WorkerParameters) :
   CoroutineWorker(appContext, workerParams) {
 
+  // Each new upload work will use a new instance of uploader
+  private val uploader = Uploader(SensingEngineProvider.getBlobStoreService())
+
+  private val sensingEngine = SensingEngineProvider.getOrCreateSensingEngine(applicationContext)
+
+  private val uploadResultProcessor = DefaultUploadResultProcessor(sensingEngine)
+  private val uploadRequestFetcher = DefaultUploadRequestFetcher(sensingEngine)
+
   private val gson =
     GsonBuilder()
       .registerTypeAdapter(OffsetDateTime::class.java, OffsetDateTimeTypeAdapter().nullSafe())
@@ -52,13 +60,6 @@ class SensorDataUploadWorker(appContext: Context, workerParams: WorkerParameters
     if (!tryAcquiringLock()) {
       return Result.success(buildWorkData(SyncUploadState.NoOp))
     }
-    val uploadRequestFetcher: UploadRequestFetcher
-    val uploadResultProcessor: UploadResultProcessor
-    with(SensingEngineProvider.getOrCreateSensingEngine(applicationContext)) {
-      uploadRequestFetcher = DefaultUploadRequestFetcher(this)
-      uploadResultProcessor = DefaultUploadResultProcessor(this)
-    }
-    val uploader = Uploader(SensingEngineProvider.getBlobStoreService())
     try {
       var failed = false
       SensingSynchronizer(
