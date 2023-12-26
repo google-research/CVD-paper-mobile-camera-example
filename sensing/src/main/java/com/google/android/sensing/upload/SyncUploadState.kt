@@ -23,29 +23,29 @@ open class SyncUploadState {
   val timestamp: OffsetDateTime = OffsetDateTime.now()
 
   /** The sync has started but nothing has progressed so far. */
-  data class Started(val totalRequests: Int) : SyncUploadState()
+  data class Started(val initialTotalRequests: Int) : SyncUploadState()
 
   /**
    * There is some progress represented by this state. It could be resource-level progress in case
-   * the resource is divided into parts to upload. This includes [currentTotalBytes] &
-   * [currentCompletedBytes]. This state can also be used to indicate a change in [totalRequests]
-   * being processed. This is possible when new [UploadRequest]s are created while current batch of
-   * requests are being processed.
+   * the resource is divided into parts to upload. This includes [currentRequestTotalBytes] &
+   * [currentRequestCompletedBytes]. This state can also be used to indicate a change in
+   * [currentTotalRequests] being processed. This is possible when new [UploadRequest]s are created
+   * while current batch of requests are being processed.
    *
    * TODO Add a state that helps to distinguish between different batches of upload.
    */
   data class InProgress(
-    val totalRequests: Int,
-    val completedRequests: Int,
-    val currentTotalBytes: Long,
-    val currentCompletedBytes: Long,
+    val currentTotalRequests: Int,
+    val completedRequests: Int = 0,
+    val currentRequestTotalBytes: Long = 0,
+    val currentRequestCompletedBytes: Long = 0,
   ) : SyncUploadState()
 
   /** The full sync has completed and there are are no further requests to be processed. */
   data class Completed(val totalRequests: Int) : SyncUploadState()
 
   /** The sync failed for some [exception]. */
-  data class Failed(val exception: Exception) : SyncUploadState()
+  data class Failed(val resourceInfoId: String?, val exception: Exception) : SyncUploadState()
 
   /**
    * This state indicates no operation. This is currently used to indicate that user's request to

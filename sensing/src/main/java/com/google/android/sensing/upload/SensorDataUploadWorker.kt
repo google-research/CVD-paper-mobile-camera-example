@@ -39,6 +39,7 @@ class SensorDataUploadWorker(appContext: Context, workerParams: WorkerParameters
   private val sensingEngine = SensingEngineProvider.getOrCreateSensingEngine(applicationContext)
 
   private val uploadResultProcessor = DefaultUploadResultProcessor(sensingEngine)
+  private val uploadRequestFetcher = DefaultUploadRequestFetcher(sensingEngine)
 
   private val gson =
     GsonBuilder()
@@ -62,7 +63,7 @@ class SensorDataUploadWorker(appContext: Context, workerParams: WorkerParameters
     try {
       var failed = false
       SensingSynchronizer(
-          sensingEngine = sensingEngine,
+          uploadRequestFetcher = uploadRequestFetcher,
           uploader = uploader,
           uploadResultProcessor = uploadResultProcessor
         )
@@ -76,7 +77,7 @@ class SensorDataUploadWorker(appContext: Context, workerParams: WorkerParameters
         }
       return if (failed) Result.retry() else Result.success()
     } catch (exception: Exception) {
-      setProgress(buildWorkData(SyncUploadState.Failed(exception)))
+      setProgress(buildWorkData(SyncUploadState.Failed(null, exception)))
       Timber.e("Synchronization Exception: $exception")
       return Result.retry()
     } finally {
