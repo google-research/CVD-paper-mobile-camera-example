@@ -17,7 +17,7 @@
 package com.google.android.sensing
 
 import androidx.annotation.WorkerThread
-import com.google.android.sensing.upload.AssumeRoleWithCustomTokenBasedCredentialProvider
+import com.google.android.sensing.upload.CustomTokenIdentityProvider
 import io.minio.credentials.Credentials
 import io.minio.credentials.Provider
 import okhttp3.OkHttpClient
@@ -34,7 +34,7 @@ import okhttp3.OkHttpClient
  * access-key (username) and secret-key (password) directly.
  * 2. [MinioIDPPluginAuthenticator]: Implement this if deployment supports external IDP. Accepts
  * [OkHttpClient], [MinioIDPPluginAuthenticator.TokenProvider], roleArn, durationSeconds and
- * stsEndpoint to create a [AssumeRoleWithCustomTokenBasedCredentialProvider].
+ * stsEndpoint to create a [CustomTokenIdentityProvider].
  */
 interface Authenticator {
   fun getCredentialsProvider(): Provider
@@ -79,7 +79,7 @@ abstract class MinioIDPPluginAuthenticator : Authenticator {
   }
 
   override fun getCredentialsProvider() =
-    AssumeRoleWithCustomTokenBasedCredentialProvider(
+    CustomTokenIdentityProvider(
       getOkHttpClient(),
       getStsEndpoint(),
       getTokenProvider(),

@@ -36,7 +36,7 @@ import org.simpleframework.xml.Root
  * Implementation of [io.minio.credentials.Provider] using AssumeRoleWithCustomToken API. Extends
  * and implements [io.minio.credentials.AssumeRoleBaseProvider].
  */
-class AssumeRoleWithCustomTokenBasedCredentialProvider(
+class CustomTokenIdentityProvider(
   okHttpClient: OkHttpClient?,
   private val stsEndpoint: String,
   private val tokenProvider: MinioIDPPluginAuthenticator.TokenProvider,
