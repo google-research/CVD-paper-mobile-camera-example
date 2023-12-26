@@ -45,7 +45,7 @@ open class SyncUploadState {
   data class Completed(val totalRequests: Int) : SyncUploadState()
 
   /** The sync failed for some [exception]. */
-  data class Failed(val resourceInfoId: String, val exception: Exception) : SyncUploadState()
+  data class Failed(val resourceInfoId: String?, val exception: Exception) : SyncUploadState()
 
   /**
    * This state indicates no operation. This is currently used to indicate that user's request to

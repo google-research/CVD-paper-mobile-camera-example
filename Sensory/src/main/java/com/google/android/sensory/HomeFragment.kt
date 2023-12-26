@@ -103,15 +103,34 @@ class HomeFragment : Fragment() {
   }
 
   private fun showSyncBanner(syncUploadState: SyncUploadState) {
+    val completedRequests: Int
+    val totalRequests: Int
+    when (syncUploadState) {
+      is SyncUploadState.Started -> {
+        totalRequests = syncUploadState.initialTotalRequests
+        completedRequests = 0
+      }
+      is SyncUploadState.InProgress -> {
+        completedRequests = syncUploadState.completedRequests
+        totalRequests = syncUploadState.currentTotalRequests
+      }
+      is SyncUploadState.Completed -> {
+        completedRequests = syncUploadState.totalRequests
+        totalRequests = syncUploadState.totalRequests
+      }
+      else -> {
+        completedRequests = 0
+        totalRequests = 0
+      }
+    }
+    if (totalRequests == 0) return
     with(binding.uploadLayout) {
       if (linearLayoutUploadStatus.visibility != View.VISIBLE) {
         // may add fade in animation here later
         linearLayoutUploadStatus.visibility = View.VISIBLE
-        updateUploadPercent(0, (syncUploadState as SyncUploadState.Started).initialTotalRequests)
-      } else if (syncUploadState is SyncUploadState.InProgress) {
-        updateUploadPercent(syncUploadState.completedRequests, syncUploadState.currentTotalRequests)
       }
     }
+    updateUploadPercent(completedRequests, totalRequests)
   }
 
   private fun hideSyncBanner(syncUploadState: SyncUploadState) {

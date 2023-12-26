@@ -57,7 +57,6 @@ class Uploader(private val blobstoreService: BlobstoreService) {
             headers,
             null
           )
-        Timber.d("UploadID: ${uploadRequest.uploadId}")
         emit(
           UploadResult.Started(uploadRequest, Date.from(Instant.now()), uploadRequest.uploadId!!)
         )

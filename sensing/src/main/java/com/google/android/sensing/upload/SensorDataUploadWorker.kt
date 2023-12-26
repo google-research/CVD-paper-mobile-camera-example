@@ -27,6 +27,7 @@ import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import java.time.OffsetDateTime
 import java.util.concurrent.atomic.AtomicBoolean
+import timber.log.Timber
 
 /** A WorkManager Worker that handles onetime and periodic requests to upload. */
 class SensorDataUploadWorker(appContext: Context, workerParams: WorkerParameters) :
@@ -47,9 +48,9 @@ class SensorDataUploadWorker(appContext: Context, workerParams: WorkerParameters
   }
 
   override suspend fun doWork(): Result {
+    if (runAttemptCount == inputData.getInt(MAX_RETRIES_ALLOWED, 0)) return Result.failure()
     if (!tryAcquiringLock()) {
       return Result.success(buildWorkData(SyncUploadState.NoOp))
-
     }
     val uploadRequestFetcher: UploadRequestFetcher
     val uploadResultProcessor: UploadResultProcessor
@@ -58,26 +59,36 @@ class SensorDataUploadWorker(appContext: Context, workerParams: WorkerParameters
       uploadResultProcessor = DefaultUploadResultProcessor(this)
     }
     val uploader = Uploader(SensingEngineProvider.getBlobStoreService())
-
-    var failed = false
-    SensingSynchronizer(
-        uploadRequestFetcher = uploadRequestFetcher,
-        uploader = uploader,
-        uploadResultProcessor = uploadResultProcessor
-      )
-      .synchronize()
-      .collect {
-        setProgress(buildWorkData(it))
-        if (it is SyncUploadState.Failed) {
-          failed = true
+    try {
+      var failed = false
+      SensingSynchronizer(
+          uploadRequestFetcher = uploadRequestFetcher,
+          uploader = uploader,
+          uploadResultProcessor = uploadResultProcessor
+        )
+        .synchronize()
+        .collect {
+          setProgress(buildWorkData(it))
+          if (it is SyncUploadState.Failed) {
+            failed = true
+            Timber.e("Synchronization Exception: ${it.exception}")
+          }
         }
-      }
-
-    releaseLock()
-    return if (failed) Result.retry() else Result.success()
+      return if (failed) Result.retry() else Result.success()
+    } catch (exception: Exception) {
+      setProgress(buildWorkData(SyncUploadState.Failed(null, exception)))
+      Timber.e("Synchronization Exception: $exception")
+      return Result.retry()
+    } finally {
+      releaseLock()
+    }
   }
 
-  private fun buildWorkData(syncUploadState: SyncUploadState) = workDataOf("StateType" to syncUploadState::class.java.name, "State" to gson.toJson(syncUploadState))
+  private fun buildWorkData(syncUploadState: SyncUploadState) =
+    workDataOf(
+      "StateType" to syncUploadState::class.java.name,
+      "State" to gson.toJson(syncUploadState)
+    )
 
   /**
    * Exclusion strategy for [Gson] that handles field exclusions for [SyncUploadState] returned by
@@ -88,7 +99,7 @@ class SensorDataUploadWorker(appContext: Context, workerParams: WorkerParameters
    * href="https://github.com/google/android-fhir/issues/707">https://github.com/google/android-fhir/issues/707</a>
    */
   internal class StateExclusionStrategy : ExclusionStrategy {
-    override fun shouldSkipField(field: FieldAttributes) = field.name.equals("exceptions")
+    override fun shouldSkipField(field: FieldAttributes) = field.name.equals("exception")
 
     override fun shouldSkipClass(clazz: Class<*>?) = false
   }
