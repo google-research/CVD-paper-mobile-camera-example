@@ -103,6 +103,7 @@ class HomeFragment : Fragment() {
   }
 
   private fun showSyncBanner(syncUploadState: SyncUploadState) {
+    if (syncUploadState is SyncUploadState.Started && syncUploadState.totalRequests == 0) return
     with(binding.uploadLayout) {
       if (linearLayoutUploadStatus.visibility != View.VISIBLE) {
         // may add fade in animation here later
