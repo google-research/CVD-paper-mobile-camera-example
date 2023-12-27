@@ -21,6 +21,7 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
+import androidx.room.Update
 import com.google.android.sensing.db.impl.entities.UploadRequestEntity
 import com.google.android.sensing.model.RequestStatus
 import com.google.android.sensing.model.UploadRequest
@@ -28,7 +29,7 @@ import java.util.Date
 
 @Dao
 internal abstract class UploadRequestDao {
-  @Insert(onConflict = OnConflictStrategy.REPLACE)
+  @Insert(onConflict = OnConflictStrategy.ABORT)
   abstract suspend fun insertUploadRequestEntity(uploadRequestEntity: UploadRequestEntity)
 
   @Transaction
@@ -36,6 +37,13 @@ internal abstract class UploadRequestDao {
     // convert to CaptureInfoEntity and insert
     insertUploadRequestEntity(uploadRequest.toUploadRequestEntity())
     return uploadRequest.requestUuid.toString()
+  }
+
+  @Update abstract suspend fun updateUploadRequestEntity(uploadRequestEntity: UploadRequestEntity)
+
+  @Transaction
+  open suspend fun updateUploadRequest(uploadRequest: UploadRequest) {
+    updateUploadRequestEntity(uploadRequest.toUploadRequestEntity())
   }
 
   @Query("""
@@ -69,7 +77,6 @@ internal fun UploadRequestEntity.toUploadRequest() =
 
 internal fun UploadRequest.toUploadRequestEntity() =
   UploadRequestEntity(
-    id = 0,
     requestUuid = requestUuid,
     resourceInfoId = resourceInfoId,
     zipFile = zipFile,
