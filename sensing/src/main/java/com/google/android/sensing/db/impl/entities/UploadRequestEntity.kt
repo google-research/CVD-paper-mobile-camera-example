@@ -41,7 +41,7 @@ import java.util.UUID
  * of this is responsible to upload. Relevantly it requires other file information.
  */
 internal data class UploadRequestEntity(
-  /** UUID for this record. */
+  /** Unique UUID for this record. */
   @PrimaryKey val requestUuid: UUID,
 
   /** Unique key in [ResourceInfoEntity]: Required to update upload status of the resource. */
