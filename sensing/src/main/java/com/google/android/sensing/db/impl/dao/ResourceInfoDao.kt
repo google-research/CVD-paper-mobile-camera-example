@@ -105,7 +105,6 @@ internal fun ResourceInfoEntity.toResourceInfo() =
 
 internal fun ResourceInfo.toResourceInfoEntity() =
   ResourceInfoEntity(
-    id = 0,
     resourceInfoId = resourceInfoId,
     captureId = captureId,
     participantId = participantId,
