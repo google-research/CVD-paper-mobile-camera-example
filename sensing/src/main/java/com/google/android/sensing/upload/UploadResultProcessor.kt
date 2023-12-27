@@ -16,7 +16,9 @@
 
 package com.google.android.sensing.upload
 
+import android.content.Context
 import com.google.android.sensing.SensingEngine
+import com.google.android.sensing.SensingEngineProvider
 import com.google.android.sensing.model.RequestStatus
 import com.google.android.sensing.model.UploadResult
 import java.io.File
@@ -28,9 +30,21 @@ import java.io.File
  */
 interface UploadResultProcessor {
   suspend fun process(uploadResult: UploadResult)
+
+  // https://www.baeldung.com/kotlin/singleton-classes#1-companion-object
+  companion object {
+    @Volatile private var instance: UploadResultProcessor? = null
+
+    fun getInstance(context: Context) =
+      instance
+        ?: synchronized(this) {
+          instance
+            ?: DefaultUploadResultProcessor(SensingEngineProvider.getOrCreateSensingEngine(context))
+        }
+  }
 }
 
-internal class DefaultUploadResultProcessor(private val sensingEngine: SensingEngine) :
+private class DefaultUploadResultProcessor(private val sensingEngine: SensingEngine) :
   UploadResultProcessor {
   override suspend fun process(uploadResult: UploadResult) {
     val uploadRequest = uploadResult.uploadRequest
