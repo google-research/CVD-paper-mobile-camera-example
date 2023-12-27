@@ -29,7 +29,7 @@ import java.util.Date
 
 @Dao
 internal abstract class UploadRequestDao {
-  @Insert(onConflict = OnConflictStrategy.IGNORE)
+  @Insert(onConflict = OnConflictStrategy.ABORT)
   abstract suspend fun insertUploadRequestEntity(uploadRequestEntity: UploadRequestEntity)
 
   @Transaction
