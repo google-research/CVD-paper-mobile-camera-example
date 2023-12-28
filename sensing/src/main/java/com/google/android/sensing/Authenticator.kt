@@ -54,6 +54,9 @@ abstract class MinioIDPPluginAuthenticator : Authenticator {
   /** Override this to provide your own [OkHttpClient]. */
   open fun getOkHttpClient(): OkHttpClient? = null
 
+  /** Override this to provide permission grant policy. */
+  open fun getPolicy(): String? = null
+
   /** Provide [TokenProvider] instance that is used to fetch fresh token. */
   abstract fun getTokenProvider(): TokenProvider
 
@@ -80,10 +83,11 @@ abstract class MinioIDPPluginAuthenticator : Authenticator {
 
   override fun getCredentialsProvider() =
     CustomTokenIdentityProvider(
-      getOkHttpClient(),
       getStsEndpoint(),
       getTokenProvider(),
       getRoleArn(),
-      getDurationSeconds()
+      getDurationSeconds(),
+      getPolicy(),
+      getOkHttpClient(),
     )
 }
