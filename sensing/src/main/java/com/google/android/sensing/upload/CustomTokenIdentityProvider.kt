@@ -17,9 +17,7 @@
 package com.google.android.sensing.upload
 
 import com.google.android.sensing.MinioIDPPluginAuthenticator
-import io.minio.Xml
 import io.minio.credentials.AssumeRoleBaseProvider
-import io.minio.messages.ResponseDate
 import java.util.Objects
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.MediaType
@@ -28,21 +26,18 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody
 import okio.BufferedSink
-import org.simpleframework.xml.Default
-import org.simpleframework.xml.Element
-import org.simpleframework.xml.Namespace
-import org.simpleframework.xml.Root
 
 /**
  * Implementation of [io.minio.credentials.Provider] using AssumeRoleWithCustomToken API. Extends
  * and implements [io.minio.credentials.AssumeRoleBaseProvider].
  */
 class CustomTokenIdentityProvider(
-  okHttpClient: OkHttpClient?,
   private val stsEndpoint: String,
   private val tokenProvider: MinioIDPPluginAuthenticator.TokenProvider,
   private val roleArn: String,
   private val durationSeconds: Int,
+  private val policy: String?,
+  okHttpClient: OkHttpClient?,
 ) : AssumeRoleBaseProvider(okHttpClient) {
 
   init {
@@ -57,7 +52,7 @@ class CustomTokenIdentityProvider(
           stsHttpUrl,
           "AssumeRoleWithCustomToken",
           getValidDurationSeconds(durationSeconds),
-          null,
+          policy,
           roleArn,
           null
         )
@@ -76,53 +71,7 @@ class CustomTokenIdentityProvider(
     return Request.Builder().url(url).method("POST", emptyRequestBody).build()
   }
 
-  /**
-   * Following needs to be overriden but it remains unused as we are also overriding [parseResponse]
-   * below.
-   */
   override fun getResponseClass(): Class<out Response> {
-    return Response::class.java
-  }
-
-  override fun parseResponse(response: okhttp3.Response): io.minio.credentials.Credentials {
-    return Xml.unmarshal(AssumeRoleWithCustomTokenResponse::class.java, response.body?.charStream())
-      .assumeRoleWithCustomTokenResult.credentials.toMinioCredentials()
-  }
-
-  @Root(name = "AssumeRoleWithCustomTokenResponse", strict = false)
-  @Namespace(reference = "https://sts.amazonaws.com/doc/2011-06-15/")
-  @Default
-  class AssumeRoleWithCustomTokenResponse {
-    @field:Element var assumeRoleWithCustomTokenResult: AssumeRoleResult = AssumeRoleResult()
-
-    class AssumeRoleResult {
-      @field:Element var credentials: Credentials = Credentials()
-
-      @field:Element var assumedUser: String = ""
-
-      @field:Element var responseMetadata: ResponseMetadata = ResponseMetadata()
-
-      class Credentials {
-        @field:Element var accessKeyId: String = ""
-
-        @field:Element var secretAccessKey: String = ""
-
-        @field:Element var expiration: String = ""
-
-        @field:Element var sessionToken: String = ""
-
-        fun toMinioCredentials() =
-          io.minio.credentials.Credentials(
-            accessKeyId,
-            secretAccessKey,
-            sessionToken,
-            ResponseDate.fromString(expiration)
-          )
-      }
-
-      class ResponseMetadata {
-        @field:Element var requestId: String = ""
-      }
-    }
+    return CustomTokenIdentityResponse::class.java
   }
 }
