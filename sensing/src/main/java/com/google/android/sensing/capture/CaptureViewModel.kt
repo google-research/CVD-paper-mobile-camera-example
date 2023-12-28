@@ -73,16 +73,14 @@ class CaptureViewModel(application: Application) : AndroidViewModel(application)
       if (captureInfo.recapture == true) getApplication<Application>().cacheDir
       else getApplication<Application>().filesDir
 
-  fun setupCaptureResultFlow(
+  fun setupCaptureAndRegisterCallback(
     captureInfo: CaptureInfo,
-    captureResultCollector: suspend ((Flow<SensorCaptureResult>) -> Unit)
+    callback: suspend ((Flow<SensorCaptureResult>) -> Unit)
   ) {
     this.captureInfo = captureInfo
-    CoroutineScope(context = Dispatchers.IO).launch {
-      captureResultCollector(captureResultLiveData.asFlow())
-    }
+    CoroutineScope(context = Dispatchers.IO).launch { callback(captureResultLiveData.asFlow()) }
   }
-  fun processRecord(camera: Camera2InteropSensor) {
+  fun processRecordClick(camera: Camera2InteropSensor) {
     if (this::recordingGate.isInitialized && recordingGate.isOpen) {
       endPPGCapture()
       return
@@ -237,10 +235,10 @@ class CaptureViewModel(application: Application) : AndroidViewModel(application)
    * Emitted [SensorCaptureResult] are collected here and posted to [captureResultLiveData] which in
    * turn is collected by the application callback.
    */
-  fun invokeCaptureCompleteCallback() {
+  fun invokeCaptureCompleteToRecordDetails() {
     CoroutineScope(context = Dispatchers.IO).launch {
       SensingEngineProvider.getOrCreateSensingEngine(getApplication())
-        .onCaptureCompleteCallback(captureInfo)
+        .onCaptureComplete(captureInfo)
         .collect { captureResultLiveData.postValue(it) }
     }
   }

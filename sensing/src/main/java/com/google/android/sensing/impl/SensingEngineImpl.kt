@@ -28,10 +28,10 @@ import com.google.android.sensing.db.Database
 import com.google.android.sensing.db.ResourceNotFoundException
 import com.google.android.sensing.model.CaptureInfo
 import com.google.android.sensing.model.CaptureType
-import com.google.android.sensing.model.RequestStatus
 import com.google.android.sensing.model.ResourceInfo
 import com.google.android.sensing.model.SensorType
 import com.google.android.sensing.model.UploadRequest
+import com.google.android.sensing.model.UploadRequestStatus
 import java.io.BufferedOutputStream
 import java.io.File
 import java.io.FileOutputStream
@@ -57,7 +57,65 @@ internal class SensingEngineImpl(
   private val serverConfiguration: ServerConfiguration,
 ) : SensingEngine {
 
-  override suspend fun onCaptureCompleteCallback(captureInfo: CaptureInfo) = flow {
+  override suspend fun getCaptureInfo(captureId: String): CaptureInfo {
+    return database.getCaptureInfo(captureId)
+  }
+
+  override suspend fun getResourceInfo(resourceInfoId: String): ResourceInfo? {
+    return try {
+      database.getResourceInfo(resourceInfoId)
+    } catch (e: ResourceNotFoundException) {
+      null
+    }
+  }
+
+  override suspend fun updateResourceInfo(resourceInfo: ResourceInfo) {
+    database.updateResourceInfo(resourceInfo)
+  }
+
+  override suspend fun updateUploadRequest(uploadRequest: UploadRequest) {
+    return database.updateUploadRequest(uploadRequest)
+  }
+
+  override suspend fun listUploadRequest(
+    uploadRequestStatus: UploadRequestStatus
+  ): List<UploadRequest> {
+    return database.listUploadRequests(uploadRequestStatus)
+  }
+
+  override suspend fun listResourceInfoForParticipant(participantId: String): List<ResourceInfo> {
+    return database.listResourceInfoForParticipant(participantId)
+  }
+
+  override suspend fun listResourceInfoInCapture(captureId: String): List<ResourceInfo> {
+    return database.listResourceInfoInCapture(captureId)
+  }
+
+  override suspend fun deleteDataInCapture(captureId: String): Boolean {
+    val captureInfo =
+      try {
+        getCaptureInfo(captureId)
+      } catch (e: ResourceNotFoundException) {
+        null
+      } ?: return true
+
+    // Step 1: Delete db records
+    database.deleteRecordsInCapture(captureId)
+    // Step 2: delete the captureFolder
+    val captureFile = File(context.filesDir, captureInfo.captureFolder)
+    val parentFile = captureFile.parentFile
+    val deleted: Boolean
+    withContext(Dispatchers.IO) {
+      deleted = captureFile.deleteRecursively()
+      // delete Participant's folder if there are no data
+      if (parentFile?.list()?.isEmpty() == true) {
+        parentFile.delete()
+      }
+    }
+    return deleted
+  }
+
+  override suspend fun onCaptureComplete(captureInfo: CaptureInfo) = flow {
     if (captureInfo.recapture == true) {
       try {
         val inRecordCaptureInfo = getCaptureInfo(captureInfo.captureId!!)
@@ -80,7 +138,7 @@ internal class SensingEngineImpl(
           fileType = resourceInfoFileType(it, captureInfo),
           resourceFolderRelativePath = resourceFolderRelativePath,
           uploadURL = serverConfiguration.getBucketUrl() + uploadRelativeUrl,
-          status = RequestStatus.PENDING
+          uploadRequestStatus = UploadRequestStatus.PENDING
         )
       database.addResourceInfo(resourceInfo)
       emit(SensorCaptureResult.ResourceMetaInfoCreated(resourceInfo.resourceInfoId))
@@ -114,7 +172,7 @@ internal class SensingEngineImpl(
           isMultiPart = serverConfiguration.networkConfiguration.isMultiPart,
           nextPart = 1,
           uploadId = null,
-          status = RequestStatus.PENDING,
+          status = UploadRequestStatus.PENDING,
           lastUpdatedTime = Date.from(Instant.now())
         )
       database.addUploadRequest(uploadRequest)
@@ -133,70 +191,6 @@ internal class SensingEngineImpl(
   }
 
   override suspend fun captureSensorData(pendingIntent: Intent) {
-    TODO("Not yet implemented")
-  }
-
-  override suspend fun listResourceInfoForParticipant(participantId: String): List<ResourceInfo> {
-    return database.listResourceInfoForParticipant(participantId)
-  }
-
-  override suspend fun listResourceInfoInCapture(captureId: String): List<ResourceInfo> {
-    return database.listResourceInfoInCapture(captureId)
-  }
-
-  override suspend fun getResourceInfo(resourceInfoId: String): ResourceInfo? {
-    return try {
-      database.getResourceInfo(resourceInfoId)
-    } catch (e: ResourceNotFoundException) {
-      null
-    }
-  }
-
-  override suspend fun updateResourceInfo(resourceInfo: ResourceInfo) {
-    database.updateResourceInfo(resourceInfo)
-  }
-
-  override suspend fun updateUploadRequest(uploadRequest: UploadRequest) {
-    return database.updateUploadRequest(uploadRequest)
-  }
-
-  override suspend fun listUploadRequest(status: RequestStatus): List<UploadRequest> {
-    return database.listUploadRequests(status)
-  }
-
-  override suspend fun getCaptureInfo(captureId: String): CaptureInfo {
-    return database.getCaptureInfo(captureId)
-  }
-
-  override suspend fun deleteDataInCapture(captureId: String): Boolean {
-    val captureInfo =
-      try {
-        getCaptureInfo(captureId)
-      } catch (e: ResourceNotFoundException) {
-        null
-      } ?: return true
-
-    // Step 1: Delete db records
-    database.deleteRecordsInCapture(captureId)
-    // Step 2: delete the captureFolder
-    val captureFile = File(context.filesDir, captureInfo.captureFolder)
-    val parentFile = captureFile.parentFile
-    val deleted: Boolean
-    withContext(Dispatchers.IO) {
-      deleted = captureFile.deleteRecursively()
-      // delete Participant's folder if there are no data
-      if (parentFile?.list()?.isEmpty() == true) {
-        parentFile.delete()
-      }
-    }
-    return deleted
-  }
-
-  override suspend fun deleteSensorData(uploadURL: String) {
-    TODO("Not yet implemented")
-  }
-
-  override suspend fun deleteSensorMetaData(uploadURL: String) {
     TODO("Not yet implemented")
   }
 

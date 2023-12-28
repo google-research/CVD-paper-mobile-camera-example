@@ -20,7 +20,7 @@ import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
-import com.google.android.sensing.model.RequestStatus
+import com.google.android.sensing.model.UploadRequestStatus
 
 @Entity(
   indices =
@@ -64,5 +64,5 @@ internal data class ResourceInfoEntity(
   val uploadURL: String,
 
   /** Upload status. */
-  val status: RequestStatus,
+  val uploadRequestStatus: UploadRequestStatus,
 )

@@ -4,13 +4,13 @@ Sensory is an illustrative code intended to accompany an upcoming research publi
 
 ## Features
 
-1. **Capture**: Provides an example of how to capture camera data on Android devices that would be appropriate for such models. 
+1. **Capture**: Provides an example of how to capture camera data on Android devices that would be appropriate for such models.
 2. **Upload**: Provides an example functionality for uploading processed images and image sequences to a blob-storage that can be owned by a 3P, which is a common need for data collection programs. This code is provided to underscore the need for robust uploading capabilities for these use cases.  It is incomplete for production use, which would also need error-handling, authentication, etc.
 3. **FHIR Questionnaires**: Integrates with FHIR-SDK to generate forms (participant registration and data capturing) using FHIR-SDC which generates FHIR resources (Patient, DocumentReference). Note: One needs to configure fhir server to sync fhir resources.
 
 # Setup
 ## Capture
-1. Create a `CaptureFragment` instance. Set `CaptureInfo` and `CaptureResult` collector.
+1. Create a `CaptureFragment` instance. Set `CaptureInfo` and `CaptureResult` callback.
    ```agsl
    val captureFragment =
        CaptureFragment().apply {
@@ -23,7 +23,7 @@ Sensory is an illustrative code intended to accompany an upcoming research publi
              captureSettings = CaptureSettings(...)
            )
          )
-         setSensorCaptureResultCollector { sensorCaptureResultFlow ->
+         setResultCallback { sensorCaptureResultFlow ->
            sensorCaptureResultFlow.collect {
              if (it is SensorCaptureResult.ResourcesStored) {
                ...
@@ -36,7 +36,7 @@ Sensory is an illustrative code intended to accompany an upcoming research publi
    ```agsl
    context.supportFragmentManager
    .beginTransaction()
-   .replace(R.id.nav_host_fragment, captureFragment)
+   .add(R.id.nav_host_fragment, captureFragment)
    .setReorderingAllowed(true)
    .addToBackStack(null)
    .commit()
@@ -44,25 +44,35 @@ Sensory is an illustrative code intended to accompany an upcoming research publi
 
 ## Upload:-
 
-### Setup MinIO Server
+### Setup Local MinIO Server
 
-1. Run MinIO server as docker container: 
-   
+1. Create a Minio container by either using Docker Desktop, or running the following command:
+
    `sudo docker run -p 9000:9000 -p 9001:9001 quay.io/minio/minio server /data --console-address ":9001"`
-   
+
    **Troubleshooting**: You might need to run `ufw allow 9000:9010/tcp` before running the docker command. [link](https://github.com/minio/minio#allow-port-access-for-firewalls).
-2. Go to http://localhost:9001/ and sign in. Default admin credentials are:-
+2. Inspect the server by opening the URL http://localhost:9001/ in a browser. You should see the Minio Web Interface.
+3. Sign in. Default admin credentials are:-
    ```
    username: minioadmin
    password: minioadmin
    ```
-3. Create a bucket `<bucket-name>`
+4. Create a bucket `<bucket-name>`
 
 Full details and other ways of setting up MinIO: [Here](https://github.com/minio/minio)
+### Setup Local Fhir Server
+Run the following command in a terminal to get the latest image of HAPI FHIR
 
+`docker pull hapiproject/hapi:latest`
+
+Create a HAPI FHIR container by either using Docker Desktop to run the previously download image hapiproject/hapi, or running the following command
+
+`docker run -p 8080:8080 hapiproject/hapi:latest`
+
+Inspect the server by opening the URL http://localhost:8080/ in a browser. You should see the HAPI FHIR web interface.
 ### App Configuration
 1. Create file `Sensory/src/main/assets/local.properties`
-2. Add following information: 
+2. Add following information:
    ```
    FHIR_BASE_URL=<fhir server url>
    BLOBSTORE_BASE_URL=<Minio Blobstore Base Url>
@@ -71,8 +81,7 @@ Full details and other ways of setting up MinIO: [Here](https://github.com/minio
    BLOBSTORE_USER=<Minio Blobstore Account Username>
    BLOBSTORE_PASSWORD=<Minio Blobstore Account Password>
    ```
-   **Note**: Storing credentials in the local file has been done since this is for research purpose only. In production case there should be a different authentication service that provides with security key and access key.
-
+   **Note**: Storing credentials in the local file has been done since this is for research purpose only. In production you may use token-based authentication by implementing relevant Authenticator interface for your need.
 ### Upload API
 Provides 2 APIs to upload captured data:-
 1. Periodic upload: `SensingUploadSync.enqueueUploadPeriodicWork(context)`

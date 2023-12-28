@@ -54,25 +54,25 @@ import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.flow.Flow
 
 /**
- * Fragment that deals with all sensors: For now only camera with capture types being
- * [CaptureType.VIDEO_PPG] and [CaptureType.IMAGE]. The UI is programmatically inflated based on the
- * captureType given. Reason why all [CaptureType]s are managed by this fragment is for a given
- * capture type, multiple sensors may be required. Business logic like subscribing, emitting flows
- * of [SensorCaptureResult], timers, livedata handling are done in [CaptureViewModel]. TODO: This is
- * too customised and we will need to make it configurable. Configurability options:-
- * 1. CaptureRequestOptions could be a part of [captureInfo.captureSettings] instead of being
- * hardcoded in the viewModel
- * 2. WriteJpegFutureSubscriber could be any generic subscriber
- * 3. Video timer should not be hardcoded
- * 4. Other camera settings like DEFAULT_BACK_CAMERA, TORCH, LOCK_AFTER_MS, etc.
- * 5. TSVWriter can be configurable
- * 6. File suppliers should be more generic ==>> DONE
+ * Fragment that displays screens to capture data from sensors involved in a captureType. The UI is
+ * programmatically inflated based on the captureType given.
+ *
+ * Expects to set [CaptureInfo] and application callback to receive [SensorCaptureResult]s.
+ *
+ * Business logic like subscribing, emitting flows of [SensorCaptureResult], timers, livedata
+ * handling are done in [CaptureViewModel].
+ *
+ * TODO: More configurability needs to be added:-
+ * ```
+ *      a. Camera settings like CaptureRequestOptions, torch, default_back_camera, etc.
+ *      b. Accepting generic output subscribers for different sensor types (instead of just WriteJpegFutureSubscriber here)
+ * ```
  */
 @SuppressLint("UnsafeOptInUsageError")
 class CaptureFragment : Fragment() {
 
   private val captureViewModel by viewModels<CaptureViewModel>()
-  private lateinit var sensorCaptureResultCollector: suspend ((Flow<SensorCaptureResult>) -> Unit)
+  private lateinit var callback: suspend ((Flow<SensorCaptureResult>) -> Unit)
   private var captureInfo: CaptureInfo? = null
 
   private var camera: Camera2InteropSensor? = null
@@ -87,14 +87,11 @@ class CaptureFragment : Fragment() {
   private lateinit var btnTakePhoto: AppCompatImageView
 
   /**
-   * A setter function: Callback defined by the application developers that collects
-   * [SensorCaptureResult] emitted from [CaptureViewModel] and
-   * [SensingEngine.onCaptureCompleteCallback].
+   * Set application layer callback to receive [SensorCaptureResult]s emitted while Capturing (from
+   * [CaptureViewModel]) and Record-Keeping (from [SensingEngine])
    */
-  fun setSensorCaptureResultCollector(
-    sensorCaptureResultCollector: suspend ((Flow<SensorCaptureResult>) -> Unit)
-  ) {
-    this.sensorCaptureResultCollector = sensorCaptureResultCollector
+  fun setResultCallback(callback: suspend ((Flow<SensorCaptureResult>) -> Unit)) {
+    this.callback = callback
   }
 
   /**
@@ -113,9 +110,9 @@ class CaptureFragment : Fragment() {
   @SuppressLint("UseRequireInsteadOfGet")
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
-    captureViewModel.setupCaptureResultFlow(
+    captureViewModel.setupCaptureAndRegisterCallback(
       captureInfo = captureInfo!!,
-      captureResultCollector = sensorCaptureResultCollector
+      callback = callback
     )
   }
 
@@ -125,35 +122,7 @@ class CaptureFragment : Fragment() {
     savedInstanceState: Bundle?,
   ): View? {
     (requireActivity() as AppCompatActivity).supportActionBar?.hide()
-    /** For a different [CaptureType] sensors may be initialized differently. */
-    when (captureViewModel.captureInfo.captureType) {
-      CaptureType.VIDEO_PPG -> {
-        preview = Preview.Builder().build()
-        camera =
-          Camera2InteropSensor.builder()
-            .setContext(requireContext())
-            .setBoundLifecycle(viewLifecycleOwner)
-            .setCameraXSensorBuilder(
-              CameraXSensorV2.builder()
-                .setCameraSelector(CameraSelector.DEFAULT_BACK_CAMERA)
-                .addUseCase(preview)
-            )
-            .build()
-      }
-      CaptureType.IMAGE -> {
-        preview = Preview.Builder().build()
-        camera =
-          Camera2InteropSensor.builder()
-            .setContext(requireContext())
-            .setBoundLifecycle(viewLifecycleOwner)
-            .setCameraXSensorBuilder(
-              CameraXSensorV2.builder()
-                .setCameraSelector(CameraSelector.DEFAULT_BACK_CAMERA)
-                .addUseCase(preview)
-            )
-            .build()
-      }
-    }
+    setupSensors()
     setupObservers()
     val layout =
       when (captureViewModel.captureInfo.captureType) {
@@ -188,7 +157,7 @@ class CaptureFragment : Fragment() {
             }
           )
         recordTimer.text = "00 : ${captureViewModel.captureInfo.captureSettings.ppgTimer}"
-        recordFab.setOnClickListener { captureViewModel.processRecord(camera!!) }
+        recordFab.setOnClickListener { captureViewModel.processRecordClick(camera!!) }
         toggleFlashFab.setOnClickListener {
           CaptureUtil.toggleFlashWithView(camera!!, toggleFlashFab, requireContext())
         }
@@ -214,6 +183,38 @@ class CaptureFragment : Fragment() {
         toggleFlashFab.setOnClickListener {
           CaptureUtil.toggleFlashWithView(camera!!, toggleFlashFab, requireContext())
         }
+      }
+    }
+  }
+
+  private fun setupSensors() {
+    /** For a different [CaptureType] sensors may be initialized differently. */
+    when (captureViewModel.captureInfo.captureType) {
+      CaptureType.VIDEO_PPG -> {
+        preview = Preview.Builder().build()
+        camera =
+          Camera2InteropSensor.builder()
+            .setContext(requireContext())
+            .setBoundLifecycle(viewLifecycleOwner)
+            .setCameraXSensorBuilder(
+              CameraXSensorV2.builder()
+                .setCameraSelector(CameraSelector.DEFAULT_BACK_CAMERA)
+                .addUseCase(preview)
+            )
+            .build()
+      }
+      CaptureType.IMAGE -> {
+        preview = Preview.Builder().build()
+        camera =
+          Camera2InteropSensor.builder()
+            .setContext(requireContext())
+            .setBoundLifecycle(viewLifecycleOwner)
+            .setCameraXSensorBuilder(
+              CameraXSensorV2.builder()
+                .setCameraSelector(CameraSelector.DEFAULT_BACK_CAMERA)
+                .addUseCase(preview)
+            )
+            .build()
       }
     }
   }
@@ -246,7 +247,7 @@ class CaptureFragment : Fragment() {
             )
           recordTimer.text = strDuration
           ppgProgress.progress =
-            captureViewModel.captureInfo.captureSettings!!.ppgTimer -
+            captureViewModel.captureInfo.captureSettings.ppgTimer -
               TimeUnit.MILLISECONDS.toSeconds(it).toInt()
         }
       }
@@ -310,7 +311,7 @@ class CaptureFragment : Fragment() {
   }
 
   private fun finishCapturing() {
-    captureViewModel.invokeCaptureCompleteCallback()
+    captureViewModel.invokeCaptureCompleteToRecordDetails()
     setFragmentResult(TAG, bundleOf(CAPTURED to true))
   }
 

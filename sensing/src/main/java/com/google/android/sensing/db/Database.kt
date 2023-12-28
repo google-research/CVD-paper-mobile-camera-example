@@ -17,9 +17,9 @@
 package com.google.android.sensing.db
 
 import com.google.android.sensing.model.CaptureInfo
-import com.google.android.sensing.model.RequestStatus
 import com.google.android.sensing.model.ResourceInfo
 import com.google.android.sensing.model.UploadRequest
+import com.google.android.sensing.model.UploadRequestStatus
 
 /** The interface for the sensor resources database. */
 internal interface Database {
@@ -28,7 +28,7 @@ internal interface Database {
   suspend fun addUploadRequest(uploadRequest: UploadRequest): String
   suspend fun listResourceInfoForParticipant(participantId: String): List<ResourceInfo>
   suspend fun listResourceInfoInCapture(captureId: String): List<ResourceInfo>
-  suspend fun listUploadRequests(status: RequestStatus): List<UploadRequest>
+  suspend fun listUploadRequests(status: UploadRequestStatus): List<UploadRequest>
   suspend fun updateUploadRequest(uploadRequest: UploadRequest)
   suspend fun updateResourceInfo(resourceInfo: ResourceInfo)
   suspend fun getResourceInfo(resourceInfoId: String): ResourceInfo

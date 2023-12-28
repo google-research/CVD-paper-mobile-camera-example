@@ -23,8 +23,8 @@ import androidx.room.Query
 import androidx.room.Transaction
 import androidx.room.Update
 import com.google.android.sensing.db.impl.entities.UploadRequestEntity
-import com.google.android.sensing.model.RequestStatus
 import com.google.android.sensing.model.UploadRequest
+import com.google.android.sensing.model.UploadRequestStatus
 import java.util.Date
 
 @Dao
@@ -51,10 +51,12 @@ internal abstract class UploadRequestDao {
       FROM UploadRequestEntity
       WHERE status = :status
     """)
-  abstract suspend fun listUploadRequestEntities(status: RequestStatus): List<UploadRequestEntity>
+  abstract suspend fun listUploadRequestEntities(
+    status: UploadRequestStatus
+  ): List<UploadRequestEntity>
 
   @Transaction
-  open suspend fun listUploadRequests(status: RequestStatus): List<UploadRequest> {
+  open suspend fun listUploadRequests(status: UploadRequestStatus): List<UploadRequest> {
     return listUploadRequestEntities(status).map { it.toUploadRequest() }
   }
 }
