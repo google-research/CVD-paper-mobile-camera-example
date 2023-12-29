@@ -28,7 +28,7 @@ import java.util.Date
 
 @Dao
 internal abstract class CaptureInfoDao {
-  @Insert(onConflict = OnConflictStrategy.REPLACE)
+  @Insert(onConflict = OnConflictStrategy.ABORT)
   abstract suspend fun insertCaptureInfoEntity(captureInfoEntity: CaptureInfoEntity)
 
   @Transaction
@@ -55,21 +55,20 @@ internal abstract class CaptureInfoDao {
 
 internal fun CaptureInfo.toCaptureInfoEntity() =
   CaptureInfoEntity(
-    id = 0,
+    captureId = captureId!!,
     participantId = participantId,
     captureType = captureType,
     captureFolder = captureFolder,
-    captureId = captureId!!,
     captureTime = captureTime?.toInstant() ?: Instant.now(),
     captureSettings = captureSettings
   )
 
 internal fun CaptureInfoEntity.toCaptureInfo() =
   CaptureInfo(
+    captureId = captureId,
     participantId = participantId,
     captureType = captureType,
     captureFolder = captureFolder,
-    captureId = captureId,
     captureSettings = captureSettings,
     captureTime = Date.from(captureTime)
   )
