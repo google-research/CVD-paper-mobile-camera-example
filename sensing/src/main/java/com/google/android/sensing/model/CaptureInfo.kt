@@ -21,11 +21,11 @@ import java.util.Date
 
 /** Data class equivalent to [CaptureInfoEntity] for usage outside database. */
 data class CaptureInfo(
+  var captureId: String? = null,
   val participantId: String,
   val captureType: CaptureType,
   val captureFolder: String,
   var captureTime: Date? = null,
-  var captureId: String? = null,
   /** This is not persisted in database for now */
   val captureSettings: CaptureSettings,
   val recapture: Boolean? = false,

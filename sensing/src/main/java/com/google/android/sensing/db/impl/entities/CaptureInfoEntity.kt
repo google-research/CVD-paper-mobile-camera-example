@@ -23,19 +23,15 @@ import com.google.android.sensing.capture.CaptureSettings
 import com.google.android.sensing.model.CaptureType
 import java.time.Instant
 
-@Entity(
-  indices =
-    [
-      Index(value = ["captureId"], unique = true),
-      Index(value = ["captureFolder"], unique = true),
-    ]
-)
+@Entity(indices = [Index(value = ["captureFolder"], unique = true)])
 /**
  * Information about the capture: Which participant, type of capture, folder data being captured to,
  * and a captureId associated with this capture record. Later we could add capture settings as well.
  */
 internal data class CaptureInfoEntity(
-  @PrimaryKey(autoGenerate = true) val id: Long,
+  /** Unique id for each capture. */
+  @PrimaryKey val captureId: String,
+
   /** Participant for which this capture was triggered. */
   val participantId: String,
 
@@ -44,9 +40,6 @@ internal data class CaptureInfoEntity(
 
   /** Unique folder for each capture. */
   val captureFolder: String,
-
-  /** Unique id for each capture. */
-  val captureId: String,
 
   /** Time of this capture. */
   val captureTime: Instant,
