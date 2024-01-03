@@ -27,51 +27,53 @@ import java.util.concurrent.TimeUnit
 import okhttp3.OkHttpClient
 
 object SensingEngineProvider {
-  private var sensingEngineConfiguration: SensingEngineConfiguration? = null
-  private var sensingEngine: SensingEngine? = null
-  private var blobstoreService: BlobstoreService? = null
+  @Volatile private var sensingEngineConfiguration: SensingEngineConfiguration? = null
+  @Volatile private var sensingEngine: SensingEngine? = null
+  @Volatile private var blobstoreService: BlobstoreService? = null
 
-  fun init(sensingEngineConfiguration: SensingEngineConfiguration) {
-    this.sensingEngineConfiguration = sensingEngineConfiguration
+  fun init(configuration: SensingEngineConfiguration) {
+    sensingEngineConfiguration =
+      sensingEngineConfiguration
+        ?: synchronized(this) { sensingEngineConfiguration ?: configuration }
   }
+
+  fun getInstance(context: Context) = getOrCreateSensingEngine(context)
 
   @SuppressLint("UnsafeOptInUsageError")
-  fun getOrCreateSensingEngine(context: Context): SensingEngine {
-    if (sensingEngine == null) {
-      val configuration = checkNotNull(sensingEngineConfiguration)
-      val database =
-        DatabaseImpl(
-          context,
-          DatabaseConfig(
-            configuration.enableEncryptionIfSupported,
-            configuration.databaseErrorStrategy
-          )
-        )
-      sensingEngine = SensingEngineImpl(database, context, configuration.serverConfiguration)
-    }
-    return sensingEngine!!
+  internal fun getOrCreateSensingEngine(context: Context): SensingEngine {
+    return sensingEngine
+      ?: synchronized(this) {
+        sensingEngine
+          ?: with(checkNotNull(sensingEngineConfiguration)) {
+            val database =
+              DatabaseImpl(
+                context,
+                DatabaseConfig(enableEncryptionIfSupported, databaseErrorStrategy)
+              )
+            SensingEngineImpl(database, context, serverConfiguration)
+          }
+      }
   }
 
-  fun getBlobStoreService(): BlobstoreService {
-    if (blobstoreService == null) {
-      with(sensingEngineConfiguration!!.serverConfiguration) {
-        blobstoreService =
-          BlobstoreService(
-            MinioAsyncClient.builder()
-              .endpoint(baseUrl)
-              .credentials(authenticator!!.getUserName(), authenticator.getPassword())
-              .httpClient(
-                OkHttpClient.Builder()
-                  .connectTimeout(networkConfiguration.connectionTimeOut, TimeUnit.SECONDS)
-                  .writeTimeout(networkConfiguration.writeTimeOut, TimeUnit.SECONDS)
-                  .build()
-              )
-              .build()
-          )
+  internal fun getBlobStoreService() =
+    blobstoreService
+      ?: synchronized(this) {
+        blobstoreService
+          ?: with(checkNotNull(sensingEngineConfiguration).serverConfiguration) {
+            BlobstoreService(
+              MinioAsyncClient.builder()
+                .endpoint(baseUrl)
+                .credentials(checkNotNull(authenticator).getUserName(), authenticator.getPassword())
+                .httpClient(
+                  OkHttpClient.Builder()
+                    .connectTimeout(networkConfiguration.connectionTimeOut, TimeUnit.SECONDS)
+                    .writeTimeout(networkConfiguration.writeTimeOut, TimeUnit.SECONDS)
+                    .build()
+                )
+                .build()
+            )
+          }
       }
-    }
-    return blobstoreService!!
-  }
 }
 
 /**

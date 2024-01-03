@@ -83,7 +83,7 @@ class SensingApplication : Application(), DataCaptureConfig.Provider {
   }
 
   private fun constructSensingEngine(): SensingEngine {
-    return SensingEngineProvider.getOrCreateSensingEngine(applicationContext)
+    return SensingEngineProvider.getInstance(applicationContext)
   }
 
   companion object {

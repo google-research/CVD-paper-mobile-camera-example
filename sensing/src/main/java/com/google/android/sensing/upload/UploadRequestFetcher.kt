@@ -33,8 +33,7 @@ interface UploadRequestFetcher {
     fun getInstance(context: Context) =
       instance
         ?: synchronized(this) {
-          instance
-            ?: DefaultUploadRequestFetcher(SensingEngineProvider.getOrCreateSensingEngine(context))
+          instance ?: DefaultUploadRequestFetcher(SensingEngineProvider.getInstance(context))
         }
   }
 }
