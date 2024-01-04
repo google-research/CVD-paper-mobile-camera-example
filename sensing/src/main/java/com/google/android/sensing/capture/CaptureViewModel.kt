@@ -239,7 +239,7 @@ class CaptureViewModel(application: Application) : AndroidViewModel(application)
    */
   fun invokeCaptureCompleteCallback() {
     CoroutineScope(context = Dispatchers.IO).launch {
-      SensingEngineProvider.getOrCreateSensingEngine(getApplication())
+      SensingEngineProvider.getInstance(getApplication())
         .onCaptureCompleteCallback(captureInfo)
         .collect { captureResultLiveData.postValue(it) }
     }

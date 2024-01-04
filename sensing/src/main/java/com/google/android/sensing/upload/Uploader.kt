@@ -16,6 +16,8 @@
 
 package com.google.android.sensing.upload
 
+import android.content.Context
+import com.google.android.sensing.SensingEngineProvider
 import com.google.android.sensing.model.UploadRequest
 import com.google.android.sensing.model.UploadResult
 import com.google.common.collect.HashMultimap
@@ -36,7 +38,21 @@ import timber.log.Timber
  * Processes upload requests and uploads the data referenced in chunks. Ideally we would want the
  * uploader to figure out [uploadPartSizeInBytes] based on network strength
  */
-class Uploader(private val blobstoreService: BlobstoreService) {
+interface Uploader {
+  suspend fun upload(uploadRequestList: List<UploadRequest>): Flow<UploadResult>
+
+  // https://www.baeldung.com/kotlin/singleton-classes#1-companion-object
+  companion object {
+    @Volatile private var instance: Uploader? = null
+    fun getInstance(context: Context) =
+      instance
+        ?: synchronized(this) {
+          instance ?: UploaderImpl(SensingEngineProvider.getBlobStoreService())
+        }
+  }
+}
+
+private class UploaderImpl(private val blobstoreService: BlobstoreService) : Uploader {
   /**
    * TODO: Ideally this should not be hardcode 6MB (6291456L) bytes as part size. Instead this
    * should be a function of network strength. Note: Min upload part size of MinioAsyncClient is
@@ -44,7 +60,7 @@ class Uploader(private val blobstoreService: BlobstoreService) {
    */
   private val uploadPartSizeInBytes = 6291456L
   private var minPartSizeInBytes = 5242880L // 5MB
-  suspend fun upload(uploadRequestList: List<UploadRequest>): Flow<UploadResult> = flow {
+  override suspend fun upload(uploadRequestList: List<UploadRequest>): Flow<UploadResult> = flow {
     uploadRequestList.forEach { uploadRequest ->
       if (uploadRequest.uploadId.isNullOrEmpty()) {
         val headers = HashMultimap.create<String, String>()

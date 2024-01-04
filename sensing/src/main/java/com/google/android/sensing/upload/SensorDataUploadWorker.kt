@@ -20,7 +20,6 @@ import android.content.Context
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import androidx.work.workDataOf
-import com.google.android.sensing.SensingEngineProvider
 import com.google.gson.ExclusionStrategy
 import com.google.gson.FieldAttributes
 import com.google.gson.Gson
@@ -32,14 +31,6 @@ import timber.log.Timber
 /** A WorkManager Worker that handles onetime and periodic requests to upload. */
 class SensorDataUploadWorker(appContext: Context, workerParams: WorkerParameters) :
   CoroutineWorker(appContext, workerParams) {
-
-  // Each new upload work will use a new instance of uploader
-  private val uploader = Uploader(SensingEngineProvider.getBlobStoreService())
-
-  private val sensingEngine = SensingEngineProvider.getOrCreateSensingEngine(applicationContext)
-
-  private val uploadResultProcessor = DefaultUploadResultProcessor(sensingEngine)
-  private val uploadRequestFetcher = DefaultUploadRequestFetcher(sensingEngine)
 
   private val gson =
     GsonBuilder()
@@ -63,9 +54,9 @@ class SensorDataUploadWorker(appContext: Context, workerParams: WorkerParameters
     try {
       var failed = false
       SensingSynchronizer(
-          uploadRequestFetcher = uploadRequestFetcher,
-          uploader = uploader,
-          uploadResultProcessor = uploadResultProcessor
+          uploadRequestFetcher = UploadRequestFetcher.getInstance(applicationContext),
+          uploader = Uploader.getInstance(applicationContext),
+          uploadResultProcessor = UploadResultProcessor.getInstance(applicationContext)
         )
         .synchronize()
         .collect {
