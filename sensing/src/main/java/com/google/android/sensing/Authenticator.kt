@@ -17,16 +17,77 @@
 package com.google.android.sensing
 
 import androidx.annotation.WorkerThread
+import com.google.android.sensing.upload.CustomTokenIdentityProvider
+import io.minio.credentials.Credentials
+import io.minio.credentials.Provider
+import okhttp3.OkHttpClient
 
+@WorkerThread
 /**
- * [SensingEngine] depends on the developer app to handle user's authentication. The developer
- * application may provide the implementation during the [SensingEngine] initial setup to obtain
- * username and password.
+ * Sensing library depends on the developer app to handle user's authentication. The developer
+ * application may provide the implementation during the initial setup.
+ *
+ * Application may use one of the abstract implementations of this interface or provide its own
+ * implementation. The interface returns a [io.minio.credentials.Provider] which is used to build a
+ * [MinioAsyncClient].
+ * 1. [MinioInternalIDPAuthenticator]: Implement this if deployment supports built-in IDP. Accepts
+ * access-key (username) and secret-key (password) directly.
+ * 2. [MinioIDPPluginAuthenticator]: Implement this if deployment supports external IDP. Accepts
+ * [OkHttpClient], [MinioIDPPluginAuthenticator.TokenProvider], roleArn, durationSeconds and
+ * stsEndpoint to create a [CustomTokenIdentityProvider].
  */
 interface Authenticator {
-  /** @return User name for the engine to make requests to the blob-storage on user's behalf. */
-  @WorkerThread fun getUserName(): String
+  fun getCredentialsProvider(): Provider
+}
 
+abstract class MinioInternalIDPAuthenticator : Authenticator {
+  /** @return User name for the engine to make requests to the blob-storage on user's behalf. */
+  abstract fun getUserName(): String
   /** @return Blob-storage account password for this user. */
-  @WorkerThread fun getPassword(): String
+  abstract fun getPassword(): String
+  override fun getCredentialsProvider() = Provider {
+    Credentials(getUserName(), getPassword(), null, null)
+  }
+}
+
+abstract class MinioIDPPluginAuthenticator : Authenticator {
+  /** Override this to provide your own [OkHttpClient]. */
+  open fun getOkHttpClient(): OkHttpClient? = null
+
+  /** Override this to provide permission grant policy. */
+  open fun getPolicy(): String? = null
+
+  /** Provide [TokenProvider] instance that is used to fetch fresh token. */
+  abstract fun getTokenProvider(): TokenProvider
+
+  /**
+   * Specify the ARN of the IAM role that MinIO should assume. Refer
+   * https://min.io/docs/minio/linux/reference/minio-mc/mc-event-list.html#mc.event.ls.ARN
+   */
+  abstract fun getRoleArn(): String
+
+  /**
+   * Specify the number of seconds after which the temporary credentials expire. Defaults to 3600.
+   *
+   * Note: Minimum is 900 seconds | Maximum is 604800 seconds.
+   */
+  abstract fun getDurationSeconds(): Int
+
+  /** Provide STS endpoint for AssumeRoleWithCustomToken API. */
+  abstract fun getStsEndpoint(): String
+
+  /** Implement this functional interface to provide fresh token when invoked. */
+  fun interface TokenProvider {
+    fun getToken(): String
+  }
+
+  override fun getCredentialsProvider() =
+    CustomTokenIdentityProvider(
+      getStsEndpoint(),
+      getTokenProvider(),
+      getRoleArn(),
+      getDurationSeconds(),
+      getPolicy(),
+      getOkHttpClient(),
+    )
 }

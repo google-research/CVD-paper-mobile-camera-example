@@ -108,27 +108,28 @@ class ScreenerViewModel(application: Application, private val state: SavedStateH
     bundle.entry.forEach {
       when (val resource = it.resource) {
         is DocumentReference -> {
-          val captureId =
-            if (resource.type.coding.isNullOrEmpty()) "" else resource.type.coding[0].code
-          // This assumes only 1 ResourceInfo is created for this capture.
-          val resourceInfo = sensingEngine.listResourceInfoInCapture(captureId!!)[0]
           resource.id = generateUuid()
           resource.status = Enumerations.DocumentReferenceStatus.CURRENT
           resource.subject = subjectReference
           resource.date = Date()
 
-          // modify data based on the nature of the capture (using resourceInfo obtained from
-          // captureId)
-          val data =
-            Attachment().apply {
-              contentType = "application/gzip" // Sensing SDK uploads only in zip for now
-              url = resourceInfo.uploadURL
-              title = resourceInfo.captureTitle
-              creation = Date()
+          val captureId =
+            if (resource.type.coding.isNullOrEmpty()) "" else resource.type.coding[0].code
+
+          val dataList =
+            sensingEngine.listResourceInfoInCapture(captureId!!).map {
+              // modify data based on the nature of the capture (using resourceInfo obtained from
+              // captureId)
+              val data =
+                Attachment().apply {
+                  contentType = "application/gzip" // Sensing SDK uploads only in zip for now
+                  url = it.uploadURL
+                  title = it.captureTitle
+                  creation = Date()
+                }
+              DocumentReference.DocumentReferenceContentComponent(data)
             }
 
-          val dataList: MutableList<DocumentReference.DocumentReferenceContentComponent> =
-            mutableListOf(DocumentReference.DocumentReferenceContentComponent(data))
           resource.content = dataList
           resource.description = ""
           saveResourceToDatabase(resource)

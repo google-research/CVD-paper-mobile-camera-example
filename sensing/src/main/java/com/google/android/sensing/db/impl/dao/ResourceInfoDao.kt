@@ -27,7 +27,7 @@ import com.google.android.sensing.model.ResourceInfo
 
 @Dao
 internal abstract class ResourceInfoDao {
-  @Insert(onConflict = OnConflictStrategy.REPLACE)
+  @Insert(onConflict = OnConflictStrategy.ABORT)
   abstract suspend fun insertResourceInfoEntity(resourceInfoEntity: ResourceInfoEntity)
 
   @Transaction
@@ -105,7 +105,6 @@ internal fun ResourceInfoEntity.toResourceInfo() =
 
 internal fun ResourceInfo.toResourceInfoEntity() =
   ResourceInfoEntity(
-    id = 0,
     resourceInfoId = resourceInfoId,
     captureId = captureId,
     participantId = participantId,

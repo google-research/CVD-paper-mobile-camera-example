@@ -26,7 +26,6 @@ import com.google.android.sensing.model.RequestStatus
   indices =
     [
       Index(value = ["resourceFolderRelativePath"], unique = true),
-      Index(value = ["resourceInfoId"], unique = true),
       Index(value = ["participantId"]),
       Index(value = ["captureTitle"])
     ],
@@ -42,10 +41,8 @@ import com.google.android.sensing.model.RequestStatus
 )
 /** Information about the resource collected per capture. This is not involved in uploading. */
 internal data class ResourceInfoEntity(
-  @PrimaryKey(autoGenerate = true) val id: Long,
-
   /** Unique Id of this record. */
-  val resourceInfoId: String,
+  @PrimaryKey val resourceInfoId: String,
 
   /** Id of the capture that created this record. */
   val captureId: String,

@@ -63,7 +63,7 @@ object SensingEngineProvider {
             BlobstoreService(
               MinioAsyncClient.builder()
                 .endpoint(baseUrl)
-                .credentials(checkNotNull(authenticator).getUserName(), authenticator.getPassword())
+                .credentialsProvider(authenticator?.getCredentialsProvider())
                 .httpClient(
                   OkHttpClient.Builder()
                     .connectTimeout(networkConfiguration.connectionTimeOut, TimeUnit.SECONDS)

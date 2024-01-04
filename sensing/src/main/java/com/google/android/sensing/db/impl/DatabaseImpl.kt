@@ -68,7 +68,7 @@ internal class DatabaseImpl(context: Context, databaseConfig: DatabaseConfig) : 
   }
 
   override suspend fun updateUploadRequest(uploadRequest: UploadRequest) {
-    uploadRequestDao.insertUploadRequest(uploadRequest)
+    uploadRequestDao.updateUploadRequest(uploadRequest)
   }
 
   override suspend fun updateResourceInfo(resourceInfo: ResourceInfo) {
