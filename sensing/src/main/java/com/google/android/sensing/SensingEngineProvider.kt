@@ -63,6 +63,7 @@ object SensingEngineProvider {
               .httpClient(
                 OkHttpClient.Builder()
                   .connectTimeout(networkConfiguration.connectionTimeOut, TimeUnit.SECONDS)
+                  .readTimeout(networkConfiguration.readTimeOut, TimeUnit.SECONDS)
                   .writeTimeout(networkConfiguration.writeTimeOut, TimeUnit.SECONDS)
                   .build()
               )
@@ -126,10 +127,19 @@ data class ServerConfiguration(
 
 /** A configuration to provide the network connection parameters. */
 data class NetworkConfiguration(
-  /** Connection timeout (in seconds). The default is 10 seconds. */
+  /** Connection timeout (in seconds). The default in [OkHttpClient] is 10 seconds. */
   val connectionTimeOut: Long = 30,
-  /** Write timeout (in seconds) for network connection. The default is 10 seconds. */
+
+  /**
+   * Write timeout (in seconds) for network connection. The default in [OkHttpClient] is 10 seconds.
+   */
   val writeTimeOut: Long = 30,
+
+  /**
+   * Read timeout (in seconds) for network connection. The default in [OkHttpClient] is 10 seconds.
+   */
+  val readTimeOut: Long = 30,
+
   /** Uploads should be multi part or not. */
   val isMultiPart: Boolean = true
 )
