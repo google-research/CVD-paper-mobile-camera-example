@@ -50,7 +50,7 @@ class SensingApplication : Application(), DataCaptureConfig.Provider {
     val properties = Properties().apply { load(applicationContext.assets.open("local.properties")) }
     val sensingEngineConfiguration =
       SensingEngineConfiguration(
-        enableEncryptionIfSupported = true,
+        enableEncryptionIfSupported = false,
         serverConfiguration =
           ServerConfiguration(
             baseUrl = properties.getProperty("BLOBSTORE_BASE_URL"),
