@@ -28,6 +28,8 @@ import androidx.core.os.bundleOf
 import androidx.fragment.app.findFragment
 import androidx.lifecycle.MutableLiveData
 import com.bumptech.glide.Glide
+import com.bumptech.glide.load.engine.DiskCacheStrategy
+import com.bumptech.glide.signature.ObjectKey
 import com.google.android.fhir.datacapture.QuestionnaireFragment
 import com.google.android.fhir.datacapture.tryUnwrapContext
 import com.google.android.fhir.datacapture.views.QuestionnaireViewItem
@@ -225,14 +227,28 @@ object PhotoCaptureViewHolderFactory :
 
       private fun loadPhotoPreview(byteArray: ByteArray, title: String) {
         photoPreview.visibility = View.VISIBLE
-        Glide.with(context).load(byteArray).into(photoThumbnail)
         photoTitle.text = title
+        Glide.with(context)
+          .asBitmap()
+          .load(byteArray)
+          .signature(ObjectKey(byteArray.toString())) // Add a signature to force Glide to reload the image
+          .transform(ViewHolderFactoryUtil.Companion.RotateTransformation(context, null, byteArray))
+          .diskCacheStrategy(DiskCacheStrategy.NONE)
+          .skipMemoryCache(true)
+          .into(photoThumbnail)
       }
 
       private fun loadPhotoPreview(uri: Uri, title: String) {
         photoPreview.visibility = View.VISIBLE
-        Glide.with(context).load(uri).into(photoThumbnail)
         photoTitle.text = title
+        Glide.with(context)
+          .asBitmap()
+          .load(uri)
+          .signature(ObjectKey(uri.toString())) // Add a signature to force Glide to reload the image
+          .transform(ViewHolderFactoryUtil.Companion.RotateTransformation(context, uri, null))
+          .diskCacheStrategy(DiskCacheStrategy.NONE)
+          .skipMemoryCache(true)
+          .into(photoThumbnail)
       }
 
       fun clearPhotoPreview() {
