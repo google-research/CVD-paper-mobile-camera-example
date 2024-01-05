@@ -73,7 +73,7 @@ class SensingApplication : Application(), DataCaptureConfig.Provider {
      */
     FhirEngineProvider.init(
       FhirEngineConfiguration(
-        enableEncryptionIfSupported = true,
+        enableEncryptionIfSupported = false,
         databaseErrorStrategy = DatabaseErrorStrategy.RECREATE_AT_OPEN,
         serverConfiguration =
           com.google.android.fhir.ServerConfiguration(properties.getProperty("FHIR_BASE_URL"))
