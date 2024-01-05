@@ -17,7 +17,7 @@
 package com.google.android.sensing.upload
 
 import com.google.android.sensing.SensingEngine
-import com.google.android.sensing.model.RequestStatus
+import com.google.android.sensing.model.UploadRequestStatus
 import com.google.android.sensing.model.UploadResult
 import java.io.File
 
@@ -40,7 +40,7 @@ internal class DefaultUploadResultProcessor(private val sensingEngine: SensingEn
         uploadRequest.apply {
           lastUpdatedTime = uploadResult.startTime
           fileOffset = 0
-          status = RequestStatus.UPLOADING
+          status = UploadRequestStatus.UPLOADING
           uploadId = uploadResult.uploadId
           nextPart = 1
         }
@@ -56,7 +56,7 @@ internal class DefaultUploadResultProcessor(private val sensingEngine: SensingEn
         assert(uploadRequest.fileOffset == uploadRequest.fileSize)
         uploadRequest.apply {
           lastUpdatedTime = uploadResult.completeTime
-          status = RequestStatus.UPLOADED
+          status = UploadRequestStatus.UPLOADED
         }
         /** Delete the zipped file as its no longer required. */
         File(uploadRequest.zipFile).delete()
@@ -64,7 +64,7 @@ internal class DefaultUploadResultProcessor(private val sensingEngine: SensingEn
       is UploadResult.Failure -> {
         uploadRequest.apply {
           lastUpdatedTime = uploadRequest.lastUpdatedTime
-          status = RequestStatus.FAILED
+          status = UploadRequestStatus.FAILED
         }
       }
     }
@@ -72,7 +72,7 @@ internal class DefaultUploadResultProcessor(private val sensingEngine: SensingEn
     /** Update status of ResourceInfo only when UploadRequest.status changes */
     if (requestsPreviousStatus != uploadRequest.status) {
       val resourceInfo = sensingEngine.getResourceInfo(uploadRequest.resourceInfoId)!!
-      resourceInfo.apply { status = uploadRequest.status }
+      resourceInfo.apply { uploadRequestStatus = uploadRequest.status }
       sensingEngine.updateResourceInfo(resourceInfo)
     }
   }

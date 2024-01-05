@@ -100,7 +100,7 @@ internal fun ResourceInfoEntity.toResourceInfo() =
     fileType = fileType,
     resourceFolderRelativePath = resourceFolderRelativePath,
     uploadURL = uploadURL,
-    status = status
+    uploadRequestStatus = uploadRequestStatus
   )
 
 internal fun ResourceInfo.toResourceInfoEntity() =
@@ -112,5 +112,5 @@ internal fun ResourceInfo.toResourceInfoEntity() =
     fileType = fileType,
     resourceFolderRelativePath = resourceFolderRelativePath,
     uploadURL = uploadURL,
-    status = status
+    uploadRequestStatus = uploadRequestStatus
   )

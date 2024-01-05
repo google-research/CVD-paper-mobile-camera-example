@@ -22,9 +22,9 @@ import com.google.android.sensing.DatabaseErrorStrategy
 import com.google.android.sensing.db.Database
 import com.google.android.sensing.db.ResourceNotFoundException
 import com.google.android.sensing.model.CaptureInfo
-import com.google.android.sensing.model.RequestStatus
 import com.google.android.sensing.model.ResourceInfo
 import com.google.android.sensing.model.UploadRequest
+import com.google.android.sensing.model.UploadRequestStatus
 import net.sqlcipher.database.SQLiteDatabase
 import net.sqlcipher.database.SupportFactory
 
@@ -63,7 +63,7 @@ internal class DatabaseImpl(context: Context, databaseConfig: DatabaseConfig) : 
     return resourceInfoDao.listResourceInfoInCapture(captureId)
   }
 
-  override suspend fun listUploadRequests(status: RequestStatus): List<UploadRequest> {
+  override suspend fun listUploadRequests(status: UploadRequestStatus): List<UploadRequest> {
     return uploadRequestDao.listUploadRequests(status)
   }
 

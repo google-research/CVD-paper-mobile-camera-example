@@ -19,45 +19,39 @@ package com.google.android.sensing
 import android.content.Intent
 import com.google.android.sensing.capture.SensorCaptureResult
 import com.google.android.sensing.model.CaptureInfo
-import com.google.android.sensing.model.RequestStatus
 import com.google.android.sensing.model.ResourceInfo
 import com.google.android.sensing.model.UploadRequest
+import com.google.android.sensing.model.UploadRequestStatus
 import kotlinx.coroutines.flow.Flow
 
 /**
- * The Sensing Engine interface that handles the local storage of captured resources.
+ * The interface that provides APIs for record-keeping and accessing local sensor data.
  *
  * TODO: CRUD APIs for UploadRequest to use only the upload mechanism this Engine provides.
- *
- * TODO: Order APIs nicely
  */
 interface SensingEngine {
 
   /** Get CaptureInfo record given @param captureId */
   suspend fun getCaptureInfo(captureId: String): CaptureInfo
 
-  /** Delete all data associated with [captureId] */
-  suspend fun deleteDataInCapture(captureId: String): Boolean
+  /** Get [ResourceInfo] given [resourceInfoId]. */
+  suspend fun getResourceInfo(resourceInfoId: String): ResourceInfo?
+
+  /** Update given [resourceInfo]. */
+  suspend fun updateResourceInfo(resourceInfo: ResourceInfo)
+
+  /** Update given [uploadRequest] in database. */
+  suspend fun updateUploadRequest(uploadRequest: UploadRequest)
 
   /**
-   * Responsible for creating resource records for captured data and completing upload setup. This
-   * API is triggered by [CaptureViewModel] after completion of capturing. Limitation: All captured
-   * data and metadata are stored in the same folder and zipped for uploading.
-   * 1. Save [CaptureInfo] in the database
-   * 2. read map for a capture type, for each sensor type:-
-   * ```
-   *      a. create [ResourceInfo] for it and save it in the database.
-   *      b. emit [SensorCaptureResult.StateChange].
-   *      c. zip the [captureInfo.captureFolder]/[sensorType] folder.
-   *      d. create [UploadRequest] for it and save it in the database.
-   * ```
-   * TODO: Support uploading of any mime type.
+   * List [UploadRequest] of a particular [uploadRequestStatus]. This can be used to fetch all
+   * requests that needs to be uploaded.
    */
-  suspend fun onCaptureCompleteCallback(captureInfo: CaptureInfo): Flow<SensorCaptureResult>
+  suspend fun listUploadRequest(uploadRequestStatus: UploadRequestStatus): List<UploadRequest>
 
   /**
    * Lists all ResourceInfo given a participantId. This will return all ResourceInfo across multiple
-   * capturings.
+   * capturing.
    */
   suspend fun listResourceInfoForParticipant(participantId: String): List<ResourceInfo>
 
@@ -67,23 +61,23 @@ interface SensingEngine {
    */
   suspend fun listResourceInfoInCapture(captureId: String): List<ResourceInfo>
 
-  suspend fun getResourceInfo(resourceInfoId: String): ResourceInfo?
+  /** Delete all data associated with [captureId] */
+  suspend fun deleteDataInCapture(captureId: String): Boolean
 
-  suspend fun updateResourceInfo(resourceInfo: ResourceInfo)
+  /**
+   * Responsible for record-keeping of the information about a capture. It creates database records
+   * ( [CaptureInfoEntity], [ResourceInfoEntity], [UploadRequestEntity]). All captured data and
+   * metadata are zipped into one folder for uploading.
+   *
+   * [CaptureFragment] invokes this API on successful capture.
+   *
+   * The application can use this API to utilize this library's record-keeping mechanism for its own
+   * captured data.
+   *
+   * TODO: Support uploading of any mime type.
+   */
+  suspend fun onCaptureComplete(captureInfo: CaptureInfo): Flow<SensorCaptureResult>
 
   /** To support 3P apps */
   suspend fun captureSensorData(pendingIntent: Intent)
-
-  /** Update given [uploadRequest] in database. */
-  suspend fun updateUploadRequest(uploadRequest: UploadRequest)
-
-  /**
-   * Get [UploadRequest] corresponding to the [ResourceInfo] given [ResourceInfo.resourceInfoId].
-   * Application developers can use this API to monitor not just upload status but also progress.
-   */
-  suspend fun listUploadRequest(status: RequestStatus): List<UploadRequest>
-
-  /** Delete data stored in blobstore */
-  suspend fun deleteSensorData(uploadURL: String)
-  suspend fun deleteSensorMetaData(uploadURL: String)
 }

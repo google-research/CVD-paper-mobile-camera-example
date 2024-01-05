@@ -17,8 +17,8 @@
 package com.google.android.sensing.upload
 
 import com.google.android.sensing.SensingEngine
-import com.google.android.sensing.model.RequestStatus
 import com.google.android.sensing.model.UploadRequest
+import com.google.android.sensing.model.UploadRequestStatus
 
 /** Responsible for fetching [UploadRequest] that are pending to be uploaded. */
 interface UploadRequestFetcher {
@@ -28,7 +28,7 @@ interface UploadRequestFetcher {
 internal class DefaultUploadRequestFetcher(private val sensingEngine: SensingEngine) :
   UploadRequestFetcher {
   override suspend fun fetchForUpload(): List<UploadRequest> {
-    return (sensingEngine.listUploadRequest(status = RequestStatus.UPLOADING) +
-      sensingEngine.listUploadRequest(status = RequestStatus.PENDING))
+    return (sensingEngine.listUploadRequest(uploadRequestStatus = UploadRequestStatus.UPLOADING) +
+      sensingEngine.listUploadRequest(uploadRequestStatus = UploadRequestStatus.PENDING))
   }
 }

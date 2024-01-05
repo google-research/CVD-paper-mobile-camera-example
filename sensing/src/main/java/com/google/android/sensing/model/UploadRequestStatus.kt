@@ -16,7 +16,7 @@
 
 package com.google.android.sensing.model
 
-enum class RequestStatus {
+enum class UploadRequestStatus {
   PENDING,
   UPLOADING,
   UPLOADED,

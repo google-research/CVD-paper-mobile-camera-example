@@ -31,6 +31,6 @@ data class UploadRequest(
   val isMultiPart: Boolean,
   var nextPart: Int,
   var uploadId: String? = null,
-  var status: RequestStatus,
+  var status: UploadRequestStatus,
   var lastUpdatedTime: Date,
 )

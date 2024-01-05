@@ -176,7 +176,7 @@ object PhotoCaptureViewHolderFactory :
                   captureId = captureId,
                 )
               )
-              setSensorCaptureResultCollector { sensorCaptureResultFlow ->
+              setResultCallback { sensorCaptureResultFlow ->
                 sensorCaptureResultFlow.collect {
                   if (it is SensorCaptureResult.ResourcesStored) {
                     val answer =

@@ -25,5 +25,5 @@ data class ResourceInfo(
   val fileType: String,
   val resourceFolderRelativePath: String,
   val uploadURL: String,
-  var status: RequestStatus,
+  var uploadRequestStatus: UploadRequestStatus,
 )

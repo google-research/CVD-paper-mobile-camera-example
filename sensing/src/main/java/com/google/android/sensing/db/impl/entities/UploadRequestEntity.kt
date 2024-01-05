@@ -20,7 +20,7 @@ import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
-import com.google.android.sensing.model.RequestStatus
+import com.google.android.sensing.model.UploadRequestStatus
 import java.time.Instant
 import java.util.UUID
 
@@ -71,8 +71,8 @@ internal data class UploadRequestEntity(
   /** Assuming this value is either null or unique. Initialized from first upload response. */
   val uploadId: String? = null,
 
-  /** Upload status. */
-  val status: RequestStatus,
+  /** Upload request status. */
+  val status: UploadRequestStatus,
 
   /** Time of initialization or successful part upload or completion. */
   val lastUpdatedTime: Instant,
