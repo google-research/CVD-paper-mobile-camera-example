@@ -50,7 +50,7 @@ class SensingApplication : Application(), DataCaptureConfig.Provider {
     val properties = Properties().apply { load(applicationContext.assets.open("local.properties")) }
     val sensingEngineConfiguration =
       SensingEngineConfiguration(
-        enableEncryptionIfSupported = false,
+        enableEncryptionIfSupported = true,
         serverConfiguration =
           ServerConfiguration(
             baseUrl = properties.getProperty("BLOBSTORE_BASE_URL"),
@@ -73,7 +73,7 @@ class SensingApplication : Application(), DataCaptureConfig.Provider {
      */
     FhirEngineProvider.init(
       FhirEngineConfiguration(
-        enableEncryptionIfSupported = false,
+        enableEncryptionIfSupported = true,
         databaseErrorStrategy = DatabaseErrorStrategy.RECREATE_AT_OPEN,
         serverConfiguration =
           com.google.android.fhir.ServerConfiguration(properties.getProperty("FHIR_BASE_URL"))
