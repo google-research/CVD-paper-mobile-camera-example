@@ -88,12 +88,6 @@ class MainActivity : AppCompatActivity() {
           Manifest.permission.WRITE_EXTERNAL_STORAGE,
           Manifest.permission.READ_EXTERNAL_STORAGE
         )
-      else
-        arrayOf(
-          Manifest.permission.CAMERA,
-          // Following are needed for Android API 33 to access files generated out of camera
-          Manifest.permission.READ_MEDIA_AUDIO,
-          Manifest.permission.READ_MEDIA_VIDEO
-        )
+      else arrayOf(Manifest.permission.CAMERA)
   }
 }
