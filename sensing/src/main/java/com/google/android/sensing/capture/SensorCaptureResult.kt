@@ -16,15 +16,18 @@
 
 package com.google.android.sensing.capture
 
+import com.google.android.sensing.model.CaptureInfo
+import com.google.android.sensing.model.ResourceInfo
+
 sealed class SensorCaptureResult {
 
   data class Started(val captureId: String) : SensorCaptureResult()
 
   data class CaptureComplete(val captureId: String) : SensorCaptureResult()
 
-  data class CaptureInfoCreated(val captureId: String) : SensorCaptureResult()
+  data class CaptureInfoCreated(val captureInfo: CaptureInfo) : SensorCaptureResult()
 
-  data class ResourceMetaInfoCreated(val resourceMetaInfoId: String) : SensorCaptureResult()
+  data class ResourceInfoCreated(val resourceInfo: ResourceInfo) : SensorCaptureResult()
 
   data class UploadRequestCreated(val uploadRequestId: String) : SensorCaptureResult()
 
