@@ -27,7 +27,8 @@ import com.google.android.sensing.model.RequestStatus
     [
       Index(value = ["resourceFolderRelativePath"], unique = true),
       Index(value = ["participantId"]),
-      Index(value = ["captureTitle"])
+      Index(value = ["captureTitle"]),
+      Index(value = ["captureId"]),
     ],
   foreignKeys =
     [

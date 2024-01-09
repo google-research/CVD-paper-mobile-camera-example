@@ -25,7 +25,12 @@ import java.time.Instant
 import java.util.UUID
 
 @Entity(
-  indices = [Index(value = ["status"]), Index(value = ["requestUuid"], unique = true)],
+  indices =
+    [
+      Index(value = ["status"]),
+      Index(value = ["requestUuid"], unique = true),
+      Index(value = ["resourceInfoId"], unique = true)
+    ],
   foreignKeys =
     [
       ForeignKey(
