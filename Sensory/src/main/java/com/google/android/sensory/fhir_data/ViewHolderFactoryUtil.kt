@@ -77,47 +77,18 @@ class ViewHolderFactoryUtil {
       }
     }
 
-    // Function to rotate the image byte array based on its Exif information
-    fun rotateImageIfRequired(bitmap: Bitmap, imageByteArray: ByteArray): Bitmap {
-      return try {
-        val exif = ExifInterface(ByteArrayInputStream(imageByteArray))
-
-        val rotationInDegrees = when (exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL)) {
-          ExifInterface.ORIENTATION_ROTATE_90 -> 90
-          ExifInterface.ORIENTATION_ROTATE_180 -> 180
-          ExifInterface.ORIENTATION_ROTATE_270 -> 270
-          else -> 90
-        }
-
-        val matrix = Matrix()
-        matrix.postRotate(rotationInDegrees.toFloat())
-        Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
-
-      } catch (e: IOException) {
-        e.printStackTrace()
-        bitmap
-      }
-    }
-
-    class RotateTransformation(private val context: Context, private val uri: Uri?, private val imageByteArray: ByteArray?) : BitmapTransformation() {
+    class RotateTransformation(private val context: Context, private val uri: Uri?) : BitmapTransformation() {
       override fun transform(
         pool: BitmapPool,
         toTransform: Bitmap,
         outWidth: Int,
         outHeight: Int
       ): Bitmap {
-        if(imageByteArray != null){
-          return rotateImageIfRequired(toTransform, imageByteArray)
-        }
         return rotateImageIfRequired(context, toTransform, uri!!)
       }
 
       override fun updateDiskCacheKey(messageDigest: MessageDigest) {
-        if(imageByteArray != null){
-          messageDigest.update(imageByteArray)
-        }else{
-          messageDigest.update((context.packageName + uri.toString()).toByteArray())
-        }
+        messageDigest.update((context.packageName + uri.toString()).toByteArray())
       }
     }
   }

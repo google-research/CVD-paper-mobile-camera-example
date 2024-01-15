@@ -214,28 +214,12 @@ object PhotoCaptureViewHolderFactory :
 
       fun displayPreview(
         attachmentTitle: String,
-        attachmentByteArray: ByteArray? = null,
         attachmentUri: Uri? = null,
       ) {
         takePhotoButton.text = "Retake Image"
-        if (attachmentByteArray != null) {
-          loadPhotoPreview(attachmentByteArray, attachmentTitle)
-        } else if (attachmentUri != null) {
+        if (attachmentUri != null) {
           loadPhotoPreview(attachmentUri, attachmentTitle)
         }
-      }
-
-      private fun loadPhotoPreview(byteArray: ByteArray, title: String) {
-        photoPreview.visibility = View.VISIBLE
-        photoTitle.text = title
-        Glide.with(context)
-          .asBitmap()
-          .load(byteArray)
-          .signature(ObjectKey(byteArray.toString())) // Add a signature to force Glide to reload the image
-          .transform(ViewHolderFactoryUtil.Companion.RotateTransformation(context, null, byteArray))
-          .diskCacheStrategy(DiskCacheStrategy.NONE)
-          .skipMemoryCache(true)
-          .into(photoThumbnail)
       }
 
       private fun loadPhotoPreview(uri: Uri, title: String) {
@@ -244,8 +228,7 @@ object PhotoCaptureViewHolderFactory :
         Glide.with(context)
           .asBitmap()
           .load(uri)
-          .signature(ObjectKey(uri.toString())) // Add a signature to force Glide to reload the image
-          .transform(ViewHolderFactoryUtil.Companion.RotateTransformation(context, uri, null))
+          .transform(ViewHolderFactoryUtil.Companion.RotateTransformation(context, uri))
           .diskCacheStrategy(DiskCacheStrategy.NONE)
           .skipMemoryCache(true)
           .into(photoThumbnail)
