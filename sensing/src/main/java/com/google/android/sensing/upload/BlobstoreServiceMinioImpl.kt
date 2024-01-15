@@ -93,7 +93,7 @@ interface BlobstoreService {
                   appContext.getSensingEngineConfiguration()
                 } else SensingEngineConfiguration()
               sensingEngineConfiguration.serverConfiguration?.let {
-                BlobstoreServiceImpl(
+                BlobstoreServiceMinioImpl(
                     MinioAsyncClient.builder()
                       .endpoint(it.baseUrl)
                       .credentialsProvider(it.authenticator?.getCredentialsProvider())
@@ -115,7 +115,8 @@ interface BlobstoreService {
   }
 }
 
-class BlobstoreServiceImpl(client: MinioAsyncClient) : MinioAsyncClient(client), BlobstoreService {
+class BlobstoreServiceMinioImpl(client: MinioAsyncClient) :
+  MinioAsyncClient(client), BlobstoreService {
   override fun initMultiPartUpload(
     bucket: String?,
     region: String?,
