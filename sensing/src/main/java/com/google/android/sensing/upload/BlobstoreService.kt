@@ -115,7 +115,7 @@ interface BlobstoreService {
   }
 }
 
-class BlobstoreServiceMinioImpl(client: MinioAsyncClient) :
+private class BlobstoreServiceMinioImpl(client: MinioAsyncClient) :
   MinioAsyncClient(client), BlobstoreService {
   override fun initMultiPartUpload(
     bucket: String?,
