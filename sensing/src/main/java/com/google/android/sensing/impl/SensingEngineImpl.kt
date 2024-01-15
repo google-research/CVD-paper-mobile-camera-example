@@ -54,7 +54,7 @@ import kotlinx.coroutines.withContext
 internal class SensingEngineImpl(
   private val database: Database,
   private val context: Context,
-  private val serverConfiguration: ServerConfiguration,
+  private val serverConfiguration: ServerConfiguration?,
 ) : SensingEngine {
 
   override suspend fun onCaptureCompleteCallback(captureInfo: CaptureInfo) = flow {
@@ -71,6 +71,7 @@ internal class SensingEngineImpl(
     CaptureUtil.sensorsInvolved(captureInfo.captureType).forEach {
       val resourceFolderRelativePath = getResourceFolderRelativePath(it, captureInfo)
       val uploadRelativeUrl = "/$resourceFolderRelativePath.zip"
+      val uploadUrl = (serverConfiguration?.getBucketUrl() ?: "") + uploadRelativeUrl
       val resourceInfo =
         ResourceInfo(
           resourceInfoId = UUID.randomUUID().toString(),
@@ -79,7 +80,7 @@ internal class SensingEngineImpl(
           captureTitle = captureInfo.captureSettings.captureTitle,
           fileType = resourceInfoFileType(it, captureInfo),
           resourceFolderRelativePath = resourceFolderRelativePath,
-          uploadURL = serverConfiguration.getBucketUrl() + uploadRelativeUrl,
+          uploadURL = uploadUrl,
           status = RequestStatus.PENDING
         )
       database.addResourceInfo(resourceInfo)
@@ -89,36 +90,38 @@ internal class SensingEngineImpl(
       val resourceFolder = File(context.filesDir, resourceFolderRelativePath)
       val outputZipFile = resourceFolder.absolutePath + ".zip"
 
-      /** Zipping logic from: https://stackoverflow.com/a/63828765 */
-      val zipOutputStream = ZipOutputStream(BufferedOutputStream(FileOutputStream(outputZipFile)))
-      zipOutputStream.use { zos ->
-        resourceFolder.walkTopDown().forEach { file ->
-          val zipFileName =
-            file.absolutePath.removePrefix(resourceFolder.absolutePath).removePrefix("/")
-          val entry = ZipEntry("$zipFileName${(if (file.isDirectory) "/" else "")}")
-          zos.putNextEntry(entry)
-          if (file.isFile) {
-            file.inputStream().use { fis -> fis.copyTo(zos) }
+      serverConfiguration?.let {
+        /** Zipping logic from: https://stackoverflow.com/a/63828765 */
+        val zipOutputStream = ZipOutputStream(BufferedOutputStream(FileOutputStream(outputZipFile)))
+        zipOutputStream.use { zos ->
+          resourceFolder.walkTopDown().forEach { file ->
+            val zipFileName =
+              file.absolutePath.removePrefix(resourceFolder.absolutePath).removePrefix("/")
+            val entry = ZipEntry("$zipFileName${(if (file.isDirectory) "/" else "")}")
+            zos.putNextEntry(entry)
+            if (file.isFile) {
+              file.inputStream().use { fis -> fis.copyTo(zos) }
+            }
           }
         }
+        val uploadRequest =
+          UploadRequest(
+            requestUuid = UUID.randomUUID(),
+            resourceInfoId = resourceInfo.resourceInfoId,
+            zipFile = outputZipFile,
+            fileSize = File(outputZipFile).length(),
+            fileOffset = 0L,
+            bucketName = serverConfiguration.bucketName,
+            uploadRelativeURL = uploadRelativeUrl,
+            isMultiPart = serverConfiguration.networkConfiguration.isMultiPart,
+            nextPart = 1,
+            uploadId = null,
+            status = RequestStatus.PENDING,
+            lastUpdatedTime = Date.from(Instant.now())
+          )
+        database.addUploadRequest(uploadRequest)
+        emit(SensorCaptureResult.UploadRequestCreated(uploadRequest.requestUuid.toString()))
       }
-      val uploadRequest =
-        UploadRequest(
-          requestUuid = UUID.randomUUID(),
-          resourceInfoId = resourceInfo.resourceInfoId,
-          zipFile = outputZipFile,
-          fileSize = File(outputZipFile).length(),
-          fileOffset = 0L,
-          bucketName = serverConfiguration.bucketName,
-          uploadRelativeURL = uploadRelativeUrl,
-          isMultiPart = serverConfiguration.networkConfiguration.isMultiPart,
-          nextPart = 1,
-          uploadId = null,
-          status = RequestStatus.PENDING,
-          lastUpdatedTime = Date.from(Instant.now())
-        )
-      database.addUploadRequest(uploadRequest)
-      emit(SensorCaptureResult.UploadRequestCreated(uploadRequest.requestUuid.toString()))
     }
     emit(SensorCaptureResult.ResourcesStored(captureInfo.captureId!!))
   }

@@ -17,7 +17,6 @@
 package com.google.android.sensing.upload
 
 import android.content.Context
-import com.google.android.sensing.SensingEngineProvider
 import com.google.android.sensing.model.UploadRequest
 import com.google.android.sensing.model.UploadResult
 import com.google.common.collect.HashMultimap
@@ -34,10 +33,6 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 
-/**
- * Processes upload requests and uploads the data referenced in chunks. Ideally we would want the
- * uploader to figure out [uploadPartSizeInBytes] based on network strength
- */
 interface Uploader {
   suspend fun upload(uploadRequestList: List<UploadRequest>): Flow<UploadResult>
 
@@ -47,11 +42,18 @@ interface Uploader {
     fun getInstance(context: Context) =
       instance
         ?: synchronized(this) {
-          instance ?: UploaderImpl(SensingEngineProvider.getBlobStoreService())
+          instance
+            ?: run {
+              BlobstoreService.getInstance(context)?.let { UploaderImpl(it).also { instance = it } }
+            }
         }
   }
 }
 
+/**
+ * Processes upload requests and uploads the data referenced in chunks. Ideally we would want the
+ * uploader to figure out [uploadPartSizeInBytes] based on network strength
+ */
 private class UploaderImpl(private val blobstoreService: BlobstoreService) : Uploader {
   /**
    * TODO: Ideally this should not be hardcode 6MB (6291456L) bytes as part size. Instead this

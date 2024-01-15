@@ -18,60 +18,25 @@ package com.google.android.sensing
 
 import android.annotation.SuppressLint
 import android.content.Context
-import com.google.android.sensing.db.impl.DatabaseConfig
 import com.google.android.sensing.db.impl.DatabaseImpl
 import com.google.android.sensing.impl.SensingEngineImpl
-import com.google.android.sensing.upload.BlobstoreService
-import io.minio.MinioAsyncClient
-import java.util.concurrent.TimeUnit
-import okhttp3.OkHttpClient
 
 object SensingEngineProvider {
-  @Volatile private var sensingEngineConfiguration: SensingEngineConfiguration? = null
   @Volatile private var sensingEngine: SensingEngine? = null
-  @Volatile private var blobstoreService: BlobstoreService? = null
-
-  fun init(configuration: SensingEngineConfiguration) {
-    sensingEngineConfiguration =
-      sensingEngineConfiguration
-        ?: synchronized(this) { sensingEngineConfiguration ?: configuration }
-  }
-
-  fun getInstance(context: Context) = getOrCreateSensingEngine(context)
 
   @SuppressLint("UnsafeOptInUsageError")
-  internal fun getOrCreateSensingEngine(context: Context): SensingEngine {
-    return sensingEngine
+  fun getInstance(context: Context) =
+    sensingEngine
       ?: synchronized(this) {
+        val appContext = context.applicationContext
+        val sensingEngineConfiguration =
+          if (appContext is SensingEngineConfiguration.Provider) {
+            appContext.getSensingEngineConfiguration()
+          } else SensingEngineConfiguration()
         sensingEngine
-          ?: with(checkNotNull(sensingEngineConfiguration)) {
-            val database =
-              DatabaseImpl(
-                context,
-                DatabaseConfig(enableEncryptionIfSupported, databaseErrorStrategy)
-              )
-            SensingEngineImpl(database, context, serverConfiguration)
-          }
-      }
-  }
-
-  internal fun getBlobStoreService() =
-    blobstoreService
-      ?: synchronized(this) {
-        blobstoreService
-          ?: with(checkNotNull(sensingEngineConfiguration).serverConfiguration) {
-            BlobstoreService(
-              MinioAsyncClient.builder()
-                .endpoint(baseUrl)
-                .credentialsProvider(authenticator?.getCredentialsProvider())
-                .httpClient(
-                  OkHttpClient.Builder()
-                    .connectTimeout(networkConfiguration.connectionTimeOut, TimeUnit.SECONDS)
-                    .writeTimeout(networkConfiguration.writeTimeOut, TimeUnit.SECONDS)
-                    .build()
-                )
-                .build()
-            )
+          ?: with(sensingEngineConfiguration) {
+            val database = DatabaseImpl(context, databaseConfiguration)
+            SensingEngineImpl(database, context, serverConfiguration).also { sensingEngine = it }
           }
       }
 }
@@ -86,25 +51,33 @@ object SensingEngineProvider {
  * on API 22 but later upgraded to API 23. When this happens, an [IllegalStateException] is thrown.
  */
 data class SensingEngineConfiguration(
-  val enableEncryptionIfSupported: Boolean = false,
-  val databaseErrorStrategy: DatabaseErrorStrategy = DatabaseErrorStrategy.UNSPECIFIED,
-  val serverConfiguration: ServerConfiguration
-)
+  val databaseConfiguration: DatabaseConfiguration = DatabaseConfiguration(),
+  val serverConfiguration: ServerConfiguration? = null,
+) {
+  interface Provider {
+    fun getSensingEngineConfiguration(): SensingEngineConfiguration
+  }
+}
 
-enum class DatabaseErrorStrategy {
-  /**
-   * If unspecified, all database errors will be propagated to the call site. The caller shall
-   * handle the database error on a case-by-case basis.
-   */
-  UNSPECIFIED,
+data class DatabaseConfiguration(
+  val enableEncryption: Boolean = true,
+  val databaseErrorStrategy: DatabaseErrorStrategy = DatabaseErrorStrategy.UNSPECIFIED
+) {
+  enum class DatabaseErrorStrategy {
+    /**
+     * If unspecified, all database errors will be propagated to the call site. The caller shall
+     * handle the database error on a case-by-case basis.
+     */
+    UNSPECIFIED,
 
-  /**
-   * If a database error occurs at open, automatically recreate the database.
-   *
-   * This strategy is NOT respected when opening a previously unencrypted database with an encrypted
-   * configuration or vice versa. An [IllegalStateException] is thrown instead.
-   */
-  RECREATE_AT_OPEN
+    /**
+     * If a database error occurs at open, automatically recreate the database.
+     *
+     * This strategy is NOT respected when opening a previously unencrypted database with an
+     * encrypted configuration or vice versa. An [IllegalStateException] is thrown instead.
+     */
+    RECREATE_AT_OPEN
+  }
 }
 
 /** A configuration to provide necessary params for network connection. */
@@ -124,14 +97,14 @@ data class ServerConfiguration(
   val authenticator: Authenticator? = null
 ) {
   fun getBucketUrl() = "$baseAccessUrl/$bucketName"
-}
 
-/** A configuration to provide the network connection parameters. */
-data class NetworkConfiguration(
-  /** Connection timeout (in seconds). The default is 10 seconds. */
-  val connectionTimeOut: Long = 30,
-  /** Write timeout (in seconds) for network connection. The default is 10 seconds. */
-  val writeTimeOut: Long = 30,
-  /** Uploads should be multi part or not. */
-  val isMultiPart: Boolean = true
-)
+  /** A configuration to provide the network connection parameters. */
+  data class NetworkConfiguration(
+    /** Connection timeout (in seconds). The default is 10 seconds. */
+    val connectionTimeOut: Long = 30,
+    /** Write timeout (in seconds) for network connection. The default is 10 seconds. */
+    val writeTimeOut: Long = 30,
+    /** Uploads should be multi part or not. */
+    val isMultiPart: Boolean = true
+  )
+}

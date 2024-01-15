@@ -53,19 +53,18 @@ class SensorDataUploadWorker(appContext: Context, workerParams: WorkerParameters
     }
     try {
       var failed = false
-      SensingSynchronizer(
-          uploadRequestFetcher = UploadRequestFetcher.getInstance(applicationContext),
-          uploader = Uploader.getInstance(applicationContext),
-          uploadResultProcessor = UploadResultProcessor.getInstance(applicationContext)
-        )
-        .synchronize()
-        .collect {
+      SensingSynchronizer.getInstance(applicationContext)?.let {
+        it.synchronize().collect {
           setProgress(buildWorkData(it))
           if (it is SyncUploadState.Failed) {
             failed = true
             Timber.e("Synchronization Exception: ${it.exception}")
           }
         }
+      }
+        ?: throw SynchronizerException(
+          "Synchronizer instance not created! Have you configured the server correctly ?"
+        )
       return if (failed) Result.retry() else Result.success()
     } catch (exception: Exception) {
       setProgress(buildWorkData(SyncUploadState.Failed(null, exception)))

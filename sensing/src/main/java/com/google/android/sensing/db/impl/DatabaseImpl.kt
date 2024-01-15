@@ -18,7 +18,7 @@ package com.google.android.sensing.db.impl
 
 import android.content.Context
 import androidx.room.Room
-import com.google.android.sensing.DatabaseErrorStrategy
+import com.google.android.sensing.DatabaseConfiguration
 import com.google.android.sensing.db.Database
 import com.google.android.sensing.db.ResourceNotFoundException
 import com.google.android.sensing.model.CaptureInfo
@@ -29,7 +29,7 @@ import net.sqlcipher.database.SQLiteDatabase
 import net.sqlcipher.database.SupportFactory
 
 /** Implementation of [Database]. */
-internal class DatabaseImpl(context: Context, databaseConfig: DatabaseConfig) : Database {
+internal class DatabaseImpl(context: Context, databaseConfig: DatabaseConfiguration) : Database {
   val db: ResourceDatabase =
     Room.databaseBuilder(context, ResourceDatabase::class.java, ENCRYPTED_DATABASE_NAME)
       .apply {
@@ -93,8 +93,3 @@ internal class DatabaseImpl(context: Context, databaseConfig: DatabaseConfig) : 
     const val ENCRYPTED_DATABASE_NAME = "sensor_resources_encrypted.db"
   }
 }
-
-data class DatabaseConfig(
-  val enableEncryption: Boolean,
-  val databaseErrorStrategy: DatabaseErrorStrategy
-)

@@ -38,7 +38,10 @@ interface UploadResultProcessor {
     fun getInstance(context: Context) =
       instance
         ?: synchronized(this) {
-          instance ?: DefaultUploadResultProcessor(SensingEngineProvider.getInstance(context))
+          instance
+            ?: DefaultUploadResultProcessor(SensingEngineProvider.getInstance(context)).also {
+              instance = it
+            }
         }
   }
 }
