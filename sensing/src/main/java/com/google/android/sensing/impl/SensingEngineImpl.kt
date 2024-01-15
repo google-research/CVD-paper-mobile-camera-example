@@ -57,6 +57,7 @@ internal class SensingEngineImpl(
   private val serverConfiguration: ServerConfiguration?,
 ) : SensingEngine {
 
+  /** TODO Move zipping and creation of UploadRequest to sync section. */
   override suspend fun onCaptureCompleteCallback(captureInfo: CaptureInfo) = flow {
     if (captureInfo.recapture == true) {
       try {
@@ -67,7 +68,7 @@ internal class SensingEngineImpl(
     } // else we don't need to worry about it because the capture module stored data in the
     // internal filesDir
     database.addCaptureInfo(captureInfo)
-    emit(SensorCaptureResult.CaptureInfoCreated(captureInfo.captureId!!))
+    emit(SensorCaptureResult.CaptureInfoCreated(captureInfo))
     CaptureUtil.sensorsInvolved(captureInfo.captureType).forEach {
       val resourceFolderRelativePath = getResourceFolderRelativePath(it, captureInfo)
       val uploadRelativeUrl = "/$resourceFolderRelativePath.zip"
@@ -84,7 +85,7 @@ internal class SensingEngineImpl(
           status = RequestStatus.PENDING
         )
       database.addResourceInfo(resourceInfo)
-      emit(SensorCaptureResult.ResourceMetaInfoCreated(resourceInfo.resourceInfoId))
+      emit(SensorCaptureResult.ResourceInfoCreated(resourceInfo))
 
       /** [CaptureFragment] stores files in app's internal storage directory */
       val resourceFolder = File(context.filesDir, resourceFolderRelativePath)

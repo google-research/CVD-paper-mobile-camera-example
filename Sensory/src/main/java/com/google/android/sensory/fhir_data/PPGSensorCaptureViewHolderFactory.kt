@@ -26,15 +26,12 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.os.bundleOf
 import androidx.fragment.app.findFragment
-import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.lifecycleScope
 import com.bumptech.glide.Glide
 import com.google.android.fhir.datacapture.QuestionnaireFragment
 import com.google.android.fhir.datacapture.tryUnwrapContext
 import com.google.android.fhir.datacapture.views.QuestionnaireViewItem
 import com.google.android.fhir.datacapture.views.factories.QuestionnaireItemViewHolderDelegate
 import com.google.android.fhir.datacapture.views.factories.QuestionnaireItemViewHolderFactory
-import com.google.android.sensing.SensingEngine
 import com.google.android.sensing.capture.CaptureFragment
 import com.google.android.sensing.capture.CaptureSettings
 import com.google.android.sensing.capture.SensorCaptureResult
@@ -44,7 +41,6 @@ import com.google.android.sensing.model.SensorType
 import com.google.android.sensory.InstructionsFragment
 import com.google.android.sensory.R
 import com.google.android.sensory.SensingApplication
-import kotlinx.coroutines.launch
 import org.hl7.fhir.r4.model.Coding
 import org.hl7.fhir.r4.model.Questionnaire
 import org.hl7.fhir.r4.model.QuestionnaireResponse
@@ -59,7 +55,6 @@ object PPGSensorCaptureViewHolderFactory :
       private lateinit var fileIcon: ImageView
       private lateinit var fileTitle: TextView
       private lateinit var context: AppCompatActivity
-      private lateinit var sensingEngine: SensingEngine
 
       private lateinit var QUESTION_TITLE: String
 
@@ -71,7 +66,6 @@ object PPGSensorCaptureViewHolderFactory :
         fileIcon = itemView.findViewById(com.google.android.fhir.datacapture.R.id.file_icon)
         fileTitle = itemView.findViewById(com.google.android.fhir.datacapture.R.id.file_title)
         context = itemView.context.tryUnwrapContext()!!
-        sensingEngine = SensingApplication.sensingEngine(context)
       }
 
       override fun bind(questionnaireViewItem: QuestionnaireViewItem) {
@@ -95,6 +89,11 @@ object PPGSensorCaptureViewHolderFactory :
       }
 
       private fun displayOrClearInitialPreview() {
+        /**
+         * Using firstOrNull temporarily for single answer scenarios.
+         *
+         * Ideally, switch to viewing multiple placeholders for each answer.
+         */
         val answer = questionnaireViewItem.answers.firstOrNull()
         // Clear preview if there is no answer to prevent showing old previews in views that have
         // been recycled.
@@ -104,20 +103,13 @@ object PPGSensorCaptureViewHolderFactory :
         }
 
         answer.valueCoding?.let { code ->
-          val captureId = code.code
-          val livePath = MutableLiveData<String>()
-          context.lifecycleScope.launch {
-            val resourceMetaInfoList = sensingEngine.listResourceInfoInCapture(captureId)
-            if (resourceMetaInfoList.isEmpty()) {
-              clearFilePreview()
-              return@launch
-            }
-            livePath.postValue(resourceMetaInfoList[0].captureTitle)
-          }
-          livePath.observe(context) {
-            loadFilePreview(com.google.android.fhir.datacapture.R.drawable.ic_document_file, it)
-          }
+          // valueCoding is non-null only when resources have been created.
+          loadFilePreview(
+            com.google.android.fhir.datacapture.R.drawable.ic_document_file,
+            code.display
+          )
         }
+          ?: clearFilePreview()
       }
 
       private fun onCapturePpgButtonClicked(
@@ -175,15 +167,25 @@ object PPGSensorCaptureViewHolderFactory :
               )
               setSensorCaptureResultCollector { sensorCaptureResultFlow ->
                 sensorCaptureResultFlow.collect {
-                  if (it is SensorCaptureResult.ResourcesStored) {
+                  if (it is SensorCaptureResult.ResourceInfoCreated) {
                     val answer =
                       QuestionnaireResponse.QuestionnaireResponseItemAnswerComponent().apply {
                         value =
                           Coding().apply {
-                            code = it.captureId
-                            system = CaptureType.VIDEO_PPG.name
+                            // store captureId to recapture again
+                            code = it.resourceInfo.captureId
+                            system = "$WIDGET_EXTENSION/CaptureInfo"
+                            display = it.resourceInfo.captureTitle
                           }
                       }
+                    /**
+                     * Using setAnswer temporarily for single ResourceInfo scenarios.
+                     *
+                     * Ideally, switch to questionnaireViewItem.addAnswer when handling multiple
+                     * sensors (multiple ResourceInfo).
+                     *
+                     * Note: addAnswer API not yet released in the current library.
+                     */
                     questionnaireViewItem.setAnswer(answer)
                   }
                 }
