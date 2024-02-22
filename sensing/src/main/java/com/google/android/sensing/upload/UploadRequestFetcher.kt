@@ -16,16 +16,32 @@
 
 package com.google.android.sensing.upload
 
+import android.content.Context
 import com.google.android.sensing.SensingEngine
+import com.google.android.sensing.SensingEngineProvider
 import com.google.android.sensing.model.RequestStatus
 import com.google.android.sensing.model.UploadRequest
 
 /** Responsible for fetching [UploadRequest] that are pending to be uploaded. */
 interface UploadRequestFetcher {
   suspend fun fetchForUpload(): List<UploadRequest>
+
+  // https://www.baeldung.com/kotlin/singleton-classes#1-companion-object
+  companion object {
+    @Volatile private var instance: UploadRequestFetcher? = null
+
+    fun getInstance(context: Context) =
+      instance
+        ?: synchronized(this) {
+          instance
+            ?: DefaultUploadRequestFetcher(SensingEngineProvider.getInstance(context)).also {
+              instance = it
+            }
+        }
+  }
 }
 
-internal class DefaultUploadRequestFetcher(private val sensingEngine: SensingEngine) :
+private class DefaultUploadRequestFetcher(private val sensingEngine: SensingEngine) :
   UploadRequestFetcher {
   override suspend fun fetchForUpload(): List<UploadRequest> {
     return (sensingEngine.listUploadRequest(status = RequestStatus.UPLOADING) +

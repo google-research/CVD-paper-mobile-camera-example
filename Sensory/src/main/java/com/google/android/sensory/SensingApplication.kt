@@ -24,6 +24,7 @@ import com.google.android.fhir.FhirEngineConfiguration
 import com.google.android.fhir.FhirEngineProvider
 import com.google.android.fhir.datacapture.DataCaptureConfig
 import com.google.android.fhir.datacapture.QuestionnaireFragment
+import com.google.android.sensing.DatabaseConfiguration
 import com.google.android.sensing.MinioInternalIDPAuthenticator
 import com.google.android.sensing.SensingEngine
 import com.google.android.sensing.SensingEngineConfiguration
@@ -31,10 +32,12 @@ import com.google.android.sensing.SensingEngineProvider
 import com.google.android.sensing.ServerConfiguration
 import com.google.android.sensory.fhir_data.PPGSensorCaptureViewHolderFactory
 import com.google.android.sensory.fhir_data.PhotoCaptureViewHolderFactory
+import java.io.IOException
 import java.util.Properties
 import timber.log.Timber
 
-class SensingApplication : Application(), DataCaptureConfig.Provider {
+class SensingApplication :
+  Application(), DataCaptureConfig.Provider, SensingEngineConfiguration.Provider {
   private val fhirEngine by lazy { constructFhirEngine() }
   private val sensingEngine by lazy { constructSensingEngine() }
 
@@ -43,30 +46,10 @@ class SensingApplication : Application(), DataCaptureConfig.Provider {
       Timber.plant(Timber.DebugTree())
     }
     super.onCreate()
-    initSensingAndFhirEngines()
+    initFhirEngine()
   }
 
-  private fun initSensingAndFhirEngines() {
-    val properties = Properties().apply { load(applicationContext.assets.open("local.properties")) }
-    val sensingEngineConfiguration =
-      SensingEngineConfiguration(
-        enableEncryptionIfSupported = false,
-        serverConfiguration =
-          ServerConfiguration(
-            baseUrl = properties.getProperty("BLOBSTORE_BASE_URL"),
-            baseAccessUrl = properties.getProperty("BLOBSTORE_BASE_ACCESS_URL"),
-            bucketName = properties.getProperty("BLOBSTORE_BUCKET_NAME"),
-            authenticator =
-              /* Implement MinioInternalIDPAuthenticator directly when built-in IDP is required. */
-              object : MinioInternalIDPAuthenticator() {
-                override fun getUserName() = properties.getProperty("BLOBSTORE_USER")
-                override fun getPassword() = properties.getProperty("BLOBSTORE_PASSWORD")
-              }
-            /* Implement Authenticator interface directly when external IDP is OpenIDP or LDAP. */
-            /* Implement MinioIDPPluginAuthenticator when external IDP is a custom one. */
-            )
-      )
-    SensingEngineProvider.init(sensingEngineConfiguration)
+  private fun initFhirEngine() {
     /**
      * Local hapi fhir server was used to test the following. Add
      * [FhirEngineConfiguration.serverConfiguration] for your own fhir server.
@@ -76,7 +59,9 @@ class SensingApplication : Application(), DataCaptureConfig.Provider {
         enableEncryptionIfSupported = true,
         databaseErrorStrategy = DatabaseErrorStrategy.RECREATE_AT_OPEN,
         serverConfiguration =
-          com.google.android.fhir.ServerConfiguration(properties.getProperty("FHIR_BASE_URL"))
+          getLocalProperties()?.let {
+            com.google.android.fhir.ServerConfiguration(it.getProperty("FHIR_BASE_URL"))
+          }
       )
     )
   }
@@ -86,7 +71,7 @@ class SensingApplication : Application(), DataCaptureConfig.Provider {
   }
 
   private fun constructSensingEngine(): SensingEngine {
-    return SensingEngineProvider.getOrCreateSensingEngine(applicationContext)
+    return SensingEngineProvider.getInstance(applicationContext)
   }
 
   companion object {
@@ -137,5 +122,36 @@ class SensingApplication : Application(), DataCaptureConfig.Provider {
         }
       }
     )
+  }
+
+  override fun getSensingEngineConfiguration(): SensingEngineConfiguration {
+    return SensingEngineConfiguration(
+      databaseConfiguration = DatabaseConfiguration(enableEncryption = false),
+      serverConfiguration =
+        getLocalProperties()?.let {
+          ServerConfiguration(
+            baseUrl = it.getProperty("BLOBSTORE_BASE_URL"),
+            baseAccessUrl = it.getProperty("BLOBSTORE_BASE_ACCESS_URL"),
+            bucketName = it.getProperty("BLOBSTORE_BUCKET_NAME"),
+            authenticator =
+              /* Implement MinioInternalIDPAuthenticator directly when built-in IDP is required. */
+              object : MinioInternalIDPAuthenticator() {
+                override fun getUserName() = it.getProperty("BLOBSTORE_USER")
+                override fun getPassword() = it.getProperty("BLOBSTORE_PASSWORD")
+              }
+            /* Implement Authenticator interface directly when external IDP is OpenIDP or LDAP. */
+            /* Implement MinioIDPPluginAuthenticator when external IDP is a custom one. */
+            )
+        }
+    )
+  }
+
+  private fun getLocalProperties(): Properties? {
+    return try {
+      Properties().apply { load(applicationContext.assets.open("local.properties")) }
+    } catch (e: IOException) {
+      Timber.d("No local.properties file. Moving with application defined configuration!")
+      null
+    }
   }
 }

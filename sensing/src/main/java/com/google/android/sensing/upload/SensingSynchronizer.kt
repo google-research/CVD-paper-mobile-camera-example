@@ -16,6 +16,7 @@
 
 package com.google.android.sensing.upload
 
+import android.content.Context
 import com.google.android.sensing.model.UploadResult
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.drop
@@ -99,5 +100,24 @@ class SensingSynchronizer(
           )
       }
     }
+  }
+
+  companion object {
+    @Volatile private var instance: SensingSynchronizer? = null
+    fun getInstance(context: Context) =
+      instance
+        ?: synchronized(this) {
+          instance
+            ?: run {
+              Uploader.getInstance(context)?.let {
+                SensingSynchronizer(
+                    UploadRequestFetcher.getInstance(context),
+                    it,
+                    UploadResultProcessor.getInstance(context)
+                  )
+                  .also { instance = it }
+              }
+            }
+        }
   }
 }

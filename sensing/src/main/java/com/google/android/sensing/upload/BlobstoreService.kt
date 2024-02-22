@@ -16,6 +16,8 @@
 
 package com.google.android.sensing.upload
 
+import android.content.Context
+import com.google.android.sensing.SensingEngineConfiguration
 import com.google.common.collect.Multimap
 import io.minio.ListPartsResponse
 import io.minio.MinioAsyncClient
@@ -32,9 +34,90 @@ import java.io.IOException
 import java.security.InvalidKeyException
 import java.security.NoSuchAlgorithmException
 import java.util.concurrent.ExecutionException
+import java.util.concurrent.TimeUnit
+import okhttp3.OkHttpClient
 
-class BlobstoreService(client: MinioAsyncClient) : MinioAsyncClient(client) {
+interface BlobstoreService {
   fun initMultiPartUpload(
+    bucket: String?,
+    region: String?,
+    `object`: String?,
+    headers: Multimap<String?, String?>?,
+    extraQueryParams: Multimap<String?, String?>?,
+  ): String?
+
+  fun uploadFilePart(
+    bucketName: String?,
+    region: String?,
+    objectName: String?,
+    data: Any?,
+    length: Long,
+    uploadId: String?,
+    partNumber: Int,
+    extraHeaders: Multimap<String?, String?>?,
+    extraQueryParams: Multimap<String?, String?>?,
+  ): UploadPartResponse?
+
+  fun mergeMultipartUpload(
+    bucketName: String?,
+    region: String?,
+    objectName: String?,
+    uploadId: String?,
+    parts: Array<Part?>?,
+    extraHeaders: Multimap<String?, String?>?,
+    extraQueryParams: Multimap<String?, String?>?,
+  ): ObjectWriteResponse?
+
+  fun listMultipart(
+    bucketName: String,
+    region: String?,
+    objectName: String,
+    maxParts: Int,
+    partNumberMarker: Int,
+    uploadId: String?,
+    extraHeaders: Multimap<String?, String?>?,
+    extraQueryParams: Multimap<String?, String?>?,
+  ): ListPartsResponse
+
+  companion object {
+    @Volatile private var instance: BlobstoreService? = null
+
+    fun getInstance(context: Context) =
+      instance
+        ?: synchronized(this) {
+          instance
+            ?: run {
+              val appContext = context.applicationContext
+              val sensingEngineConfiguration =
+                if (appContext is SensingEngineConfiguration.Provider) {
+                  appContext.getSensingEngineConfiguration()
+                } else SensingEngineConfiguration()
+              sensingEngineConfiguration.serverConfiguration?.let {
+                BlobstoreServiceMinioImpl(
+                    MinioAsyncClient.builder()
+                      .endpoint(it.baseUrl)
+                      .credentialsProvider(it.authenticator?.getCredentialsProvider())
+                      .httpClient(
+                        OkHttpClient.Builder()
+                          .connectTimeout(
+                            it.networkConfiguration.connectionTimeOut,
+                            TimeUnit.SECONDS
+                          )
+                          .writeTimeout(it.networkConfiguration.writeTimeOut, TimeUnit.SECONDS)
+                          .build()
+                      )
+                      .build()
+                  )
+                  .also { instance = it }
+              }
+            }
+        }
+  }
+}
+
+private class BlobstoreServiceMinioImpl(client: MinioAsyncClient) :
+  MinioAsyncClient(client), BlobstoreService {
+  override fun initMultiPartUpload(
     bucket: String?,
     region: String?,
     `object`: String?,
@@ -56,7 +139,7 @@ class BlobstoreService(client: MinioAsyncClient) : MinioAsyncClient(client) {
     ExecutionException::class,
     InterruptedException::class
   )
-  fun uploadFilePart(
+  override fun uploadFilePart(
     bucketName: String?,
     region: String?,
     objectName: String?,
@@ -94,7 +177,7 @@ class BlobstoreService(client: MinioAsyncClient) : MinioAsyncClient(client) {
     ExecutionException::class,
     InterruptedException::class
   )
-  fun mergeMultipartUpload(
+  override fun mergeMultipartUpload(
     bucketName: String?,
     region: String?,
     objectName: String?,
@@ -128,7 +211,7 @@ class BlobstoreService(client: MinioAsyncClient) : MinioAsyncClient(client) {
     ExecutionException::class,
     InterruptedException::class
   )
-  fun listMultipart(
+  override fun listMultipart(
     bucketName: String,
     region: String?,
     objectName: String,
