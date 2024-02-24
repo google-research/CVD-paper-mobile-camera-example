@@ -32,8 +32,8 @@ internal data class CaptureInfoEntity(
   /** Unique id for each capture. */
   @PrimaryKey val captureId: String,
 
-  /** Participant for which this capture was triggered. */
-  val participantId: String,
+  /** External identifier for which this capture was triggered. When this is not provided by application this is same as [captureId] */
+  val externalIdentifier: String,
 
   /** Tracking capture information like the ones below. May include [CaptureSettings] later. */
   val captureType: CaptureType,

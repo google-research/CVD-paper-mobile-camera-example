@@ -59,13 +59,7 @@ interface SensingEngine {
    * Lists all ResourceInfo given a participantId. This will return all ResourceInfo across multiple
    * capturings.
    */
-  suspend fun listResourceInfoForParticipant(participantId: String): List<ResourceInfo>
-
-  /**
-   * Lists all ResourceInfo given a captureId. This will return all ResourceInfo for a single
-   * capture.
-   */
-  suspend fun listResourceInfoInCapture(captureId: String): List<ResourceInfo>
+  suspend fun listResourceInfoForExternalIdentifier(participantId: String): List<ResourceInfo>
 
   suspend fun getResourceInfo(resourceInfoId: String): ResourceInfo?
 

@@ -20,7 +20,7 @@ package com.google.android.sensing.model
 data class ResourceInfo(
   val resourceInfoId: String,
   val captureId: String,
-  val participantId: String,
+  val externalIdentifier: String,
   val captureTitle: String,
   val fileType: String,
   val resourceFolderRelativePath: String,

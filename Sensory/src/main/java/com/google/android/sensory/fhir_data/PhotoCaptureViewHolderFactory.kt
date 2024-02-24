@@ -133,7 +133,7 @@ object PhotoCaptureViewHolderFactory :
           if (!instructionsUnderstood) {
             return@setFragmentResultListener
           }
-          val participantId =
+          val fhirPatientId =
             context
               .getSharedPreferences(SensingApplication.SHARED_PREFS_KEY, Context.MODE_PRIVATE)
               .getString(SensingApplication.CURRENT_PATIENT_ID, null)!!
@@ -142,9 +142,9 @@ object PhotoCaptureViewHolderFactory :
             CaptureFragment().apply {
               setCaptureInfo(
                 CaptureInfo(
-                  participantId = participantId,
+                  externalIdentifier = fhirPatientId,
                   captureType = CaptureType.IMAGE,
-                  captureFolder = "Sensory/Participant_$participantId/$QUESTION_TITLE",
+                  captureFolder = "Sensory/Participant_$fhirPatientId/$QUESTION_TITLE",
                   captureSettings =
                     CaptureSettings(
                       fileTypeMap = mapOf(SensorType.CAMERA to "jpeg"),

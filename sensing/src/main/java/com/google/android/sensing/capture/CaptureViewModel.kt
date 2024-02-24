@@ -151,7 +151,7 @@ class CaptureViewModel(application: Application) : AndroidViewModel(application)
   private fun getCameraResourceFile(): File {
     val folder = "${captureInfo.captureFolder}/${SensorType.CAMERA}"
     val filename =
-      "Participant${captureInfo.participantId}_${captureInfo.captureSettings.captureTitle}_${frameNumber}_${System.currentTimeMillis()}_${captureInfo.captureSettings.contextMap[SensorType.CAMERA]}.${captureInfo.captureSettings.fileTypeMap[SensorType.CAMERA]}"
+      "Participant${captureInfo.externalIdentifier}_${captureInfo.captureSettings.captureTitle}_${frameNumber}_${System.currentTimeMillis()}_${captureInfo.captureSettings.contextMap[SensorType.CAMERA]}.${captureInfo.captureSettings.fileTypeMap[SensorType.CAMERA]}"
     frameNumber++
     val filePath = "$folder/$filename"
     return File(internalStorageFolder, filePath)
@@ -160,7 +160,7 @@ class CaptureViewModel(application: Application) : AndroidViewModel(application)
   private fun getCameraMetadataFile(): File {
     val folder = "${captureInfo.captureFolder}/${SensorType.CAMERA}"
     val filename =
-      "Participant_${captureInfo.participantId}_${captureInfo.captureSettings.captureTitle}_${System.currentTimeMillis()}_${captureInfo.captureSettings.contextMap[SensorType.CAMERA]}.${captureInfo.captureSettings.metaDataTypeMap[SensorType.CAMERA]}"
+      "Participant_${captureInfo.externalIdentifier}_${captureInfo.captureSettings.captureTitle}_${System.currentTimeMillis()}_${captureInfo.captureSettings.contextMap[SensorType.CAMERA]}.${captureInfo.captureSettings.metaDataTypeMap[SensorType.CAMERA]}"
     val filePath = "$folder/$filename"
     return File(internalStorageFolder, filePath)
   }

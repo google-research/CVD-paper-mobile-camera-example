@@ -95,7 +95,7 @@ internal fun ResourceInfoEntity.toResourceInfo() =
   ResourceInfo(
     resourceInfoId = resourceInfoId,
     captureId = captureId,
-    participantId = participantId,
+    externalIdentifier = participantId,
     captureTitle = captureTitle,
     fileType = fileType,
     resourceFolderRelativePath = resourceFolderRelativePath,
@@ -107,7 +107,7 @@ internal fun ResourceInfo.toResourceInfoEntity() =
   ResourceInfoEntity(
     resourceInfoId = resourceInfoId,
     captureId = captureId,
-    participantId = participantId,
+    participantId = externalIdentifier,
     captureTitle = captureTitle,
     fileType = fileType,
     resourceFolderRelativePath = resourceFolderRelativePath,
