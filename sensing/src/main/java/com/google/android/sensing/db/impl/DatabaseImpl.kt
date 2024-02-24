@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Google LLC
+ * Copyright 2023-2024 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,7 +56,9 @@ internal class DatabaseImpl(context: Context, databaseConfig: DatabaseConfigurat
     return uploadRequestDao.insertUploadRequest(uploadRequest)
   }
 
-  override suspend fun listResourceInfoForExternalIdentifier(externalIdentifier: String): List<ResourceInfo> {
+  override suspend fun listResourceInfoForExternalIdentifier(
+    externalIdentifier: String
+  ): List<ResourceInfo> {
     return resourceInfoDao.listResourceInfoForParticipant(externalIdentifier)
   }
 
@@ -78,7 +80,9 @@ internal class DatabaseImpl(context: Context, databaseConfig: DatabaseConfigurat
 
   override suspend fun getCaptureInfo(captureId: String): CaptureInfo {
     return db.withTransaction {
-      val captureInfo = captureInfoDao.getCaptureInfo(captureId) ?: throw ResourceNotFoundException("CaptureInfo", captureId)
+      val captureInfo =
+        captureInfoDao.getCaptureInfo(captureId)
+          ?: throw ResourceNotFoundException("CaptureInfo", captureId)
       val resourceInfoList = resourceInfoDao.listResourceInfoInCapture(captureId)
       captureInfo.copy(resourceInfoList = resourceInfoList)
     }
