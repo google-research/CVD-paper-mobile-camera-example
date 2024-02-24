@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Google LLC
+ * Copyright 2023-2024 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -151,7 +151,7 @@ class CaptureViewModel(application: Application) : AndroidViewModel(application)
   private fun getCameraResourceFile(): File {
     val folder = "${captureInfo.captureFolder}/${SensorType.CAMERA}"
     val filename =
-      "Participant${captureInfo.participantId}_${captureInfo.captureSettings.captureTitle}_${frameNumber}_${System.currentTimeMillis()}_${captureInfo.captureSettings.contextMap[SensorType.CAMERA]}.${captureInfo.captureSettings.fileTypeMap[SensorType.CAMERA]}"
+      "${captureInfo.captureSettings.captureTitle}_${frameNumber}_${System.currentTimeMillis()}.${captureInfo.captureSettings.fileTypeMap[SensorType.CAMERA]}"
     frameNumber++
     val filePath = "$folder/$filename"
     return File(internalStorageFolder, filePath)
@@ -160,7 +160,7 @@ class CaptureViewModel(application: Application) : AndroidViewModel(application)
   private fun getCameraMetadataFile(): File {
     val folder = "${captureInfo.captureFolder}/${SensorType.CAMERA}"
     val filename =
-      "Participant_${captureInfo.participantId}_${captureInfo.captureSettings.captureTitle}_${System.currentTimeMillis()}_${captureInfo.captureSettings.contextMap[SensorType.CAMERA]}.${captureInfo.captureSettings.metaDataTypeMap[SensorType.CAMERA]}"
+      "${captureInfo.captureSettings.captureTitle}_${System.currentTimeMillis()}.${captureInfo.captureSettings.metaDataTypeMap[SensorType.CAMERA]}"
     val filePath = "$folder/$filename"
     return File(internalStorageFolder, filePath)
   }

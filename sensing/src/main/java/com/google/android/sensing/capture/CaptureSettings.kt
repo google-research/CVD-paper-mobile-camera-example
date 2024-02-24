@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Google LLC
+ * Copyright 2023-2024 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,8 +26,6 @@ data class CaptureSettings(
   val fileTypeMap: Map<SensorType, String>,
   /** The mimetype map for metadata files captured via a sensor. */
   val metaDataTypeMap: Map<SensorType, String>,
-  /** The context is appended at the end of a filename being produced while capturing. */
-  val contextMap: Map<SensorType, String>,
   /**
    * The capture title is appended next to ParticipantID in a filename being produced while
    * capturing.

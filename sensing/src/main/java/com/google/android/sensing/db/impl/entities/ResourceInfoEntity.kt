@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Google LLC
+ * Copyright 2023-2024 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,13 +21,14 @@ import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
 import com.google.android.sensing.model.RequestStatus
+import java.time.Instant
 
 @Entity(
   indices =
     [
-      Index(value = ["resourceFolderRelativePath"], unique = true),
-      Index(value = ["participantId"]),
-      Index(value = ["captureTitle"]),
+      Index(value = ["localLocation"], unique = true),
+      Index(value = ["externalIdentifier"]),
+      Index(value = ["resourceTitle"]),
       Index(value = ["captureId"]),
     ],
   foreignKeys =
@@ -49,20 +50,26 @@ internal data class ResourceInfoEntity(
   val captureId: String,
 
   /** Participant for which the capture created this record. */
-  val participantId: String,
+  val externalIdentifier: String,
 
-  /** Title of the capture that creates this record. */
-  val captureTitle: String,
+  /** Android location of the captured data from a sensor. */
+  val localLocation: String,
 
-  /** Resource extension */
-  val fileType: String,
+  /** Absolute and immutable remote location, eg, url. */
+  val remoteLocation: String,
 
-  /** Relative android folder location of the captured data from a sensor. */
-  val resourceFolderRelativePath: String,
+  /** Label to display in place of the data. */
+  val resourceTitle: String,
 
-  /** Absolute and immutable upload url. */
-  val uploadURL: String,
+  /** Mime type of the content, with charset etc. */
+  val contentType: String,
+
+  /** Date this resource was first created. */
+  val creation: Instant,
 
   /** Upload status. */
   val status: RequestStatus,
+
+  /** The last time the [status] was updated. */
+  val lastUpdateTime: Instant
 )

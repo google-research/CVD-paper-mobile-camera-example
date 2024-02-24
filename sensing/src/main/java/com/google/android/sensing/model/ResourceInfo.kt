@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Google LLC
+ * Copyright 2023-2024 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,18 @@
 
 package com.google.android.sensing.model
 
+import java.util.Date
+
 /** Data class equivalent to ResourceInfoEntity for usage outside database. */
 data class ResourceInfo(
   val resourceInfoId: String,
   val captureId: String,
-  val participantId: String,
-  val captureTitle: String,
-  val fileType: String,
-  val resourceFolderRelativePath: String,
-  val uploadURL: String,
+  val externalIdentifier: String,
+  val localLocation: String,
+  val remoteLocation: String,
+  val resourceTitle: String,
+  val contentType: String,
   var status: RequestStatus,
+  val creation: Date? = null,
+  var lastUpdateTime: Date? = null,
 )

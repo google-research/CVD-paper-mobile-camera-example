@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Google LLC
+ * Copyright 2023-2024 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -144,12 +144,12 @@ object PhotoCaptureViewHolderFactory :
                 CaptureInfo(
                   participantId = participantId,
                   captureType = CaptureType.IMAGE,
-                  captureFolder = "Sensory/Participant_$participantId/$QUESTION_TITLE",
+                  captureFolder =
+                    "Sensory_${SensingApplication.APP_VERSION}/Participant_$participantId/$QUESTION_TITLE",
                   captureSettings =
                     CaptureSettings(
                       fileTypeMap = mapOf(SensorType.CAMERA to "jpeg"),
                       metaDataTypeMap = mapOf(SensorType.CAMERA to "tsv"),
-                      contextMap = mapOf(SensorType.CAMERA to SensingApplication.APP_VERSION),
                       captureTitle = QUESTION_TITLE
                     ),
                   recapture = captureId != null,
@@ -170,8 +170,8 @@ object PhotoCaptureViewHolderFactory :
                             display =
                               ViewHolderFactoryUtil.getFirstOrNullImageUri(
                                   internalFilesDir,
-                                  it.resourceInfo.resourceFolderRelativePath,
-                                  it.resourceInfo.fileType
+                                  it.resourceInfo.localLocation,
+                                  it.resourceInfo.contentType
                                 )
                                 ?.toString()
                           }

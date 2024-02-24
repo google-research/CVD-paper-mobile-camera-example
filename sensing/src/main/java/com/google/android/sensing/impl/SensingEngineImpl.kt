@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Google LLC
+ * Copyright 2023-2024 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -77,11 +77,11 @@ internal class SensingEngineImpl(
         ResourceInfo(
           resourceInfoId = UUID.randomUUID().toString(),
           captureId = captureInfo.captureId!!,
-          participantId = captureInfo.participantId,
-          captureTitle = captureInfo.captureSettings.captureTitle,
-          fileType = resourceInfoFileType(it, captureInfo),
-          resourceFolderRelativePath = resourceFolderRelativePath,
-          uploadURL = uploadUrl,
+          externalIdentifier = captureInfo.participantId,
+          resourceTitle = captureInfo.captureSettings.captureTitle,
+          contentType = resourceInfoFileType(it, captureInfo),
+          localLocation = resourceFolderRelativePath,
+          remoteLocation = uploadUrl,
           status = RequestStatus.PENDING
         )
       database.addResourceInfo(resourceInfo)
