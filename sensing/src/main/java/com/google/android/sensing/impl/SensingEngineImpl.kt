@@ -21,7 +21,6 @@ import android.content.Intent
 import androidx.camera.camera2.interop.ExperimentalCamera2Interop
 import com.google.android.sensing.SensingEngine
 import com.google.android.sensing.ServerConfiguration
-import com.google.android.sensing.capture.CaptureFragment
 import com.google.android.sensing.capture.CaptureUtil
 import com.google.android.sensing.capture.SensorCaptureResult
 import com.google.android.sensing.db.Database
@@ -71,6 +70,7 @@ internal class SensingEngineImpl(
     emit(SensorCaptureResult.CaptureInfoCreated(captureInfo))
     CaptureUtil.sensorsInvolved(captureInfo.captureType).forEach {
       val resourceFolderRelativePath = getResourceFolderRelativePath(it, captureInfo)
+      val resourceFolder = File(context.filesDir, resourceFolderRelativePath)
       val uploadRelativeUrl = "/$resourceFolderRelativePath.zip"
       val uploadUrl = (serverConfiguration?.getBucketUrl() ?: "") + uploadRelativeUrl
       val resourceInfo =
@@ -80,18 +80,15 @@ internal class SensingEngineImpl(
           externalIdentifier = captureInfo.participantId,
           resourceTitle = captureInfo.captureSettings.captureTitle,
           contentType = resourceInfoFileType(it, captureInfo),
-          localLocation = resourceFolderRelativePath,
+          localLocation = resourceFolder.absolutePath,
           remoteLocation = uploadUrl,
           status = RequestStatus.PENDING
         )
       database.addResourceInfo(resourceInfo)
       emit(SensorCaptureResult.ResourceInfoCreated(resourceInfo))
 
-      /** [CaptureFragment] stores files in app's internal storage directory */
-      val resourceFolder = File(context.filesDir, resourceFolderRelativePath)
-      val outputZipFile = resourceFolder.absolutePath + ".zip"
-
       serverConfiguration?.let {
+        val outputZipFile = resourceFolder.absolutePath + ".zip"
         /** Zipping logic from: https://stackoverflow.com/a/63828765 */
         val zipOutputStream = ZipOutputStream(BufferedOutputStream(FileOutputStream(outputZipFile)))
         zipOutputStream.use { zos ->
