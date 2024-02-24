@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Google LLC
+ * Copyright 2023-2024 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,8 @@ import androidx.room.Transaction
 import androidx.room.Update
 import com.google.android.sensing.db.impl.entities.ResourceInfoEntity
 import com.google.android.sensing.model.ResourceInfo
+import java.time.Instant
+import java.util.Date
 
 @Dao
 internal abstract class ResourceInfoDao {
@@ -40,7 +42,7 @@ internal abstract class ResourceInfoDao {
     """
       SELECT *
       FROM ResourceInfoEntity
-      WHERE participantId = :participantId
+      WHERE externalIdentifier = :participantId
     """
   )
   abstract suspend fun listResourceInfoEntitiesForParticipant(
@@ -95,22 +97,26 @@ internal fun ResourceInfoEntity.toResourceInfo() =
   ResourceInfo(
     resourceInfoId = resourceInfoId,
     captureId = captureId,
-    participantId = participantId,
-    captureTitle = captureTitle,
-    fileType = fileType,
-    resourceFolderRelativePath = resourceFolderRelativePath,
-    uploadURL = uploadURL,
-    status = status
+    externalIdentifier = externalIdentifier,
+    localLocation = localLocation,
+    remoteLocation = remoteLocation,
+    resourceTitle = resourceTitle,
+    contentType = contentType,
+    status = status,
+    lastUpdateTime = Date.from(lastUpdateTime),
+    creation = Date.from(creation),
   )
 
 internal fun ResourceInfo.toResourceInfoEntity() =
   ResourceInfoEntity(
     resourceInfoId = resourceInfoId,
     captureId = captureId,
-    participantId = participantId,
-    captureTitle = captureTitle,
-    fileType = fileType,
-    resourceFolderRelativePath = resourceFolderRelativePath,
-    uploadURL = uploadURL,
-    status = status
+    externalIdentifier = externalIdentifier,
+    localLocation = localLocation,
+    remoteLocation = remoteLocation,
+    resourceTitle = resourceTitle,
+    contentType = contentType,
+    status = status,
+    lastUpdateTime = lastUpdateTime?.toInstant() ?: Instant.now(),
+    creation = creation?.toInstant() ?: Instant.now(),
   )

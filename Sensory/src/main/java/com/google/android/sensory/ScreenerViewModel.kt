@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Google LLC
+ * Copyright 2023-2024 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -123,8 +123,8 @@ class ScreenerViewModel(application: Application, private val state: SavedStateH
               val data =
                 Attachment().apply {
                   contentType = "application/gzip" // Sensing SDK uploads only in zip for now
-                  url = it.uploadURL
-                  title = it.captureTitle
+                  url = it.remoteLocation
+                  title = it.resourceTitle
                   creation = Date()
                 }
               DocumentReference.DocumentReferenceContentComponent(data)

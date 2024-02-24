@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Google LLC
+ * Copyright 2023-2024 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -152,12 +152,12 @@ object PPGSensorCaptureViewHolderFactory :
                 CaptureInfo(
                   participantId = participantId,
                   captureType = CaptureType.VIDEO_PPG,
-                  captureFolder = "Sensory/Participant_$participantId/$QUESTION_TITLE",
+                  captureFolder =
+                    "Sensory_${SensingApplication.APP_VERSION}/Participant_$participantId/$QUESTION_TITLE",
                   captureSettings =
                     CaptureSettings(
                       fileTypeMap = mapOf(SensorType.CAMERA to "jpeg"),
                       metaDataTypeMap = mapOf(SensorType.CAMERA to "tsv"),
-                      contextMap = mapOf(SensorType.CAMERA to SensingApplication.APP_VERSION),
                       captureTitle = QUESTION_TITLE,
                       ppgTimer = 30
                     ),
@@ -175,7 +175,7 @@ object PPGSensorCaptureViewHolderFactory :
                             // store captureId to recapture again
                             code = it.resourceInfo.captureId
                             system = "$WIDGET_EXTENSION/CaptureInfo"
-                            display = it.resourceInfo.captureTitle
+                            display = it.resourceInfo.resourceTitle
                           }
                       }
                     /**
