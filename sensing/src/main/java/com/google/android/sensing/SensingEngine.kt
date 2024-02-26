@@ -16,8 +16,11 @@
 
 package com.google.android.sensing
 
+import android.content.Context
 import android.content.Intent
 import com.google.android.sensing.capture.SensorCaptureResult
+import com.google.android.sensing.db.Database
+import com.google.android.sensing.impl.SensingEngineImpl
 import com.google.android.sensing.model.CaptureInfo
 import com.google.android.sensing.model.RequestStatus
 import com.google.android.sensing.model.ResourceInfo
@@ -86,4 +89,25 @@ interface SensingEngine {
   /** Delete data stored in blobstore */
   suspend fun deleteSensorData(uploadURL: String)
   suspend fun deleteSensorMetaData(uploadURL: String)
+
+  companion object {
+    @Volatile private var instance: SensingEngine? = null
+    fun getInstance(context: Context) =
+      instance
+        ?: synchronized(this) {
+          instance
+            ?: run {
+                val appContext = context.applicationContext
+                val sensingEngineConfiguration =
+                  if (appContext is SensingEngineConfiguration.Provider) {
+                    appContext.getSensingEngineConfiguration()
+                  } else SensingEngineConfiguration()
+                with(sensingEngineConfiguration) {
+                  val database = Database.getInstance(context, databaseConfiguration)
+                  SensingEngineImpl(database, context, serverConfiguration)
+                }
+              }
+              .also { instance = it }
+        }
+  }
 }

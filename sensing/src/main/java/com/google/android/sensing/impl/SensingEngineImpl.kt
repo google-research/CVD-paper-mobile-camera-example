@@ -18,7 +18,6 @@ package com.google.android.sensing.impl
 
 import android.content.Context
 import android.content.Intent
-import androidx.camera.camera2.interop.ExperimentalCamera2Interop
 import com.google.android.sensing.SensingEngine
 import com.google.android.sensing.ServerConfiguration
 import com.google.android.sensing.capture.CaptureFragment
@@ -50,7 +49,6 @@ import kotlinx.coroutines.withContext
  * resources in the application context.
  * @param serverConfiguration
  */
-@ExperimentalCamera2Interop
 internal class SensingEngineImpl(
   private val database: Database,
   private val context: Context,

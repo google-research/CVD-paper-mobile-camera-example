@@ -28,7 +28,6 @@ import com.google.android.sensing.DatabaseConfiguration
 import com.google.android.sensing.MinioInternalIDPAuthenticator
 import com.google.android.sensing.SensingEngine
 import com.google.android.sensing.SensingEngineConfiguration
-import com.google.android.sensing.SensingEngineProvider
 import com.google.android.sensing.ServerConfiguration
 import com.google.android.sensory.fhir_data.PPGSensorCaptureViewHolderFactory
 import com.google.android.sensory.fhir_data.PhotoCaptureViewHolderFactory
@@ -71,7 +70,7 @@ class SensingApplication :
   }
 
   private fun constructSensingEngine(): SensingEngine {
-    return SensingEngineProvider.getInstance(applicationContext)
+    return SensingEngine.getInstance(applicationContext)
   }
 
   companion object {
