@@ -16,8 +16,6 @@
 
 package com.google.android.sensing.model
 
-import java.util.Date
-
 /** Data class equivalent to ResourceInfoEntity for usage outside database. */
 data class ResourceInfo(
   val resourceInfoId: String,

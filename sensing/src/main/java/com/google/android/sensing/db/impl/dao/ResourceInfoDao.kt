@@ -24,8 +24,6 @@ import androidx.room.Transaction
 import androidx.room.Update
 import com.google.android.sensing.db.impl.entities.ResourceInfoEntity
 import com.google.android.sensing.model.ResourceInfo
-import java.time.Instant
-import java.util.Date
 
 @Dao
 internal abstract class ResourceInfoDao {
