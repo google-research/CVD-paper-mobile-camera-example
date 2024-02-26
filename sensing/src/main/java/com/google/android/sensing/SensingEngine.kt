@@ -18,14 +18,12 @@ package com.google.android.sensing
 
 import android.content.Context
 import android.content.Intent
-import com.google.android.sensing.capture.SensorCaptureResult
 import com.google.android.sensing.db.Database
 import com.google.android.sensing.impl.SensingEngineImpl
 import com.google.android.sensing.model.CaptureInfo
 import com.google.android.sensing.model.RequestStatus
 import com.google.android.sensing.model.ResourceInfo
 import com.google.android.sensing.model.UploadRequest
-import kotlinx.coroutines.flow.Flow
 
 /**
  * The Sensing Engine interface that handles the local storage of captured resources.
@@ -41,22 +39,6 @@ interface SensingEngine {
 
   /** Delete all data associated with [captureId] */
   suspend fun deleteDataInCapture(captureId: String): Boolean
-
-  /**
-   * Responsible for creating resource records for captured data and completing upload setup. This
-   * API is triggered by [CaptureViewModel] after completion of capturing. Limitation: All captured
-   * data and metadata are stored in the same folder and zipped for uploading.
-   * 1. Save [CaptureInfo] in the database
-   * 2. read map for a capture type, for each sensor type:-
-   * ```
-   *      a. create [ResourceInfo] for it and save it in the database.
-   *      b. emit [SensorCaptureResult.StateChange].
-   *      c. zip the [captureInfo.captureFolder]/[sensorType] folder.
-   *      d. create [UploadRequest] for it and save it in the database.
-   * ```
-   * TODO: Support uploading of any mime type.
-   */
-  suspend fun onCaptureCompleteCallback(captureInfo: CaptureInfo): Flow<SensorCaptureResult>
 
   /**
    * Lists all ResourceInfo given a externalIdentifier. This will return all ResourceInfo across

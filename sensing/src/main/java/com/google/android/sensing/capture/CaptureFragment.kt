@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Google LLC
+ * Copyright 2023-2024 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package com.google.android.sensing.capture
 
 import android.annotation.SuppressLint
 import android.app.AlertDialog
+import android.content.Context
 import android.content.res.ColorStateList
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -27,31 +28,31 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.AppCompatImageView
-import androidx.camera.camera2.interop.CaptureRequestOptions
+import androidx.camera.camera2.interop.Camera2CameraControl
+import androidx.camera.core.Camera
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.Preview
+import androidx.camera.core.TorchState
 import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
 import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.setFragmentResult
 import androidx.fragment.app.viewModels
-import androidx.lifecycle.DefaultLifecycleObserver
-import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
-import com.google.android.fitbit.research.sensing.common.libraries.camera.Camera2InteropSensor
-import com.google.android.fitbit.research.sensing.common.libraries.camera.CameraXSensorV2
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.progressindicator.CircularProgressIndicator
 import com.google.android.sensing.R
+import com.google.android.sensing.SensorManager
 import com.google.android.sensing.model.CaptureInfo
 import com.google.android.sensing.model.CaptureType
+import com.google.android.sensing.model.SensorType
 import java.util.Locale
 import java.util.Timer
 import java.util.TimerTask
 import java.util.UUID
 import java.util.concurrent.TimeUnit
-import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.launch
 
 /**
  * Fragment that deals with all sensors: For now only camera with capture types being
@@ -72,10 +73,9 @@ import kotlinx.coroutines.flow.Flow
 class CaptureFragment : Fragment() {
 
   private val captureViewModel by viewModels<CaptureViewModel>()
-  private lateinit var sensorCaptureResultCollector: suspend ((Flow<SensorCaptureResult>) -> Unit)
   private var captureInfo: CaptureInfo? = null
 
-  private var camera: Camera2InteropSensor? = null
+  private lateinit var sensorManager: SensorManager
 
   private var preview: Preview? = null
   private lateinit var previewView: PreviewView
@@ -85,17 +85,6 @@ class CaptureFragment : Fragment() {
   private lateinit var ppgInstruction: TextView
   private lateinit var ppgProgress: CircularProgressIndicator
   private lateinit var btnTakePhoto: AppCompatImageView
-
-  /**
-   * A setter function: Callback defined by the application developers that collects
-   * [SensorCaptureResult] emitted from [CaptureViewModel] and
-   * [SensingEngine.onCaptureCompleteCallback].
-   */
-  fun setSensorCaptureResultCollector(
-    sensorCaptureResultCollector: suspend ((Flow<SensorCaptureResult>) -> Unit)
-  ) {
-    this.sensorCaptureResultCollector = sensorCaptureResultCollector
-  }
 
   /**
    * A setter function: All details about the capture. Not passing via arguments as it requires API
@@ -113,10 +102,8 @@ class CaptureFragment : Fragment() {
   @SuppressLint("UseRequireInsteadOfGet")
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
-    captureViewModel.setupCaptureResultFlow(
-      captureInfo = captureInfo!!,
-      captureResultCollector = sensorCaptureResultCollector
-    )
+    captureViewModel.captureInfo = captureInfo!!
+    sensorManager = SensorManager.getInstance(requireContext())
   }
 
   override fun onCreateView(
@@ -126,34 +113,8 @@ class CaptureFragment : Fragment() {
   ): View? {
     (requireActivity() as AppCompatActivity).supportActionBar?.hide()
     /** For a different [CaptureType] sensors may be initialized differently. */
-    when (captureViewModel.captureInfo.captureType) {
-      CaptureType.VIDEO_PPG -> {
-        preview = Preview.Builder().build()
-        camera =
-          Camera2InteropSensor.builder()
-            .setContext(requireContext())
-            .setBoundLifecycle(viewLifecycleOwner)
-            .setCameraXSensorBuilder(
-              CameraXSensorV2.builder()
-                .setCameraSelector(CameraSelector.DEFAULT_BACK_CAMERA)
-                .addUseCase(preview)
-            )
-            .build()
-      }
-      CaptureType.IMAGE -> {
-        preview = Preview.Builder().build()
-        camera =
-          Camera2InteropSensor.builder()
-            .setContext(requireContext())
-            .setBoundLifecycle(viewLifecycleOwner)
-            .setCameraXSensorBuilder(
-              CameraXSensorV2.builder()
-                .setCameraSelector(CameraSelector.DEFAULT_BACK_CAMERA)
-                .addUseCase(preview)
-            )
-            .build()
-      }
-    }
+    preview = Preview.Builder().build()
+    prepareCapture(captureViewModel.captureInfo.captureType)
     setupObservers()
     val layout =
       when (captureViewModel.captureInfo.captureType) {
@@ -163,8 +124,27 @@ class CaptureFragment : Fragment() {
     return inflater.inflate(layout, container, false)
   }
 
+  private fun prepareCapture(captureType: CaptureType) {
+    lifecycleScope.launch {
+      sensorManager.init(
+        SensorType.CAMERA,
+        requireContext(),
+        viewLifecycleOwner,
+        InitConfig.CameraInitConfig(
+          cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA,
+          useCases = listOf(preview!!)
+        )
+      )
+    }
+  }
+
   override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
     super.onViewCreated(view, savedInstanceState)
+    with((sensorManager.getSensor(SensorType.CAMERA) as Camera).cameraControl) {
+      this.enableTorch(true)
+      Camera2CameraControl.from(this).captureRequestOptions =
+        captureViewModel.getCaptureRequestOptions(false)
+    }
     when (captureViewModel.captureInfo.captureType) {
       CaptureType.VIDEO_PPG -> {
         previewView = view.findViewById(R.id.preview_view)
@@ -177,20 +157,26 @@ class CaptureFragment : Fragment() {
         ppgProgress.progress = 0
         // Start the camera and preview
         preview!!.setSurfaceProvider(previewView.surfaceProvider)
-        camera!!
-          .lifecycle.addObserver(
-            object : DefaultLifecycleObserver {
-              override fun onCreate(owner: LifecycleOwner) {
-                camera!!.cameraXSensor.cameraControl!!.enableTorch(true)
-                camera!!.camera2Control!!.captureRequestOptions =
-                  captureViewModel.getCaptureRequestOptions(false)
-              }
-            }
-          )
+
         recordTimer.text = "00 : ${captureViewModel.captureInfo.captureSettings.ppgTimer}"
-        recordFab.setOnClickListener { captureViewModel.processRecord(camera!!) }
-        toggleFlashFab.setOnClickListener {
-          CaptureUtil.toggleFlashWithView(camera!!, toggleFlashFab, requireContext())
+        recordFab.setOnClickListener {
+          lifecycleScope.launch {
+            if (sensorManager.isStarted(SensorType.CAMERA)) {
+              sensorManager.stop(SensorType.CAMERA)
+            } else {
+              captureViewModel.startTimer()
+              val captureRequest =
+                with(captureViewModel.captureInfo) {
+                  CameraCaptureRequest.ImageStreamRequest(
+                    externalIdentifier = externalIdentifier,
+                    outputFolder = captureFolder,
+                    outputTitle = captureSettings.captureTitle,
+                    bufferCapacity = Int.MAX_VALUE
+                  )
+                }
+              sensorManager.start(SensorType.CAMERA, captureRequest)
+            }
+          }
         }
       }
       CaptureType.IMAGE -> {
@@ -198,61 +184,37 @@ class CaptureFragment : Fragment() {
         toggleFlashFab = view.findViewById(R.id.toggle_flash_fab)
         btnTakePhoto = view.findViewById(R.id.btn_take_photo)
         preview!!.setSurfaceProvider(previewView.surfaceProvider)
-        camera!!
-          .lifecycle.addObserver(
-            object : DefaultLifecycleObserver {
-              override fun onCreate(owner: LifecycleOwner) {
-                camera!!.cameraXSensor.cameraControl!!.enableTorch(true)
-                camera!!.camera2Control!!.captureRequestOptions =
-                  CaptureRequestOptions.Builder().build()
-              }
-            }
-          )
         btnTakePhoto.setOnClickListener {
-          captureViewModel.capturePhoto(camera!!, requireContext())
-        }
-        toggleFlashFab.setOnClickListener {
-          CaptureUtil.toggleFlashWithView(camera!!, toggleFlashFab, requireContext())
+          lifecycleScope.launch {
+            with(captureViewModel.captureInfo) {
+              sensorManager.start(
+                SensorType.CAMERA,
+                CameraCaptureRequest.ImageRequest(
+                  externalIdentifier = externalIdentifier,
+                  outputFolder = captureFolder,
+                  outputTitle = captureSettings.captureTitle,
+                )
+              )
+            }
+          }
         }
       }
+    }
+    toggleFlashFab.setOnClickListener {
+      toggleFlashWithView(
+        sensorManager.getSensor(SensorType.CAMERA)!! as Camera,
+        toggleFlashFab,
+        requireContext()
+      )
     }
   }
 
   private fun setupObservers() {
-    lifecycleScope.launchWhenCreated {
-      if (captureViewModel.captureInfo.captureType == CaptureType.VIDEO_PPG) {
-        captureViewModel.isPhoneSafeToUse.observe(viewLifecycleOwner) {
-          if (!it) {
-            showOverheatDialog()
-          } else {
-            val timer = Timer()
-            timer.schedule(
-              object : TimerTask() {
-                override fun run() {
-                  lockExposure()
-                }
-              },
-              LOCK_AFTER_MS.toLong()
-            )
-          }
-        }
-        captureViewModel.timerLiveData.observe(viewLifecycleOwner) {
-          val strDuration =
-            String.format(
-              Locale.ENGLISH,
-              "%02d : %02d",
-              0L /* minutes */,
-              TimeUnit.MILLISECONDS.toSeconds(it)
-            )
-          recordTimer.text = strDuration
-          ppgProgress.progress =
-            captureViewModel.captureInfo.captureSettings!!.ppgTimer -
-              TimeUnit.MILLISECONDS.toSeconds(it).toInt()
-        }
-      }
-      captureViewModel.captureResultLiveData.observe(viewLifecycleOwner) {
-        when (it) {
-          is SensorCaptureResult.Started -> {
+    sensorManager.registerListener(
+      sensorType = SensorType.CAMERA,
+      listener =
+        object : SensorManager.AppDataCaptureListener {
+          override fun onStart(captureInfo: CaptureInfo) {
             when (captureViewModel.captureInfo.captureType) {
               CaptureType.VIDEO_PPG -> {
                 ppgInstruction.text = resources.getString(R.string.ppg_instruction_recording)
@@ -267,16 +229,20 @@ class CaptureFragment : Fragment() {
               }
             }
           }
-          is SensorCaptureResult.CaptureComplete -> {
+
+          override fun onComplete(captureInfo: CaptureInfo) {
+            captureViewModel.endTimer()
             val toastText =
               when (captureViewModel.captureInfo.captureType) {
                 CaptureType.VIDEO_PPG -> "Video Saved"
                 CaptureType.IMAGE -> "Image Saved"
               }
             Toast.makeText(requireContext(), toastText, Toast.LENGTH_SHORT).show()
-            finishCapturing()
+            setFragmentResult(TAG, bundleOf(CAPTURED to true, CAPTURED_ID to captureInfo.captureId))
           }
-          is SensorCaptureResult.Failed -> {
+
+          override fun onError(exception: Exception, captureInfo: CaptureInfo?) {
+            captureViewModel.endTimer()
             val toastText =
               when (captureViewModel.captureInfo.captureType) {
                 CaptureType.VIDEO_PPG -> "Failed to save Video"
@@ -284,7 +250,42 @@ class CaptureFragment : Fragment() {
               }
             Toast.makeText(requireContext(), toastText, Toast.LENGTH_SHORT).show()
           }
-          else -> {}
+        }
+    )
+
+    if (captureViewModel.captureInfo.captureType == CaptureType.VIDEO_PPG) {
+      captureViewModel.isPhoneSafeToUse.observe(viewLifecycleOwner) {
+        if (!it) {
+          showOverheatDialog()
+        } else {
+          val timer = Timer()
+          timer.schedule(
+            object : TimerTask() {
+              override fun run() {
+                lockExposure()
+              }
+            },
+            LOCK_AFTER_MS.toLong()
+          )
+        }
+      }
+      captureViewModel.timerLiveData.observe(viewLifecycleOwner) {
+        val strDuration =
+          String.format(
+            Locale.ENGLISH,
+            "%02d : %02d",
+            0L /* minutes */,
+            TimeUnit.MILLISECONDS.toSeconds(it)
+          )
+        recordTimer.text = strDuration
+        ppgProgress.progress =
+          captureViewModel.captureInfo.captureSettings.ppgTimer -
+            TimeUnit.MILLISECONDS.toSeconds(it).toInt()
+      }
+
+      captureViewModel.automaticallyStopCapturing.observe(viewLifecycleOwner) {
+        if (it) {
+          lifecycleScope.launch { sensorManager.stop(SensorType.CAMERA) }
         }
       }
     }
@@ -292,8 +293,28 @@ class CaptureFragment : Fragment() {
 
   // Safe to ignore CameraControl futures
   private fun lockExposure() {
-    camera!!.camera2Control!!.captureRequestOptions =
-      captureViewModel.getCaptureRequestOptions(true)
+    Camera2CameraControl.from((sensorManager.getSensor(SensorType.CAMERA) as Camera).cameraControl)
+      .captureRequestOptions = captureViewModel.getCaptureRequestOptions(true)
+  }
+
+  private fun toggleFlashWithView(
+    c: Camera,
+    toggleFlashFab: FloatingActionButton,
+    context: Context
+  ) {
+    if (c.cameraInfo.torchState.value == TorchState.ON) {
+      // Turn off flash
+      c.cameraControl.enableTorch(false)
+      toggleFlashFab.setImageResource(R.drawable.flashlight_off)
+      toggleFlashFab.backgroundTintList =
+        ColorStateList.valueOf(ContextCompat.getColor(context, android.R.color.black))
+    } else {
+      // Turn on flash
+      c.cameraControl.enableTorch(true)
+      toggleFlashFab.setImageResource(R.drawable.flashlight_on)
+      toggleFlashFab.backgroundTintList =
+        ColorStateList.valueOf(ContextCompat.getColor(context, R.color.colorPrimary))
+    }
   }
 
   private fun showOverheatDialog() {
@@ -309,14 +330,8 @@ class CaptureFragment : Fragment() {
     dialog.show()
   }
 
-  private fun finishCapturing() {
-    captureViewModel.invokeCaptureCompleteCallback()
-    setFragmentResult(TAG, bundleOf(CAPTURED to true))
-  }
-
   override fun onPause() {
     super.onPause()
-    captureViewModel.endPPGCapture()
     (requireActivity() as AppCompatActivity).supportActionBar?.show()
   }
 
@@ -324,6 +339,7 @@ class CaptureFragment : Fragment() {
     const val LOCK_AFTER_MS = 1000
     const val CAPTURE_FRAGMENT_TAG = "capture_fragment_tag"
     const val CAPTURED = "captured"
+    const val CAPTURED_ID = "captured-id"
     const val TAG = "CAPTURE_FRAGMENT"
   }
 }
