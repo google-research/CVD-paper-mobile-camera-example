@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Google LLC
+ * Copyright 2023-2024 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,8 +32,11 @@ internal data class CaptureInfoEntity(
   /** Unique id for each capture. */
   @PrimaryKey val captureId: String,
 
-  /** Participant for which this capture was triggered. */
-  val participantId: String,
+  /**
+   * External identifier for which this capture was triggered. When this is not provided by
+   * application this is same as [captureId]
+   */
+  val externalIdentifier: String,
 
   /** Tracking capture information like the ones below. May include [CaptureSettings] later. */
   val captureType: CaptureType,

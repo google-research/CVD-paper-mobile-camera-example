@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Google LLC
+ * Copyright 2023-2024 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,11 @@
 
 package com.google.android.sensing
 
+import android.content.Context
 import android.content.Intent
 import com.google.android.sensing.capture.SensorCaptureResult
+import com.google.android.sensing.db.Database
+import com.google.android.sensing.impl.SensingEngineImpl
 import com.google.android.sensing.model.CaptureInfo
 import com.google.android.sensing.model.RequestStatus
 import com.google.android.sensing.model.ResourceInfo
@@ -56,16 +59,10 @@ interface SensingEngine {
   suspend fun onCaptureCompleteCallback(captureInfo: CaptureInfo): Flow<SensorCaptureResult>
 
   /**
-   * Lists all ResourceInfo given a participantId. This will return all ResourceInfo across multiple
-   * capturings.
+   * Lists all ResourceInfo given a externalIdentifier. This will return all ResourceInfo across
+   * multiple capturings.
    */
-  suspend fun listResourceInfoForParticipant(participantId: String): List<ResourceInfo>
-
-  /**
-   * Lists all ResourceInfo given a captureId. This will return all ResourceInfo for a single
-   * capture.
-   */
-  suspend fun listResourceInfoInCapture(captureId: String): List<ResourceInfo>
+  suspend fun listResourceInfoForExternalIdentifier(externalIdentifier: String): List<ResourceInfo>
 
   suspend fun getResourceInfo(resourceInfoId: String): ResourceInfo?
 
@@ -86,4 +83,25 @@ interface SensingEngine {
   /** Delete data stored in blobstore */
   suspend fun deleteSensorData(uploadURL: String)
   suspend fun deleteSensorMetaData(uploadURL: String)
+
+  companion object {
+    @Volatile private var instance: SensingEngine? = null
+    fun getInstance(context: Context) =
+      instance
+        ?: synchronized(this) {
+          instance
+            ?: run {
+                val appContext = context.applicationContext
+                val sensingEngineConfiguration =
+                  if (appContext is SensingEngineConfiguration.Provider) {
+                    appContext.getSensingEngineConfiguration()
+                  } else SensingEngineConfiguration()
+                with(sensingEngineConfiguration) {
+                  val database = Database.getInstance(context, databaseConfiguration)
+                  SensingEngineImpl(database, context, serverConfiguration)
+                }
+              }
+              .also { instance = it }
+        }
+  }
 }

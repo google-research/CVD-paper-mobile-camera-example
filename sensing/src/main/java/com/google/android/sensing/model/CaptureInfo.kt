@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Google LLC
+ * Copyright 2023-2024 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,11 +22,11 @@ import java.util.Date
 /** Data class equivalent to [CaptureInfoEntity] for usage outside database. */
 data class CaptureInfo(
   var captureId: String? = null,
-  val participantId: String,
+  val externalIdentifier: String,
   val captureType: CaptureType,
   val captureFolder: String,
   var captureTime: Date? = null,
-  /** This is not persisted in database for now */
   val captureSettings: CaptureSettings,
   val recapture: Boolean? = false,
+  val resourceInfoList: List<ResourceInfo> = emptyList()
 )

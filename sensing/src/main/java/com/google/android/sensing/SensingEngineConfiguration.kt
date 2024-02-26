@@ -16,31 +16,6 @@
 
 package com.google.android.sensing
 
-import android.annotation.SuppressLint
-import android.content.Context
-import com.google.android.sensing.db.impl.DatabaseImpl
-import com.google.android.sensing.impl.SensingEngineImpl
-
-object SensingEngineProvider {
-  @Volatile private var sensingEngine: SensingEngine? = null
-
-  @SuppressLint("UnsafeOptInUsageError")
-  fun getInstance(context: Context) =
-    sensingEngine
-      ?: synchronized(this) {
-        val appContext = context.applicationContext
-        val sensingEngineConfiguration =
-          if (appContext is SensingEngineConfiguration.Provider) {
-            appContext.getSensingEngineConfiguration()
-          } else SensingEngineConfiguration()
-        sensingEngine
-          ?: with(sensingEngineConfiguration) {
-            val database = DatabaseImpl(context, databaseConfiguration)
-            SensingEngineImpl(database, context, serverConfiguration).also { sensingEngine = it }
-          }
-      }
-}
-
 /**
  * A configuration which describes the database setup and error recovery.
  *

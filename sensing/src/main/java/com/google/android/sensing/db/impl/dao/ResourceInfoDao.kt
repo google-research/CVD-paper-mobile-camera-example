@@ -103,8 +103,6 @@ internal fun ResourceInfoEntity.toResourceInfo() =
     resourceTitle = resourceTitle,
     contentType = contentType,
     status = status,
-    lastUpdateTime = Date.from(lastUpdateTime),
-    creation = Date.from(creation),
   )
 
 internal fun ResourceInfo.toResourceInfoEntity() =
@@ -117,6 +115,4 @@ internal fun ResourceInfo.toResourceInfoEntity() =
     resourceTitle = resourceTitle,
     contentType = contentType,
     status = status,
-    lastUpdateTime = lastUpdateTime?.toInstant() ?: Instant.now(),
-    creation = creation?.toInstant() ?: Instant.now(),
   )

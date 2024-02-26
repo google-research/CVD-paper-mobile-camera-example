@@ -18,7 +18,6 @@ package com.google.android.sensing.upload
 
 import android.content.Context
 import com.google.android.sensing.SensingEngine
-import com.google.android.sensing.SensingEngineProvider
 import com.google.android.sensing.model.RequestStatus
 import com.google.android.sensing.model.UploadResult
 import java.io.File
@@ -39,7 +38,7 @@ interface UploadResultProcessor {
       instance
         ?: synchronized(this) {
           instance
-            ?: DefaultUploadResultProcessor(SensingEngineProvider.getInstance(context)).also {
+            ?: DefaultUploadResultProcessor(SensingEngine.getInstance(context)).also {
               instance = it
             }
         }

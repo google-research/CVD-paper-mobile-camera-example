@@ -52,24 +52,18 @@ internal data class ResourceInfoEntity(
   /** Participant for which the capture created this record. */
   val externalIdentifier: String,
 
+  /** Label to display in place of the data. */
+  val resourceTitle: String,
+
   /** Android location of the captured data from a sensor. */
   val localLocation: String,
 
   /** Absolute and immutable remote location, eg, url. */
   val remoteLocation: String,
 
-  /** Label to display in place of the data. */
-  val resourceTitle: String,
-
   /** Mime type of the content, with charset etc. */
   val contentType: String,
 
-  /** Date this resource was first created. */
-  val creation: Instant,
-
   /** Upload status. */
   val status: RequestStatus,
-
-  /** The last time the [status] was updated. */
-  val lastUpdateTime: Instant
 )

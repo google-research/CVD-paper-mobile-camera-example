@@ -117,7 +117,7 @@ class ScreenerViewModel(application: Application, private val state: SavedStateH
             if (resource.type.coding.isNullOrEmpty()) "" else resource.type.coding[0].code
 
           val dataList =
-            sensingEngine.listResourceInfoInCapture(captureId!!).map {
+            sensingEngine.getCaptureInfo(captureId!!).resourceInfoList.map {
               // modify data based on the nature of the capture (using resourceInfo obtained from
               // captureId)
               val data =

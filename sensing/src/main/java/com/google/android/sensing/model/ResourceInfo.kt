@@ -28,6 +28,4 @@ data class ResourceInfo(
   val resourceTitle: String,
   val contentType: String,
   var status: RequestStatus,
-  val creation: Date? = null,
-  var lastUpdateTime: Date? = null,
 )

@@ -18,7 +18,6 @@ package com.google.android.sensing.impl
 
 import android.content.Context
 import android.content.Intent
-import androidx.camera.camera2.interop.ExperimentalCamera2Interop
 import com.google.android.sensing.SensingEngine
 import com.google.android.sensing.ServerConfiguration
 import com.google.android.sensing.capture.CaptureUtil
@@ -49,7 +48,6 @@ import kotlinx.coroutines.withContext
  * resources in the application context.
  * @param serverConfiguration
  */
-@ExperimentalCamera2Interop
 internal class SensingEngineImpl(
   private val database: Database,
   private val context: Context,
@@ -77,7 +75,7 @@ internal class SensingEngineImpl(
         ResourceInfo(
           resourceInfoId = UUID.randomUUID().toString(),
           captureId = captureInfo.captureId!!,
-          externalIdentifier = captureInfo.participantId,
+          externalIdentifier = captureInfo.externalIdentifier,
           resourceTitle = captureInfo.captureSettings.captureTitle,
           contentType = resourceInfoFileType(it, captureInfo),
           localLocation = resourceFolder.absolutePath,
@@ -137,12 +135,10 @@ internal class SensingEngineImpl(
     TODO("Not yet implemented")
   }
 
-  override suspend fun listResourceInfoForParticipant(participantId: String): List<ResourceInfo> {
-    return database.listResourceInfoForParticipant(participantId)
-  }
-
-  override suspend fun listResourceInfoInCapture(captureId: String): List<ResourceInfo> {
-    return database.listResourceInfoInCapture(captureId)
+  override suspend fun listResourceInfoForExternalIdentifier(
+    externalIdentifier: String
+  ): List<ResourceInfo> {
+    return database.listResourceInfoForExternalIdentifier(externalIdentifier)
   }
 
   override suspend fun getResourceInfo(resourceInfoId: String): ResourceInfo? {

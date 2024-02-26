@@ -18,7 +18,6 @@ package com.google.android.sensing.upload
 
 import android.content.Context
 import com.google.android.sensing.SensingEngine
-import com.google.android.sensing.SensingEngineProvider
 import com.google.android.sensing.model.RequestStatus
 import com.google.android.sensing.model.UploadRequest
 
@@ -34,7 +33,7 @@ interface UploadRequestFetcher {
       instance
         ?: synchronized(this) {
           instance
-            ?: DefaultUploadRequestFetcher(SensingEngineProvider.getInstance(context)).also {
+            ?: DefaultUploadRequestFetcher(SensingEngine.getInstance(context)).also {
               instance = it
             }
         }
