@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Google LLC
+ * Copyright 2023-2024 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package com.google.android.sensing.db.impl
 
 import android.content.Context
 import androidx.room.Room
+import androidx.room.withTransaction
 import com.google.android.sensing.DatabaseConfiguration
 import com.google.android.sensing.db.Database
 import com.google.android.sensing.db.ResourceNotFoundException
@@ -55,12 +56,10 @@ internal class DatabaseImpl(context: Context, databaseConfig: DatabaseConfigurat
     return uploadRequestDao.insertUploadRequest(uploadRequest)
   }
 
-  override suspend fun listResourceInfoForParticipant(participantId: String): List<ResourceInfo> {
-    return resourceInfoDao.listResourceInfoForParticipant(participantId)
-  }
-
-  override suspend fun listResourceInfoInCapture(captureId: String): List<ResourceInfo> {
-    return resourceInfoDao.listResourceInfoInCapture(captureId)
+  override suspend fun listResourceInfoForExternalIdentifier(
+    externalIdentifier: String
+  ): List<ResourceInfo> {
+    return resourceInfoDao.listResourceInfoForParticipant(externalIdentifier)
   }
 
   override suspend fun listUploadRequests(status: RequestStatus): List<UploadRequest> {
@@ -80,8 +79,13 @@ internal class DatabaseImpl(context: Context, databaseConfig: DatabaseConfigurat
   }
 
   override suspend fun getCaptureInfo(captureId: String): CaptureInfo {
-    return captureInfoDao.getCaptureInfo(captureId)
-      ?: throw ResourceNotFoundException("CaptureInfo", captureId)
+    return db.withTransaction {
+      val captureInfo =
+        captureInfoDao.getCaptureInfo(captureId)
+          ?: throw ResourceNotFoundException("CaptureInfo", captureId)
+      val resourceInfoList = resourceInfoDao.listResourceInfoInCapture(captureId)
+      captureInfo.copy(resourceInfoList = resourceInfoList)
+    }
   }
 
   override suspend fun deleteRecordsInCapture(captureId: String): Boolean {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Google LLC
+ * Copyright 2023-2024 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -95,7 +95,7 @@ internal fun ResourceInfoEntity.toResourceInfo() =
   ResourceInfo(
     resourceInfoId = resourceInfoId,
     captureId = captureId,
-    participantId = participantId,
+    externalIdentifier = participantId,
     captureTitle = captureTitle,
     fileType = fileType,
     resourceFolderRelativePath = resourceFolderRelativePath,
@@ -107,7 +107,7 @@ internal fun ResourceInfo.toResourceInfoEntity() =
   ResourceInfoEntity(
     resourceInfoId = resourceInfoId,
     captureId = captureId,
-    participantId = participantId,
+    participantId = externalIdentifier,
     captureTitle = captureTitle,
     fileType = fileType,
     resourceFolderRelativePath = resourceFolderRelativePath,

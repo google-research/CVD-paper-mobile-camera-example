@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Google LLC
+ * Copyright 2023-2024 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,7 +34,7 @@ internal abstract class CaptureInfoDao {
   @Transaction
   open suspend fun insertCaptureInfo(captureInfo: CaptureInfo): String {
     insertCaptureInfoEntity(captureInfo.toCaptureInfoEntity())
-    return captureInfo.participantId
+    return captureInfo.externalIdentifier
   }
 
   @Query("""
@@ -56,7 +56,7 @@ internal abstract class CaptureInfoDao {
 internal fun CaptureInfo.toCaptureInfoEntity() =
   CaptureInfoEntity(
     captureId = captureId!!,
-    participantId = participantId,
+    externalIdentifier = externalIdentifier,
     captureType = captureType,
     captureFolder = captureFolder,
     captureTime = captureTime?.toInstant() ?: Instant.now(),
@@ -66,7 +66,7 @@ internal fun CaptureInfo.toCaptureInfoEntity() =
 internal fun CaptureInfoEntity.toCaptureInfo() =
   CaptureInfo(
     captureId = captureId,
-    participantId = participantId,
+    externalIdentifier = externalIdentifier,
     captureType = captureType,
     captureFolder = captureFolder,
     captureSettings = captureSettings,

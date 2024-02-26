@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Google LLC
+ * Copyright 2023-2024 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ package com.google.android.sensing.model
 data class ResourceInfo(
   val resourceInfoId: String,
   val captureId: String,
-  val participantId: String,
+  val externalIdentifier: String,
   val captureTitle: String,
   val fileType: String,
   val resourceFolderRelativePath: String,

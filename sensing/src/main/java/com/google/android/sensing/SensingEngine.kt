@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Google LLC
+ * Copyright 2023-2024 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,16 +59,10 @@ interface SensingEngine {
   suspend fun onCaptureCompleteCallback(captureInfo: CaptureInfo): Flow<SensorCaptureResult>
 
   /**
-   * Lists all ResourceInfo given a participantId. This will return all ResourceInfo across multiple
-   * capturings.
+   * Lists all ResourceInfo given a externalIdentifier. This will return all ResourceInfo across
+   * multiple capturings.
    */
-  suspend fun listResourceInfoForParticipant(participantId: String): List<ResourceInfo>
-
-  /**
-   * Lists all ResourceInfo given a captureId. This will return all ResourceInfo for a single
-   * capture.
-   */
-  suspend fun listResourceInfoInCapture(captureId: String): List<ResourceInfo>
+  suspend fun listResourceInfoForExternalIdentifier(externalIdentifier: String): List<ResourceInfo>
 
   suspend fun getResourceInfo(resourceInfoId: String): ResourceInfo?
 

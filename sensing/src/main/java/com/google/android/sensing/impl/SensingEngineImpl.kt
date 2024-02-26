@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Google LLC
+ * Copyright 2023-2024 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -75,7 +75,7 @@ internal class SensingEngineImpl(
         ResourceInfo(
           resourceInfoId = UUID.randomUUID().toString(),
           captureId = captureInfo.captureId!!,
-          participantId = captureInfo.participantId,
+          externalIdentifier = captureInfo.externalIdentifier,
           captureTitle = captureInfo.captureSettings.captureTitle,
           fileType = resourceInfoFileType(it, captureInfo),
           resourceFolderRelativePath = resourceFolderRelativePath,
@@ -138,12 +138,10 @@ internal class SensingEngineImpl(
     TODO("Not yet implemented")
   }
 
-  override suspend fun listResourceInfoForParticipant(participantId: String): List<ResourceInfo> {
-    return database.listResourceInfoForParticipant(participantId)
-  }
-
-  override suspend fun listResourceInfoInCapture(captureId: String): List<ResourceInfo> {
-    return database.listResourceInfoInCapture(captureId)
+  override suspend fun listResourceInfoForExternalIdentifier(
+    externalIdentifier: String
+  ): List<ResourceInfo> {
+    return database.listResourceInfoForExternalIdentifier(externalIdentifier)
   }
 
   override suspend fun getResourceInfo(resourceInfoId: String): ResourceInfo? {
