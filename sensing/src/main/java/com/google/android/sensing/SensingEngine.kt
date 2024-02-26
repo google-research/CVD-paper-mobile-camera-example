@@ -56,10 +56,10 @@ interface SensingEngine {
   suspend fun onCaptureCompleteCallback(captureInfo: CaptureInfo): Flow<SensorCaptureResult>
 
   /**
-   * Lists all ResourceInfo given a participantId. This will return all ResourceInfo across multiple
-   * capturings.
+   * Lists all ResourceInfo given a externalIdentifier. This will return all ResourceInfo across
+   * multiple capturings.
    */
-  suspend fun listResourceInfoForExternalIdentifier(participantId: String): List<ResourceInfo>
+  suspend fun listResourceInfoForExternalIdentifier(externalIdentifier: String): List<ResourceInfo>
 
   suspend fun getResourceInfo(resourceInfoId: String): ResourceInfo?
 
