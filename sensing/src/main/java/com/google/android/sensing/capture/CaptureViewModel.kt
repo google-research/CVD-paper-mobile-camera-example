@@ -37,7 +37,7 @@ import com.google.android.fitbit.research.sensing.common.libraries.camera.camera
 import com.google.android.fitbit.research.sensing.common.libraries.camera.storage.WriteJpegFutureSubscriber
 import com.google.android.fitbit.research.sensing.common.libraries.flow.FlowGate
 import com.google.android.fitbit.research.sensing.common.libraries.storage.StreamToTsvSubscriber
-import com.google.android.sensing.SensingEngineProvider
+import com.google.android.sensing.SensingEngine
 import com.google.android.sensing.model.CaptureInfo
 import com.google.android.sensing.model.SensorType
 import com.google.common.util.concurrent.FutureCallback
@@ -239,9 +239,9 @@ class CaptureViewModel(application: Application) : AndroidViewModel(application)
    */
   fun invokeCaptureCompleteCallback() {
     CoroutineScope(context = Dispatchers.IO).launch {
-      SensingEngineProvider.getInstance(getApplication())
-        .onCaptureCompleteCallback(captureInfo)
-        .collect { captureResultLiveData.postValue(it) }
+      SensingEngine.getInstance(getApplication()).onCaptureCompleteCallback(captureInfo).collect {
+        captureResultLiveData.postValue(it)
+      }
     }
   }
 

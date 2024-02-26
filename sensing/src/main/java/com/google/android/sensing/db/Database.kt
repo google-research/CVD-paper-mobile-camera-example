@@ -16,6 +16,9 @@
 
 package com.google.android.sensing.db
 
+import android.content.Context
+import com.google.android.sensing.DatabaseConfiguration
+import com.google.android.sensing.db.impl.DatabaseImpl
 import com.google.android.sensing.model.CaptureInfo
 import com.google.android.sensing.model.RequestStatus
 import com.google.android.sensing.model.ResourceInfo
@@ -33,4 +36,21 @@ internal interface Database {
   suspend fun getResourceInfo(resourceInfoId: String): ResourceInfo
   suspend fun getCaptureInfo(captureId: String): CaptureInfo
   suspend fun deleteRecordsInCapture(captureId: String): Boolean
+
+  companion object {
+    @Volatile private var instance: Database? = null
+    fun getInstance(context: Context, databaseConfig: DatabaseConfiguration) =
+      instance
+        ?: synchronized(this) {
+          instance
+            ?: DatabaseImpl(
+                context,
+                DatabaseConfiguration(
+                  databaseConfig.enableEncryption,
+                  databaseConfig.databaseErrorStrategy
+                )
+              )
+              .also { instance = it }
+        }
+  }
 }
