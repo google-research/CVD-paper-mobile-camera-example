@@ -123,8 +123,8 @@ class ScreenerViewModel(application: Application, private val state: SavedStateH
               val data =
                 Attachment().apply {
                   contentType = "application/gzip" // Sensing SDK uploads only in zip for now
-                  url = it.uploadURL
-                  title = it.captureTitle
+                  url = it.remoteLocation
+                  title = it.resourceTitle
                   creation = Date()
                 }
               DocumentReference.DocumentReferenceContentComponent(data)

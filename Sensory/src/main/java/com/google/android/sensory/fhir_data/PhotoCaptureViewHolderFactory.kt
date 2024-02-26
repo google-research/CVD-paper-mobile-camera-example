@@ -42,7 +42,6 @@ import com.google.android.sensing.model.SensorType
 import com.google.android.sensory.InstructionsFragment
 import com.google.android.sensory.R
 import com.google.android.sensory.SensingApplication
-import java.io.File
 import org.hl7.fhir.r4.model.Coding
 import org.hl7.fhir.r4.model.QuestionnaireResponse
 
@@ -56,7 +55,6 @@ object PhotoCaptureViewHolderFactory :
       private lateinit var photoThumbnail: ImageView
       private lateinit var photoTitle: TextView
       private lateinit var context: AppCompatActivity
-      private lateinit var internalFilesDir: File
       private lateinit var QUESTION_TITLE: String
 
       override fun init(itemView: View) {
@@ -68,7 +66,6 @@ object PhotoCaptureViewHolderFactory :
           itemView.findViewById(com.google.android.fhir.datacapture.R.id.photo_thumbnail)
         photoTitle = itemView.findViewById(com.google.android.fhir.datacapture.R.id.photo_title)
         context = itemView.context.tryUnwrapContext()!!
-        internalFilesDir = context.filesDir
       }
 
       override fun bind(questionnaireViewItem: QuestionnaireViewItem) {
@@ -144,12 +141,12 @@ object PhotoCaptureViewHolderFactory :
                 CaptureInfo(
                   externalIdentifier = fhirPatientId,
                   captureType = CaptureType.IMAGE,
-                  captureFolder = "Sensory/Participant_$fhirPatientId/$QUESTION_TITLE",
+                  captureFolder =
+                    "Sensory_${SensingApplication.APP_VERSION}/Participant_$fhirPatientId/$QUESTION_TITLE",
                   captureSettings =
                     CaptureSettings(
                       fileTypeMap = mapOf(SensorType.CAMERA to "jpeg"),
                       metaDataTypeMap = mapOf(SensorType.CAMERA to "tsv"),
-                      contextMap = mapOf(SensorType.CAMERA to SensingApplication.APP_VERSION),
                       captureTitle = QUESTION_TITLE
                     ),
                   recapture = captureId != null,
@@ -169,9 +166,8 @@ object PhotoCaptureViewHolderFactory :
                               "${PPGSensorCaptureViewHolderFactory.WIDGET_EXTENSION}/CaptureInfo"
                             display =
                               ViewHolderFactoryUtil.getFirstOrNullImageUri(
-                                  internalFilesDir,
-                                  it.resourceInfo.resourceFolderRelativePath,
-                                  it.resourceInfo.fileType
+                                  it.resourceInfo.localLocation,
+                                  it.resourceInfo.contentType
                                 )
                                 ?.toString()
                           }

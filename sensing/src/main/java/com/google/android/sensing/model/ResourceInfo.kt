@@ -21,9 +21,9 @@ data class ResourceInfo(
   val resourceInfoId: String,
   val captureId: String,
   val externalIdentifier: String,
-  val captureTitle: String,
-  val fileType: String,
-  val resourceFolderRelativePath: String,
-  val uploadURL: String,
+  val localLocation: String,
+  val remoteLocation: String,
+  val resourceTitle: String,
+  val contentType: String,
   var status: RequestStatus,
 )

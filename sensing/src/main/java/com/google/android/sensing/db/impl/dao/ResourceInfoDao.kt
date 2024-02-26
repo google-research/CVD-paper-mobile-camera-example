@@ -40,7 +40,7 @@ internal abstract class ResourceInfoDao {
     """
       SELECT *
       FROM ResourceInfoEntity
-      WHERE participantId = :participantId
+      WHERE externalIdentifier = :participantId
     """
   )
   abstract suspend fun listResourceInfoEntitiesForParticipant(
@@ -95,22 +95,22 @@ internal fun ResourceInfoEntity.toResourceInfo() =
   ResourceInfo(
     resourceInfoId = resourceInfoId,
     captureId = captureId,
-    externalIdentifier = participantId,
-    captureTitle = captureTitle,
-    fileType = fileType,
-    resourceFolderRelativePath = resourceFolderRelativePath,
-    uploadURL = uploadURL,
-    status = status
+    externalIdentifier = externalIdentifier,
+    localLocation = localLocation,
+    remoteLocation = remoteLocation,
+    resourceTitle = resourceTitle,
+    contentType = contentType,
+    status = status,
   )
 
 internal fun ResourceInfo.toResourceInfoEntity() =
   ResourceInfoEntity(
     resourceInfoId = resourceInfoId,
     captureId = captureId,
-    participantId = externalIdentifier,
-    captureTitle = captureTitle,
-    fileType = fileType,
-    resourceFolderRelativePath = resourceFolderRelativePath,
-    uploadURL = uploadURL,
-    status = status
+    externalIdentifier = externalIdentifier,
+    localLocation = localLocation,
+    remoteLocation = remoteLocation,
+    resourceTitle = resourceTitle,
+    contentType = contentType,
+    status = status,
   )
