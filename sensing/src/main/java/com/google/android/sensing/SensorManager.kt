@@ -40,6 +40,9 @@ interface SensorManager {
    * @param lifecycleOwner A LifecycleOwner (typically Activity or Fragment) to tie the sensor's
    * lifecycle.
    * @param initConfig Sensor-specific initialization configuration.
+   * @throws IllegalStateException when
+   * 1. [sensorType] is not compatible with [initConfig]
+   * 2. [init] is called before [reset]-ting the previous capture
    */
   suspend fun init(
     sensorType: SensorType,
@@ -49,10 +52,14 @@ interface SensorManager {
   )
 
   /**
-   * Starts the capture process for the specified sensor.
+   * Starts the capture process for the specified sensor. Call after [init].
    *
    * @param sensorType The type of sensor to start.
    * @param captureRequest Details about the capture requirements (e.g., resolution, frame rate).
+   * @throws IllegalStateException when
+   * 1. [start] is called before [init],
+   * 2. [start] is called before [reset]-ting the previous capture,
+   * 3. [sensorType] is not compatible with the given [captureRequest]
    */
   suspend fun start(sensorType: SensorType, captureRequest: CaptureRequest)
 
@@ -77,7 +84,14 @@ interface SensorManager {
    */
   suspend fun resume(sensorType: SensorType)
 
-  suspend fun reset(sensorType: SensorType)
+  /**
+   * Resets SensorManager for the specified sensor, killing the sensor if its capturing and
+   * releasing any acquired resources. Call it after [stop]. If called before [stop] capturing is
+   * [kill]ed.
+   *
+   * @param sensorType The type of sensor to reset.
+   */
+  fun reset(sensorType: SensorType)
 
   /** Interface for receiving notifications about sensor capture events and results. */
   interface AppDataCaptureListener {
@@ -119,6 +133,7 @@ interface SensorManager {
   fun getSupportedSensors(): List<SensorType>
 
   companion object {
+    // singleton instance
     @Volatile private var instance: SensorManager? = null
     fun getInstance(context: Context) =
       instance

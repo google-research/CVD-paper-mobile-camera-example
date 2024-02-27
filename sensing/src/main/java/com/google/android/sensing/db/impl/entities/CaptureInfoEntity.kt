@@ -23,6 +23,7 @@ import com.google.android.sensing.capture.CaptureSettings
 import com.google.android.sensing.model.CaptureType
 import java.time.Instant
 
+/** TODO Update this for Sensing1.0. */
 @Entity(indices = [Index(value = ["captureFolder"], unique = true)])
 /**
  * Information about the capture: Which participant, type of capture, folder data being captured to,

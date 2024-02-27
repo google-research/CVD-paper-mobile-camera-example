@@ -18,6 +18,14 @@ package com.google.android.sensing.capture
 
 import android.media.MediaRecorder
 
+/**
+ * Base class representing a capture request with common properties.
+ *
+ * @param externalIdentifier App identifier for this capture request.
+ * @param outputFolder The destination folder where captured output will be saved.
+ * @param outputFormat The output format (e.g., "jpeg", "video/mp4v-es")
+ * @param outputTitle Label to display in place of the data.
+ */
 sealed class CaptureRequest(
   open val externalIdentifier: String,
   open val outputFolder: String,
@@ -31,7 +39,7 @@ sealed class CameraCaptureRequest(
   override val outputFormat: String,
   override val outputTitle: String,
   open val compressionQuality: Int = 100,
-  open val bufferCapacity: Int = 0,
+  open val bufferCapacity: Int = Int.MAX_VALUE,
   open val maxDataCount: Int? = null,
 ) : CaptureRequest(externalIdentifier, outputFolder, outputFormat, outputTitle) {
 
@@ -94,7 +102,7 @@ sealed class CameraCaptureRequest(
 }
 
 // Not used currently
-data class AudioCaptureRequest(
+data class MicrophoneCaptureRequest(
   override val externalIdentifier: String,
   override val outputFolder: String,
   override val outputFormat: String = "audio/3gpp",

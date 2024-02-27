@@ -22,7 +22,7 @@ import com.google.android.sensing.model.SensorType
 /**
  * Generic Sensor interface. Provides capture control for a particular implementation of a sensor.
  */
-interface Sensor {
+internal interface Sensor {
 
   interface SensorListener {
     fun onStarted(sensorType: SensorType, captureRequest: CaptureRequest)
@@ -34,9 +34,10 @@ interface Sensor {
 
   /** Is invoked within [CoroutineContext] [Dispatchers.IO] */
   suspend fun start(captureRequest: CaptureRequest)
-  suspend fun stop() // Optional, if applicable
-  suspend fun pause() // Optional, if applicable
-  suspend fun resume() // Optional, if applicable
+  suspend fun stop()
+  suspend fun pause()
+  suspend fun resume()
+  fun kill()
 
   fun getSensor(): Any
   fun isStarted(): Boolean

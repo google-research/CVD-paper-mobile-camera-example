@@ -19,9 +19,14 @@ package com.google.android.sensing.capture
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.UseCase
 
-open class InitConfig {
+/** Configurations required for initializing Sensor. */
+open class InitConfig(open val captureMode: CaptureMode) {
+  enum class CaptureMode {
+    ACTIVE,
+    PASSIVE
+  }
   data class CameraInitConfig(
     val cameraSelector: CameraSelector = CameraSelector.DEFAULT_BACK_CAMERA,
     val useCases: List<UseCase> = emptyList()
-  ) : InitConfig()
+  ) : InitConfig(CaptureMode.ACTIVE)
 }

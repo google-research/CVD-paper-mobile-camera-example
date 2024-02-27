@@ -59,6 +59,7 @@ import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.zip
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import timber.log.Timber
@@ -200,7 +201,7 @@ internal class CameraSensor(
       }
       .onCompletion {
         /**
-         * This gracefully completes when [getMaxDataCount] returns a finite value and there is no
+         * This completes gracefully when [getMaxDataCount] returns a finite value and there is no
          * manual stopping. For example in the case of capturing a snapshot image.
          */
         stop()
@@ -225,6 +226,8 @@ internal class CameraSensor(
   override suspend fun resume() {
     TODO("Not yet implemented")
   }
+
+  override fun kill() = runBlocking { stop() }
 
   override fun getSensor() = camera
 

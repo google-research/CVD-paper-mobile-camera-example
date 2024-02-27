@@ -17,6 +17,7 @@
 package com.google.android.sensing.impl
 
 import android.content.Context
+import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import com.google.android.sensing.SensorManager
@@ -40,6 +41,8 @@ import java.util.UUID
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 
@@ -52,28 +55,44 @@ internal class SensorManagerImpl(context: Context, private val database: Databas
   )
   private val componentsMap = mutableMapOf<SensorType, Components>()
 
-  @Synchronized
+  private val mutex = Mutex()
+
   override suspend fun init(
     sensorType: SensorType,
     context: Context,
     lifecycleOwner: LifecycleOwner,
     initConfig: InitConfig
   ) {
-    if (componentsMap.containsKey(sensorType)) {
-      throw IllegalStateException("Sensor $sensorType already inited. Call #reset first.")
-    }
-    if (!isCompatible(sensorType, initConfig)) {
-      throw IllegalStateException("Sensor $sensorType and InitConfig $initConfig not compatible.")
-    }
-    val sensor =
-      when (sensorType) {
-        SensorType.CAMERA ->
-          CameraSensor(context, lifecycleOwner, initConfig as InitConfig.CameraInitConfig)
-        else -> TODO()
+    mutex.withLock {
+      if (!isCompatible(sensorType, initConfig)) {
+        throw IllegalStateException("Sensor $sensorType and InitConfig $initConfig not compatible.")
       }
-    sensor.prepare(sensorListener = getSensorListener(context, lifecycleOwner))
-    // Assign a captureId to the current capture.
-    componentsMap[sensorType] = Components(UUID.randomUUID().toString(), sensor)
+      if (componentsMap.containsKey(sensorType)) {
+        throw IllegalStateException("Sensor $sensorType already initialized. Call #reset first.")
+      }
+      val sensor =
+        when (sensorType) {
+          SensorType.CAMERA ->
+            CameraSensor(context, lifecycleOwner, initConfig as InitConfig.CameraInitConfig)
+          else -> TODO()
+        }
+      sensor.prepare(sensorListener = getSensorListener(context, lifecycleOwner))
+
+      // For Active mode capturing (eg, Camera) we reset the sensor if user navigates to a different
+      // screen / app
+      if (initConfig.captureMode == InitConfig.CaptureMode.ACTIVE) {
+        lifecycleOwner.lifecycle.addObserver(
+          object : DefaultLifecycleObserver {
+            override fun onPause(owner: LifecycleOwner) {
+              reset(sensorType)
+            }
+          }
+        )
+      }
+
+      // Assign a captureId to the current capture.
+      componentsMap[sensorType] = Components(UUID.randomUUID().toString(), sensor)
+    }
   }
 
   private fun getSensorListener(
@@ -86,7 +105,6 @@ internal class SensorManagerImpl(context: Context, private val database: Databas
         CoroutineScope(Dispatchers.IO).launch {
           componentsMap[sensorType]?.let {
             with(captureRequest) {
-              it.captureRequest = this
               database.addCaptureInfo(
                 CaptureInfo(
                   captureId = it.captureId,
@@ -161,24 +179,28 @@ internal class SensorManagerImpl(context: Context, private val database: Databas
     }
   }
 
-  @Synchronized
   override suspend fun start(sensorType: SensorType, captureRequest: CaptureRequest) {
-    if (!componentsMap.containsKey(sensorType))
-      throw IllegalStateException("Sensor $sensorType not ready. Call #init(<SensorType>) first")
-    if (componentsMap[sensorType]?.captureRequest != null) {
-      throw IllegalStateException("Sensor $sensorType already started. Call #reset to reset.")
-    }
-    if (!isCompatible(sensorType, captureRequest)) {
-      throw IllegalStateException(
-        "Sensor $sensorType and CaptureRequest $captureRequest not compatible."
-      )
-    }
-    componentsMap[sensorType]?.let {
-      try {
-        withContext(Dispatchers.IO) { it.sensor.start(captureRequest) }
-      } catch (e: IllegalStateException) {
-        Timber.w(e.message)
+    mutex.withLock {
+      if (!isCompatible(sensorType, captureRequest)) {
+        throw IllegalStateException(
+          "Sensor $sensorType and CaptureRequest $captureRequest not compatible."
+        )
       }
+      if (!componentsMap.containsKey(sensorType))
+        throw IllegalStateException("Sensor $sensorType not ready. Call #init(<SensorType>) first")
+      // If a captureRequest is already present then it means that either capturing is happening or
+      // has stopped but reset has not been called.
+      if (componentsMap[sensorType]?.captureRequest != null) {
+        throw IllegalStateException(
+          "Sensor $sensorType already started. Call #stop to stop capturing or #reset to reset."
+        )
+      }
+      componentsMap[sensorType]?.captureRequest = captureRequest
+    }
+    try {
+      withContext(Dispatchers.IO) { componentsMap[sensorType]?.sensor?.start(captureRequest) }
+    } catch (e: IllegalStateException) {
+      Timber.w(e.message)
     }
   }
 
@@ -196,39 +218,36 @@ internal class SensorManagerImpl(context: Context, private val database: Databas
     }
   }
 
-  @Synchronized
   override suspend fun stop(sensorType: SensorType) {
-    if (!componentsMap.containsKey(sensorType)) {
-      Timber.w("Sensor $sensorType not initialized. Nothing to stop.")
-      return
+    mutex.withLock {
+      if (!componentsMap.containsKey(sensorType)) {
+        Timber.w("Sensor $sensorType not initialized. Nothing to stop.")
+        return
+      }
+      if (componentsMap[sensorType]?.sensor == null) {
+        Timber.w("Sensor $sensorType not started. Nothing to stop.")
+        return
+      }
+      componentsMap[sensorType]?.sensor?.stop()
     }
-    if (componentsMap[sensorType]?.sensor == null) {
-      Timber.w("Sensor $sensorType not started. Nothing to stop.")
-      return
-    }
-    componentsMap[sensorType]?.sensor?.stop()
   }
 
-  @Synchronized
   override suspend fun pause(sensorType: SensorType) {
     TODO("Not yet implemented")
   }
 
-  @Synchronized
   override suspend fun resume(sensorType: SensorType) {
     TODO("Not yet implemented")
   }
 
-  @Synchronized
-  override suspend fun reset(sensorType: SensorType) {
+  override fun reset(sensorType: SensorType) {
     if (!componentsMap.containsKey(sensorType)) {
       Timber.w("Sensor $sensorType has not been initialized. ")
       return
     }
     if (componentsMap[sensorType]?.sensor?.isStarted() == true) {
-      stop(sensorType)
+      componentsMap[sensorType]?.sensor?.kill()
     }
-    componentsMap.remove(sensorType)
   }
 
   override fun registerListener(
@@ -236,7 +255,7 @@ internal class SensorManagerImpl(context: Context, private val database: Databas
     listener: SensorManager.AppDataCaptureListener
   ) {
     componentsMap[sensorType]?.let { it.listener = listener }
-      ?: Timber.w("Cant register listener for Sensor $sensorType. Call #init and #start first.")
+      ?: Timber.w("Cant register listener for Sensor $sensorType. Call #init first.")
   }
 
   override fun isStarted(sensorType: SensorType): Boolean {
