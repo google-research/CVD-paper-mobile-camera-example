@@ -32,9 +32,14 @@ import com.google.android.sensing.model.SensorType
  */
 interface SensorManager {
   /**
-   * Initializes a specific sensor for capture.
-   * @param sensorType to initialize.
-   * @param context in which the capture shall occur
+   * Initializes a specified sensor in preparation for capturing data.
+   *
+   * @param sensorType The type of sensor to initialize (e.g., SensorType.CAMERA,
+   * SensorType.MICROPHONE)
+   * @param context Android Context for accessing system resources.
+   * @param lifecycleOwner A LifecycleOwner (typically Activity or Fragment) to tie the sensor's
+   * lifecycle.
+   * @param initConfig Sensor-specific initialization configuration.
    */
   suspend fun init(
     sensorType: SensorType,
@@ -43,19 +48,74 @@ interface SensorManager {
     initConfig: InitConfig
   )
 
+  /**
+   * Starts the capture process for the specified sensor.
+   *
+   * @param sensorType The type of sensor to start.
+   * @param captureRequest Details about the capture requirements (e.g., resolution, frame rate).
+   */
   suspend fun start(sensorType: SensorType, captureRequest: CaptureRequest)
-  suspend fun stop(sensorType: SensorType)
-  suspend fun pause(sensorType: SensorType) // Optional, if applicable
-  suspend fun resume(sensorType: SensorType) // Optional, if applicable
 
+  /**
+   * Stops the capture process for the specified sensor.
+   *
+   * @param sensorType The type of sensor to stop.
+   */
+  suspend fun stop(sensorType: SensorType)
+
+  /**
+   * **[Optional]** Temporarily pauses the capture process for the specified sensor.
+   *
+   * @param sensorType The type of sensor to pause.
+   */
+  suspend fun pause(sensorType: SensorType)
+
+  /**
+   * **[Optional]** Resumes the capture process for a previously paused sensor.
+   *
+   * @param sensorType The type of sensor to resume.
+   */
+  suspend fun resume(sensorType: SensorType)
+
+  suspend fun reset(sensorType: SensorType)
+
+  /** Interface for receiving notifications about sensor capture events and results. */
   interface AppDataCaptureListener {
     fun onStart(captureInfo: CaptureInfo)
     fun onComplete(captureInfo: CaptureInfo)
     fun onError(exception: Exception, captureInfo: CaptureInfo? = null)
   }
+
+  /**
+   * Registers a listener to receive capture-related events for a specific sensor.
+   *
+   * @param sensorType The type of sensor for which to receive events.
+   * @param listener The AppDataCaptureListener implementation to handle events.
+   */
   fun registerListener(sensorType: SensorType, listener: AppDataCaptureListener)
+
+  /**
+   * Checks whether a specified sensor is currently in the capturing state.
+   *
+   * @param sensorType The type of sensor to check.
+   * @return True if the sensor is actively capturing data, false otherwise.
+   */
   fun isStarted(sensorType: SensorType): Boolean
+
+  /**
+   * Retrieves the underlying sensor object for a given sensor type. Note: Exercise caution when
+   * using this; direct sensor manipulation might be better encapsulated within the SensorManager.
+   *
+   * @param sensorType The type of sensor to retrieve.
+   * @return The sensor object, or null if not found or not applicable.
+   */
   fun getSensor(sensorType: SensorType): Any?
+
+  /**
+   * Returns a list of sensor types supported by the SensorManager implementation.
+   *
+   * @return A list of [SensorType] objects representing the supported sensors.
+   */
   fun getSupportedSensors(): List<SensorType>
 
   companion object {

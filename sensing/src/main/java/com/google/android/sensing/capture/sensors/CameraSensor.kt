@@ -42,6 +42,7 @@ import java.io.FileWriter
 import java.util.concurrent.CancellationException
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.Executors
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlinx.coroutines.Dispatchers
@@ -123,7 +124,7 @@ internal class CameraSensor(
   /** This is constructed when [start] is invoked. */
   private lateinit var data: Flow<CameraData>
 
-  private var isStarted = false
+  private var isStarted = AtomicBoolean(false)
   private var dataCount = 0
 
   @SuppressLint("UnsafeOptInUsageError")
@@ -189,7 +190,7 @@ internal class CameraSensor(
     data = _imageFlow.zip(_metaDataFlow) { a, b -> CameraData(SharedCloseable(a), b) }
     data
       .onStart {
-        isStarted = true
+        isStarted.set(true)
         dataCount = 0
         internalListener.onStarted(SensorType.CAMERA, captureRequest)
       }
@@ -211,7 +212,7 @@ internal class CameraSensor(
 
   override suspend fun stop() {
     if (isStarted()) {
-      isStarted = false
+      isStarted.set(false)
       internalImageAnalysis.clearAnalyzer()
       internalListener.onStopped(SensorType.CAMERA)
     }
@@ -227,7 +228,7 @@ internal class CameraSensor(
 
   override fun getSensor() = camera
 
-  override fun isStarted() = isStarted
+  override fun isStarted() = isStarted.get()
 
   /** TODO support VIDEO Data. */
   private suspend fun saveData(cameraData: CameraData) {

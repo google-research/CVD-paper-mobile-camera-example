@@ -19,6 +19,7 @@ package com.google.android.sensing.model
 import com.google.android.sensing.capture.CaptureSettings
 import java.util.Date
 
+/** TODO Update this for Sensing1.0. */
 /** Data class equivalent to [CaptureInfoEntity] for usage outside database. */
 data class CaptureInfo(
   var captureId: String? = null,
