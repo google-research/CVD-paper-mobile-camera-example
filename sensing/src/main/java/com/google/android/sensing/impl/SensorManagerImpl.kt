@@ -78,7 +78,7 @@ internal class SensorManagerImpl(context: Context, private val database: Databas
           else -> TODO()
         }
 
-      // Prepare for it capture
+      // Prepare sensor for capture
       sensor.prepare(sensorListener = getSensorListener(context, lifecycleOwner))
 
       // For Active mode capturing (eg, Camera) we reset the sensor if user navigates to a different
@@ -125,9 +125,10 @@ internal class SensorManagerImpl(context: Context, private val database: Databas
                 )
                 try {
                   database.getCaptureInfo(this.captureId).let { captureInfo ->
-                    // Back to original coroutine context. For application this will generally run
-                    // in
-                    // the main thread.
+                    /**
+                     * Back to original coroutine context. For application this will generally run
+                     * in the main thread.
+                     */
                     withContext(lifecycleOwner.lifecycleScope.coroutineContext) {
                       it.listener?.onStart(captureInfo)
                     }
@@ -164,9 +165,11 @@ internal class SensorManagerImpl(context: Context, private val database: Databas
                 )
                 try {
                   database.getCaptureInfo(this.captureId).let { captureInfo ->
-                    // Back to original coroutine context. For application this will generally run
-                    // in the main thread.
-                    val processedString =
+                  /**
+                   * Back to original coroutine context. For application this will generally run in
+                   * the main thread.
+                   */
+                  val processedString =
                       withContext(lifecycleOwner.lifecycleScope.coroutineContext) {
                         it.listener?.onComplete(captureInfo)
                         /** TODO PostProcess. */

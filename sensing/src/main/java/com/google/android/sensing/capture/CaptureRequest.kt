@@ -109,6 +109,4 @@ data class MicrophoneCaptureRequest(
   override val outputFolder: String,
   override val outputFormat: String = "audio/3gpp",
   override val outputTitle: String,
-  val audioSource: Int,
-  val audioEncoder: Int,
 ) : CaptureRequest(externalIdentifier, outputFolder, outputFormat, outputTitle)

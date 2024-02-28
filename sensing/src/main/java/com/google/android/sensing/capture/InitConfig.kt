@@ -35,5 +35,5 @@ open class InitConfig(open val captureMode: CaptureMode) {
     val sampleRate: Int = 44100, // Sample rate in Hz (common choices: 44100, 48000)
     val channelConfig: Int = AudioFormat.CHANNEL_IN_MONO, // Mono or Stereo
     val audioFormat: Int = AudioFormat.ENCODING_PCM_16BIT // 8-b
-  )
+  ) : InitConfig(CaptureMode.ACTIVE)
 }

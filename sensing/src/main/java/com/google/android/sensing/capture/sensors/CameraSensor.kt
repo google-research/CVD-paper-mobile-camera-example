@@ -86,7 +86,10 @@ internal class CameraSensor(
   init {
     internalCameraInitJob =
       lifecycleOwner.lifecycleScope.launch {
-        /** This launches a new coroutine to get a [ProcessCameraProvider] instance. */
+        /**
+         * This launches a new coroutine in Main Thread Pool to get a [ProcessCameraProvider]
+         * instance asynchronously.
+         */
         var resumeCount = 0
         suspendCancellableCoroutine<ProcessCameraProvider> { continuation ->
             if (resumeCount > 5) {
@@ -104,7 +107,8 @@ internal class CameraSensor(
             }
           }
           .let {
-            init(it)
+            //
+            buildData(it)
             cancel()
           }
       }
@@ -119,6 +123,9 @@ internal class CameraSensor(
    * A [SharedFlow] and not a [StateFlow] because of 2 reasons:-
    * 1. Provides Subscription APIs: onSubscription, subscriptionCount
    * 2. Maintains a [SharedFlow.replayCache] for new subscribers
+   *
+   * Here replay = 1 is needed so that it can be played for the new subscriber to close the
+   * ImageProxy instance and hence receive new ImageProxies.
    */
   private val _imageFlow = MutableSharedFlow<ImageProxy>(replay = 1)
   private val _metaDataFlow = MutableSharedFlow<CaptureResult>(replay = 1)
@@ -130,8 +137,8 @@ internal class CameraSensor(
   private var dataCount = 0
 
   @SuppressLint("UnsafeOptInUsageError")
-  private fun init(processCameraProvider: ProcessCameraProvider) {
-    /** Setup [_metaDataFlow]. */
+  private fun buildData(processCameraProvider: ProcessCameraProvider) {
+    /** Build [_metaDataFlow]. */
     val captureCallback =
       object : CameraCaptureSession.CaptureCallback() {
         override fun onCaptureCompleted(
@@ -146,7 +153,7 @@ internal class CameraSensor(
     val internalImageAnalysisBuilder = ImageAnalysis.Builder()
     Camera2Interop.Extender(internalImageAnalysisBuilder).setSessionCaptureCallback(captureCallback)
 
-    /** Setup [_imageFlow]. */
+    /** Build [_imageFlow]. */
     internalImageAnalysis = internalImageAnalysisBuilder.build()
     internalImageAnalysis.setAnalyzer(
       Executors.newSingleThreadExecutor {
@@ -154,6 +161,7 @@ internal class CameraSensor(
       }
     ) { _imageFlow.tryEmit(it) }
 
+    /** Get [Camera] instance responsible for interaction with the physical sensor. */
     camera =
       with(initConfig) {
         processCameraProvider.bindToLifecycle(
@@ -170,6 +178,7 @@ internal class CameraSensor(
       Timber.w("Call to #prepare the capture is redundant as Sensor is currently capturing.")
       return
     }
+    /** Suspend until [Camera] is available. */
     if (internalCameraInitJob.isActive) {
       kotlin.runCatching { internalCameraInitJob.join() }.onFailure(Timber::w)
     }
