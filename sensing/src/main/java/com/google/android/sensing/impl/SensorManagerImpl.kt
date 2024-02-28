@@ -48,7 +48,6 @@ import timber.log.Timber
 
 internal class SensorManagerImpl(context: Context, private val database: Database) : SensorManager {
   data class Components(
-    val captureId: String,
     val sensor: Sensor,
     var captureRequest: CaptureRequest? = null,
     var listener: SensorManager.AppDataCaptureListener? = null,
@@ -70,12 +69,16 @@ internal class SensorManagerImpl(context: Context, private val database: Databas
       if (componentsMap.containsKey(sensorType)) {
         throw IllegalStateException("Sensor $sensorType already initialized. Call #reset first.")
       }
+
+      // Initialize the sensor
       val sensor =
         when (sensorType) {
           SensorType.CAMERA ->
             CameraSensor(context, lifecycleOwner, initConfig as InitConfig.CameraInitConfig)
           else -> TODO()
         }
+
+      // Prepare for it capture
       sensor.prepare(sensorListener = getSensorListener(context, lifecycleOwner))
 
       // For Active mode capturing (eg, Camera) we reset the sensor if user navigates to a different
@@ -91,7 +94,7 @@ internal class SensorManagerImpl(context: Context, private val database: Databas
       }
 
       // Assign a captureId to the current capture.
-      componentsMap[sensorType] = Components(UUID.randomUUID().toString(), sensor)
+      componentsMap[sensorType] = Components(sensor = sensor)
     }
   }
 
@@ -99,34 +102,41 @@ internal class SensorManagerImpl(context: Context, private val database: Databas
     context: Context,
     lifecycleOwner: LifecycleOwner
   ): Sensor.SensorListener {
+    /**
+     * In these events we can fairly assume for captureRequest to be non-null in the [componentsMap]
+     * entry.
+     */
     return object : Sensor.SensorListener {
-      override fun onStarted(sensorType: SensorType, captureRequest: CaptureRequest) {
+      override fun onStarted(sensorType: SensorType) {
         // Offload DB tasks to IO pool of threads.
         CoroutineScope(Dispatchers.IO).launch {
           componentsMap[sensorType]?.let {
-            with(captureRequest) {
-              database.addCaptureInfo(
-                CaptureInfo(
-                  captureId = it.captureId,
-                  externalIdentifier = externalIdentifier,
-                  captureType = CaptureType.VIDEO_PPG,
-                  captureFolder = File(context.filesDir, outputFolder).absolutePath,
-                  captureTime = Date.from(Instant.now()),
-                  captureSettings = CaptureSettings(emptyMap(), emptyMap(), "")
+            it.captureRequest?.let { request ->
+              with(request) {
+                database.addCaptureInfo(
+                  CaptureInfo(
+                    captureId = this.captureId,
+                    externalIdentifier = externalIdentifier,
+                    captureType = CaptureType.VIDEO_PPG,
+                    captureFolder = File(context.filesDir, outputFolder).absolutePath,
+                    captureTime = Date.from(Instant.now()),
+                    captureSettings = CaptureSettings(emptyMap(), emptyMap(), "")
+                  )
                 )
-              )
-            }
-            try {
-              database.getCaptureInfo(it.captureId).let { captureInfo ->
-                // Back to original coroutine context. For application this will generally run in
-                // the main thread.
-                withContext(lifecycleOwner.lifecycleScope.coroutineContext) {
-                  it.listener?.onStart(captureInfo)
+                try {
+                  database.getCaptureInfo(this.captureId).let { captureInfo ->
+                    // Back to original coroutine context. For application this will generally run
+                    // in
+                    // the main thread.
+                    withContext(lifecycleOwner.lifecycleScope.coroutineContext) {
+                      it.listener?.onStart(captureInfo)
+                    }
+                  }
+                } catch (e: ResourceNotFoundException) {
+                  it.listener?.onError(e)
+                  stop(sensorType)
                 }
               }
-            } catch (e: ResourceNotFoundException) {
-              it.listener?.onError(e)
-              stop(sensorType)
             }
           }
         }
@@ -142,7 +152,7 @@ internal class SensorManagerImpl(context: Context, private val database: Databas
                 database.addResourceInfo(
                   ResourceInfo(
                     resourceInfoId = UUID.randomUUID().toString(),
-                    captureId = it.captureId,
+                    captureId = this.captureId,
                     externalIdentifier = externalIdentifier,
                     resourceTitle = outputTitle,
                     contentType = outputFormat,
@@ -152,20 +162,20 @@ internal class SensorManagerImpl(context: Context, private val database: Databas
                     status = RequestStatus.PENDING
                   )
                 )
-              }
-              try {
-                database.getCaptureInfo(it.captureId).let { captureInfo ->
-                  // Back to original coroutine context. For application this will generally run
-                  // in the main thread.
-                  val processedString =
-                    withContext(lifecycleOwner.lifecycleScope.coroutineContext) {
-                      it.listener?.onComplete(captureInfo)
-                      /** TODO PostProcess. */
-                    }
+                try {
+                  database.getCaptureInfo(this.captureId).let { captureInfo ->
+                    // Back to original coroutine context. For application this will generally run
+                    // in the main thread.
+                    val processedString =
+                      withContext(lifecycleOwner.lifecycleScope.coroutineContext) {
+                        it.listener?.onComplete(captureInfo)
+                        /** TODO PostProcess. */
+                      }
+                  }
+                } catch (e: ResourceNotFoundException) {
+                  it.listener?.onError(e)
+                  stop(sensorType)
                 }
-              } catch (e: ResourceNotFoundException) {
-                it.listener?.onError(e)
-                stop(sensorType)
               }
             }
             /** TODO zipping and creating UploadRequest */
@@ -192,7 +202,7 @@ internal class SensorManagerImpl(context: Context, private val database: Databas
       // has stopped but reset has not been called.
       if (componentsMap[sensorType]?.captureRequest != null) {
         throw IllegalStateException(
-          "Sensor $sensorType already started. Call #stop to stop capturing or #reset to reset."
+          "Sensor $sensorType has a pending capture request $captureRequest. Call #stop to stop capturing or #reset to reset."
         )
       }
       componentsMap[sensorType]?.captureRequest = captureRequest

@@ -86,6 +86,7 @@ internal class CameraSensor(
   init {
     internalCameraInitJob =
       lifecycleOwner.lifecycleScope.launch {
+        /** This launches a new coroutine to get a [ProcessCameraProvider] instance. */
         var resumeCount = 0
         suspendCancellableCoroutine<ProcessCameraProvider> { continuation ->
             if (resumeCount > 5) {
@@ -193,7 +194,7 @@ internal class CameraSensor(
       .onStart {
         isStarted.set(true)
         dataCount = 0
-        internalListener.onStarted(SensorType.CAMERA, captureRequest)
+        internalListener.onStarted(SensorType.CAMERA)
       }
       .onEach {
         dataCount++

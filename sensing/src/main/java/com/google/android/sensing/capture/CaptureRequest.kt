@@ -17,6 +17,7 @@
 package com.google.android.sensing.capture
 
 import android.media.MediaRecorder
+import java.util.UUID
 
 /**
  * Base class representing a capture request with common properties.
@@ -31,6 +32,7 @@ sealed class CaptureRequest(
   open val outputFolder: String,
   open val outputFormat: String,
   open val outputTitle: String,
+  val captureId: String = UUID.randomUUID().toString(),
 )
 
 sealed class CameraCaptureRequest(

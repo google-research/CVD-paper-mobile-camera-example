@@ -16,6 +16,7 @@
 
 package com.google.android.sensing.capture
 
+import android.media.AudioFormat
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.UseCase
 
@@ -29,4 +30,10 @@ open class InitConfig(open val captureMode: CaptureMode) {
     val cameraSelector: CameraSelector = CameraSelector.DEFAULT_BACK_CAMERA,
     val useCases: List<UseCase> = emptyList()
   ) : InitConfig(CaptureMode.ACTIVE)
+
+  data class MicrophoneInitConfig(
+    val sampleRate: Int = 44100, // Sample rate in Hz (common choices: 44100, 48000)
+    val channelConfig: Int = AudioFormat.CHANNEL_IN_MONO, // Mono or Stereo
+    val audioFormat: Int = AudioFormat.ENCODING_PCM_16BIT // 8-b
+  )
 }

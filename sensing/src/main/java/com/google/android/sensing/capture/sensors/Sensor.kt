@@ -25,7 +25,7 @@ import com.google.android.sensing.model.SensorType
 internal interface Sensor {
 
   interface SensorListener {
-    fun onStarted(sensorType: SensorType, captureRequest: CaptureRequest)
+    fun onStarted(sensorType: SensorType)
     fun onData(sensorType: SensorType)
     fun onStopped(sensorType: SensorType)
     fun onError(sensorType: SensorType, exception: Exception)
