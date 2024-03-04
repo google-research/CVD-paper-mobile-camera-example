@@ -17,7 +17,6 @@
 package com.google.android.sensing.impl
 
 import android.content.Context
-import android.content.Intent
 import com.google.android.sensing.SensingEngine
 import com.google.android.sensing.ServerConfiguration
 import com.google.android.sensing.capture.CaptureUtil
@@ -131,10 +130,6 @@ internal class SensingEngineImpl(
     }
   }
 
-  override suspend fun captureSensorData(pendingIntent: Intent) {
-    TODO("Not yet implemented")
-  }
-
   override suspend fun listResourceInfoForExternalIdentifier(
     externalIdentifier: String
   ): List<ResourceInfo> {
@@ -147,18 +142,6 @@ internal class SensingEngineImpl(
     } catch (e: ResourceNotFoundException) {
       null
     }
-  }
-
-  override suspend fun updateResourceInfo(resourceInfo: ResourceInfo) {
-    database.updateResourceInfo(resourceInfo)
-  }
-
-  override suspend fun updateUploadRequest(uploadRequest: UploadRequest) {
-    return database.updateUploadRequest(uploadRequest)
-  }
-
-  override suspend fun listUploadRequest(status: RequestStatus): List<UploadRequest> {
-    return database.listUploadRequests(status)
   }
 
   override suspend fun getCaptureInfo(captureId: String): CaptureInfo {
@@ -187,14 +170,6 @@ internal class SensingEngineImpl(
       }
     }
     return deleted
-  }
-
-  override suspend fun deleteSensorData(uploadURL: String) {
-    TODO("Not yet implemented")
-  }
-
-  override suspend fun deleteSensorMetaData(uploadURL: String) {
-    TODO("Not yet implemented")
   }
 
   companion object {

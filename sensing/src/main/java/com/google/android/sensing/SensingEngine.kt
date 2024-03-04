@@ -17,14 +17,11 @@
 package com.google.android.sensing
 
 import android.content.Context
-import android.content.Intent
 import com.google.android.sensing.capture.SensorCaptureResult
 import com.google.android.sensing.db.Database
 import com.google.android.sensing.impl.SensingEngineImpl
 import com.google.android.sensing.model.CaptureInfo
-import com.google.android.sensing.model.RequestStatus
 import com.google.android.sensing.model.ResourceInfo
-import com.google.android.sensing.model.UploadRequest
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -65,24 +62,6 @@ interface SensingEngine {
   suspend fun listResourceInfoForExternalIdentifier(externalIdentifier: String): List<ResourceInfo>
 
   suspend fun getResourceInfo(resourceInfoId: String): ResourceInfo?
-
-  suspend fun updateResourceInfo(resourceInfo: ResourceInfo)
-
-  /** To support 3P apps */
-  suspend fun captureSensorData(pendingIntent: Intent)
-
-  /** Update given [uploadRequest] in database. */
-  suspend fun updateUploadRequest(uploadRequest: UploadRequest)
-
-  /**
-   * Get [UploadRequest] corresponding to the [ResourceInfo] given [ResourceInfo.resourceInfoId].
-   * Application developers can use this API to monitor not just upload status but also progress.
-   */
-  suspend fun listUploadRequest(status: RequestStatus): List<UploadRequest>
-
-  /** Delete data stored in blobstore */
-  suspend fun deleteSensorData(uploadURL: String)
-  suspend fun deleteSensorMetaData(uploadURL: String)
 
   companion object {
     @Volatile private var instance: SensingEngine? = null
