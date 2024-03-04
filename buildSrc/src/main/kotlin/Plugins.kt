@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Google LLC
+ * Copyright 2023-2024 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,6 @@ object Plugins {
     "androidx.navigation:navigation-safe-args-gradle-plugin:${Dependencies.Versions.Androidx.navigation}"
 
   object Versions {
-    const val androidGradlePlugin = "7.2.1"
-    const val dokka = "1.6.10"
+    const val androidGradlePlugin = "8.0.2"
   }
 }
