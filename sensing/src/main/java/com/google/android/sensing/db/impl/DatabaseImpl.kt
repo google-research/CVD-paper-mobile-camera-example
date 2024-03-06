@@ -59,7 +59,7 @@ internal class DatabaseImpl(context: Context, databaseConfig: DatabaseConfigurat
   override suspend fun listResourceInfoForExternalIdentifier(
     externalIdentifier: String
   ): List<ResourceInfo> {
-    return resourceInfoDao.listResourceInfoForParticipant(externalIdentifier)
+    return resourceInfoDao.listResourceInfoForExternalIdentifier(externalIdentifier)
   }
 
   override suspend fun listUploadRequests(status: RequestStatus): List<UploadRequest> {
