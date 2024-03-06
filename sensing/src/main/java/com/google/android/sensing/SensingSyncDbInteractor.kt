@@ -24,20 +24,39 @@ import com.google.android.sensing.model.UploadRequest
 import com.google.android.sensing.model.UploadResult
 import java.io.File
 
+/** Interface defining interactions with a database for sensor data synchronization. */
 internal interface SensingSyncDbInteractor {
-  /** Update given [resourceInfo] in database. */
+  /**
+   * Updates an existing ResourceInfo entry in the database.
+   *
+   * @param resourceInfo The ResourceInfo object containing the data to be updated.
+   */
   suspend fun updateResourceInfo(resourceInfo: ResourceInfo)
 
-  /** Update given [uploadRequest] in database. */
+  /**
+   * Updates the state of an UploadRequest entry in the database. This might involve changing the
+   * status (pending, in-progress, completed, failed), or other relevant details.
+   *
+   * @param uploadRequest The UploadRequest object to be updated.
+   */
   suspend fun updateUploadRequest(uploadRequest: UploadRequest)
 
-  /** Fetches [UploadRequest]s from database that needs uploading. */
+  /**
+   * Retrieves a list of UploadRequest objects from the database that are marked as ready for
+   * upload.
+   *
+   * @return A list of UploadRequest objects pending upload.
+   */
   suspend fun fetchUploadRequestsToUpload(): List<UploadRequest>
 
   /**
-   * Responsible for processing [UploadResult]s. Examples of this would be, updating the partial
-   * upload information for handling multi-part and failures, updating the lastUpdated timestamp
-   * field.
+   * Processes the result of an upload operation and updates the database accordingly. This may
+   * include:
+   * * Marking an upload request as successful or failed.
+   * * Updating progress information for partial or multi-part uploads.
+   * * Recording timestamps for synchronization purposes.
+   *
+   * @param uploadResult The UploadResult object containing details about the upload outcome.
    */
   suspend fun processUploadResult(uploadResult: UploadResult)
 

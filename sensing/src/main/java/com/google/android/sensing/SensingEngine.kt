@@ -25,18 +25,29 @@ import com.google.android.sensing.model.ResourceInfo
 import kotlinx.coroutines.flow.Flow
 
 /**
- * The Sensing Engine interface that handles the local storage of captured resources.
- *
- * TODO: CRUD APIs for UploadRequest to use only the upload mechanism this Engine provides.
- *
- * TODO: Order APIs nicely
+ * Interface defining interactions with a sensing engine, responsible for managing captured data and
+ * metadata.
  */
 interface SensingEngine {
 
-  /** Get CaptureInfo record given @param captureId */
+  /**
+   * Retrieves the CaptureInfo record associated with a specific capture session.
+   *
+   * @param captureId The unique identifier for a capture session.
+   * @return The CaptureInfo object containing metadata about the capture session,
+   * ```
+   *         or null if no record is found.
+   * ```
+   */
   suspend fun getCaptureInfo(captureId: String): CaptureInfo
 
-  /** Delete all data associated with [captureId] */
+  /**
+   * Deletes all data associated with a specific capture session. This includes sensor data,
+   * metadata (CaptureInfo), and potentially related resources.
+   *
+   * @param captureId The unique identifier for the capture session to be deleted.
+   * @return True if the deletion was successful, false otherwise.
+   */
   suspend fun deleteDataInCapture(captureId: String): Boolean
 
   /**
@@ -56,11 +67,24 @@ interface SensingEngine {
   suspend fun onCaptureCompleteCallback(captureInfo: CaptureInfo): Flow<SensorCaptureResult>
 
   /**
-   * Lists all ResourceInfo given a externalIdentifier. This will return all ResourceInfo across
-   * multiple capturings.
+   * Retrieves a list of ResourceInfo objects associated with a given external identifier. This
+   * search spans across multiple capture sessions.
+   *
+   * @param externalIdentifier An identifier used to link resources, potentially across different
+   * capture sessions.
+   * @return A list of ResourceInfo objects matching the external identifier.
+   * ```
+   *         The list may be empty if no resources are found.
+   * ```
    */
   suspend fun listResourceInfoForExternalIdentifier(externalIdentifier: String): List<ResourceInfo>
 
+  /**
+   * Retrieves a specific ResourceInfo object based on its unique ID.
+   *
+   * @param resourceInfoId The unique identifier of the ResourceInfo object.
+   * @return The ResourceInfo object if found, otherwise null.
+   */
   suspend fun getResourceInfo(resourceInfoId: String): ResourceInfo?
 
   companion object {

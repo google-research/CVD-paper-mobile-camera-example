@@ -40,16 +40,20 @@ internal abstract class ResourceInfoDao {
     """
       SELECT *
       FROM ResourceInfoEntity
-      WHERE externalIdentifier = :participantId
+      WHERE externalIdentifier = :externalIdentifier
     """
   )
-  abstract suspend fun listResourceInfoEntitiesForParticipant(
-    participantId: String
+  abstract suspend fun listResourceInfoEntitiesForExternalIdentifier(
+    externalIdentifier: String
   ): List<ResourceInfoEntity>
 
   @Transaction
-  open suspend fun listResourceInfoForParticipant(participantId: String): List<ResourceInfo> {
-    return listResourceInfoEntitiesForParticipant(participantId).map { it.toResourceInfo() }
+  open suspend fun listResourceInfoForExternalIdentifier(
+    externalIdentifier: String
+  ): List<ResourceInfo> {
+    return listResourceInfoEntitiesForExternalIdentifier(externalIdentifier).map {
+      it.toResourceInfo()
+    }
   }
 
   @Query(
