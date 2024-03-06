@@ -36,7 +36,7 @@ import com.google.android.sensing.capture.CaptureFragment
 import com.google.android.sensing.capture.CaptureSettings
 import com.google.android.sensing.model.CaptureInfo
 import com.google.android.sensing.model.CaptureType
-import com.google.android.sensing.model.SensorType
+import com.google.android.sensing.model.InternalSensorType
 import com.google.android.sensory.InstructionsFragment
 import com.google.android.sensory.R
 import com.google.android.sensory.SensingApplication
@@ -167,8 +167,8 @@ object PPGSensorCaptureViewHolderFactory :
                     "Sensory_${SensingApplication.APP_VERSION}/Participant_$fhirPatientId/$QUESTION_TITLE",
                   captureSettings =
                     CaptureSettings(
-                      fileTypeMap = mapOf(SensorType.CAMERA to "jpeg"),
-                      metaDataTypeMap = mapOf(SensorType.CAMERA to "tsv"),
+                      fileTypeMap = mapOf(InternalSensorType.CAMERA to "jpeg"),
+                      metaDataTypeMap = mapOf(InternalSensorType.CAMERA to "tsv"),
                       captureTitle = QUESTION_TITLE,
                       ppgTimer = 30
                     ),

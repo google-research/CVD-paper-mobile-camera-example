@@ -22,15 +22,15 @@ package com.google.android.sensing.capture
  *
  * @param captureMode The desired capture mode for the sensor. See [CaptureMode] for details.
  */
-open class InitConfig(open val captureMode: CaptureMode) {
-  /**
-   * Enumerates supported capture modes for a sensor. The terminology here relates to the technical
-   * behavior of the sensor, but the impact on the user experience can differ.
-   * * ACTIVE: Sensors that run in foreground and require user intervention, like button clicking.
-   * * PASSIVE: Sensors that run in background.
-   */
-  enum class CaptureMode {
-    ACTIVE,
-    PASSIVE
-  }
+open class InitConfig(open val captureMode: CaptureMode)
+
+/**
+ * Enumerates supported capture modes for a sensor. The terminology here relates to the technical
+ * behavior of the sensor, but the impact on the user experience can differ.
+ * * ACTIVE: Sensors that run in foreground and require user intervention, like button clicking.
+ * * PASSIVE: Sensors that run in background.
+ */
+enum class CaptureMode {
+  ACTIVE,
+  PASSIVE
 }

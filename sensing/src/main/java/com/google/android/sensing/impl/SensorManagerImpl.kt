@@ -20,13 +20,12 @@ import android.content.Context
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
+import com.google.android.sensing.SensorFactory
 import com.google.android.sensing.SensorManager
+import com.google.android.sensing.capture.CaptureMode
 import com.google.android.sensing.capture.CaptureRequest
 import com.google.android.sensing.capture.CaptureSettings
 import com.google.android.sensing.capture.InitConfig
-import com.google.android.sensing.capture.sensors.CameraCaptureRequest
-import com.google.android.sensing.capture.sensors.CameraInitConfig
-import com.google.android.sensing.capture.sensors.CameraSensor
 import com.google.android.sensing.capture.sensors.Sensor
 import com.google.android.sensing.db.Database
 import com.google.android.sensing.db.ResourceNotFoundException
@@ -48,6 +47,7 @@ import kotlinx.coroutines.withContext
 import timber.log.Timber
 
 internal class SensorManagerImpl(context: Context, private val database: Database) : SensorManager {
+  private val sensorFactoryMap = mutableMapOf<SensorType, SensorFactory>()
   data class Components(
     val sensor: Sensor,
     var captureRequest: CaptureRequest? = null,
@@ -55,7 +55,24 @@ internal class SensorManagerImpl(context: Context, private val database: Databas
   )
   private val componentsMap = mutableMapOf<SensorType, Components>()
 
-  private val mutex = Mutex()
+  private val mutexMap = mutableMapOf<SensorType, Mutex>()
+
+  override fun registerSensorFactory(sensorType: SensorType, sensorFactory: SensorFactory) {
+    if (sensorFactoryMap.containsKey(sensorType)) {
+      throw IllegalStateException(
+        "SensorFactor already registered for SensorType $sensorType. Use #unregisterSensorFactory maybe!"
+      )
+    }
+    sensorFactoryMap[sensorType] = sensorFactory
+    mutexMap[sensorType] = Mutex()
+  }
+
+  override fun unregisterSensorFactory(sensorType: SensorType) {
+    sensorFactoryMap.remove(sensorType)
+    mutexMap.remove(sensorType)
+  }
+
+  override fun checkRegistration(sensorType: SensorType) = sensorFactoryMap.containsKey(sensorType)
 
   override suspend fun init(
     sensorType: SensorType,
@@ -63,27 +80,22 @@ internal class SensorManagerImpl(context: Context, private val database: Databas
     lifecycleOwner: LifecycleOwner,
     initConfig: InitConfig
   ) {
-    mutex.withLock {
-      if (!isCompatible(sensorType, initConfig)) {
-        throw IllegalStateException("Sensor $sensorType and InitConfig $initConfig not compatible.")
-      }
+    val sensorTypeMutex = validate(sensorType)
+    sensorTypeMutex.withLock {
       if (componentsMap.containsKey(sensorType)) {
         throw IllegalStateException("Sensor $sensorType already initialized. Call #reset first.")
       }
+      /** Within [sensorTypeMutex] we can assume SensorFactory will be non null. */
 
-      // Initialize the sensor
-      val sensor =
-        when (sensorType) {
-          SensorType.CAMERA -> CameraSensor(context, lifecycleOwner, initConfig as CameraInitConfig)
-          else -> TODO()
-        }
+      // Fetch SensorFactory and create Sensor instance.
+      val sensor = sensorFactoryMap[sensorType]!!.create(context, lifecycleOwner, initConfig)
 
       // Prepare sensor for capture
       sensor.prepare(internalSensorListener = getSensorListener(context, lifecycleOwner))
 
       // For Active mode capturing (eg, Camera) we reset the sensor if user navigates to a different
       // screen / app
-      if (initConfig.captureMode == InitConfig.CaptureMode.ACTIVE) {
+      if (sensor.getCaptureMode() == CaptureMode.ACTIVE) {
         lifecycleOwner.lifecycle.addObserver(
           object : DefaultLifecycleObserver {
             override fun onPause(owner: LifecycleOwner) {
@@ -93,7 +105,7 @@ internal class SensorManagerImpl(context: Context, private val database: Databas
         )
       }
 
-      // Assign a captureId to the current capture.
+      // Create an entry in the Component map.
       componentsMap[sensorType] = Components(sensor = sensor)
     }
   }
@@ -193,14 +205,12 @@ internal class SensorManagerImpl(context: Context, private val database: Databas
   }
 
   override suspend fun start(sensorType: SensorType, captureRequest: CaptureRequest) {
-    mutex.withLock {
-      if (!isCompatible(sensorType, captureRequest)) {
-        throw IllegalStateException(
-          "Sensor $sensorType and CaptureRequest $captureRequest not compatible."
-        )
-      }
+    val sensorTypeMutex = validate(sensorType)
+    sensorTypeMutex.withLock {
       if (!componentsMap.containsKey(sensorType))
-        throw IllegalStateException("Sensor $sensorType not ready. Call #init(<SensorType>) first")
+        throw IllegalStateException(
+          "Sensor $sensorType not initialized. Possible view lifecycle pause event triggered reset. Call #init(<SensorType>) first"
+        )
       // If a captureRequest is already present then it means that either capturing is happening or
       // has stopped but reset has not been called.
       if (componentsMap[sensorType]?.captureRequest != null) {
@@ -217,22 +227,9 @@ internal class SensorManagerImpl(context: Context, private val database: Databas
     }
   }
 
-  private fun isCompatible(sensorType: SensorType, initConfig: InitConfig): Boolean {
-    return when (sensorType) {
-      SensorType.CAMERA -> initConfig is CameraInitConfig
-      else -> TODO()
-    }
-  }
-
-  private fun isCompatible(sensorType: SensorType, captureRequest: CaptureRequest): Boolean {
-    return when (sensorType) {
-      SensorType.CAMERA -> captureRequest is CameraCaptureRequest
-      else -> TODO()
-    }
-  }
-
   override suspend fun stop(sensorType: SensorType) {
-    mutex.withLock {
+    val sensorTypeMutex = validate(sensorType)
+    sensorTypeMutex.withLock {
       if (!componentsMap.containsKey(sensorType)) {
         Timber.w("Sensor $sensorType not initialized. Nothing to stop.")
         return
@@ -285,12 +282,34 @@ internal class SensorManagerImpl(context: Context, private val database: Databas
   override fun isStarted(sensorType: SensorType): Boolean {
     return componentsMap[sensorType]?.sensor?.isStarted()
       ?: run {
-        Timber.w("Cant register PostProcessor for Sensor $sensorType. Call #init and #start first.")
+        Timber.w("Sensor $sensorType not initialized. Call #init first.")
         false
       }
   }
 
   override fun getSensor(sensorType: SensorType) = componentsMap[sensorType]?.sensor?.getSensor()
 
-  override fun getSupportedSensors() = listOf(SensorType.CAMERA)
+  override fun getSupportedSensors() = sensorFactoryMap.keys.toList()
+
+  /**
+   * Fetches the appropriate SensorFactory, Sensor, and Mutex objects for the given `sensorType`. If
+   * necessary, throws appropriate exceptions based on the state of the SensorManager.
+   *
+   * @param sensorType The type of sensor to validate.
+   * @return The Mutex object associated with the provided `sensorType`.
+   * @throws IllegalStateException if a factory is not registered for the `sensorType`, or if
+   * ```
+   *                               the SensorManager is in an invalid state (e.g., trying to
+   *                               `start` an uninitialized sensor).
+   * ```
+   */
+  @Synchronized
+  private fun validate(sensorType: SensorType): Mutex {
+    if (!checkRegistration(sensorType)) {
+      throw IllegalStateException(
+        "No SensorFactory implementation has been registered for SensorType $sensorType. Register via #registerSensorFactory"
+      )
+    }
+    return mutexMap[sensorType]!!
+  }
 }

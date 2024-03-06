@@ -22,9 +22,11 @@ import com.google.android.sensing.capture.CaptureRequest
 import com.google.android.sensing.capture.InitConfig
 import com.google.android.sensing.capture.sensors.CameraCaptureRequest
 import com.google.android.sensing.capture.sensors.CameraInitConfig
+import com.google.android.sensing.capture.sensors.CameraSensorFactor
 import com.google.android.sensing.db.Database
 import com.google.android.sensing.impl.SensorManagerImpl
 import com.google.android.sensing.model.CaptureInfo
+import com.google.android.sensing.model.InternalSensorType
 import com.google.android.sensing.model.SensorType
 
 /**
@@ -54,17 +56,58 @@ import com.google.android.sensing.model.SensorType
  * relying on the `SensorManager` to orchestrate sensor operations.
  */
 interface SensorManager {
+
   /**
-   * Initializes a specified sensor in preparation for capturing data.
+   * Registers a `SensorFactory` for the specified `sensorType`. This factory will be responsible
+   * for creating sensor instances of the given type when the `init` method is called.
+   *
+   * @param sensorType The unique type of sensor to register a factory for.
+   * @param sensorFactory The `SensorFactory` implementation responsible for creating sensors of
+   * ```
+   *                      the specified `sensorType`.
+   * @throws IllegalArgumentException
+   * ```
+   * if a factory is already registered for the given `sensorType`.
+   */
+  fun registerSensorFactory(sensorType: SensorType, sensorFactory: SensorFactory)
+
+  /**
+   * Unregisters the `SensorFactory` associated with the specified `sensorType`. After
+   * unregistering, the `SensorManager` will no longer be able to create sensors of this type.
+   *
+   * @param sensorType The type of sensor whose factory should be unregistered.
+   */
+  fun unregisterSensorFactory(sensorType: SensorType)
+
+  /**
+   * Checks whether a `SensorFactory` is currently registered for the specified `sensorType`.
+   *
+   * @param sensorType The type of sensor to check for registration.
+   * @return `true` if a factory is registered for the `sensorType`, `false` otherwise.
+   */
+  fun checkRegistration(sensorType: SensorType): Boolean
+
+  /**
+   * Initializes a specified sensor in preparation for capturing data. This involves:
+   * 1. Validating that a SensorFactory is registered for the sensorType
+   * 2. Acquiring a lock (Mutex) to ensure thread safety for this sensor
+   * 3. Fetching or creating the Sensor instance using the SensorFactory
+   * 4. Preparing the sensor, setting up lifecycle observers, etc.
    *
    * @param sensorType The type of sensor to initialize (e.g., SensorType.CAMERA,
-   * SensorType.MICROPHONE)
-   * @param context Android Context for accessing system resources.
+   * ```
+   *                   SensorType.MICROPHONE)
+   * @param context
+   * ```
+   * Android Context for accessing system resources.
    * @param lifecycleOwner A LifecycleOwner (typically Activity or Fragment) to tie the sensor's
-   * lifecycle.
-   * @param initConfig Sensor-specific initialization configuration. Example [CameraInitConfig].
-   * @throws IllegalStateException when
-   * 1. [sensorType] is not compatible with [initConfig]
+   * ```
+   *                       lifecycle.
+   * @param initConfig
+   * ```
+   * Sensor-specific initialization configuration. Example [CameraInitConfig].
+   * @throws IllegalStateException when:
+   * 1. [SensorFactory] is not registered for [SensorType]
    * 2. [init] is called before [reset]-ting the previous capture
    */
   suspend fun init(
@@ -167,16 +210,19 @@ interface SensorManager {
         ?: synchronized(this) {
           instance
             ?: run {
-              val appContext = context.applicationContext
-              val sensingEngineConfiguration =
-                if (appContext is SensingEngineConfiguration.Provider) {
-                  appContext.getSensingEngineConfiguration()
-                } else SensingEngineConfiguration()
-              with(sensingEngineConfiguration) {
-                val database = Database.getInstance(context, databaseConfiguration)
-                SensorManagerImpl(context, database).also { instance = it }
+                val appContext = context.applicationContext
+                val sensingEngineConfiguration =
+                  if (appContext is SensingEngineConfiguration.Provider) {
+                    appContext.getSensingEngineConfiguration()
+                  } else SensingEngineConfiguration()
+                with(sensingEngineConfiguration) {
+                  val database = Database.getInstance(context, databaseConfiguration)
+                  SensorManagerImpl(context, database).apply {
+                    registerSensorFactory(InternalSensorType.CAMERA, CameraSensorFactor)
+                  }
+                }
               }
-            }
+              .also { instance = it }
         }
   }
 }

@@ -34,10 +34,12 @@ import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import com.google.android.fitbit.research.sensing.common.libraries.camera.storage.ImageEncoders
+import com.google.android.sensing.SensorFactory
+import com.google.android.sensing.capture.CaptureMode
 import com.google.android.sensing.capture.InitConfig
 import com.google.android.sensing.capture.SharedCloseable
 import com.google.android.sensing.capture.use
-import com.google.android.sensing.model.SensorType
+import com.google.android.sensing.model.InternalSensorType
 import java.io.File
 import java.io.FileWriter
 import java.util.concurrent.CancellationException
@@ -95,7 +97,7 @@ internal class CameraSensor(
         suspendCancellableCoroutine<ProcessCameraProvider> { continuation ->
             if (resumeCount > 5) {
               CancellationException("Failed to get CameraProvider.").let {
-                internalListener.onError(SensorType.CAMERA, it)
+                internalListener.onError(InternalSensorType.CAMERA, it)
                 cancel(it)
               }
             }
@@ -187,14 +189,14 @@ internal class CameraSensor(
   }
 
   override suspend fun start(captureRequest: com.google.android.sensing.capture.CaptureRequest) {
+    if (captureRequest !is CameraCaptureRequest) {
+      throw IllegalArgumentException(
+        "Invalid Request. CameraSensor needs a CameraCaptureRequest. Given = ${captureRequest::class.java}"
+      )
+    }
     if (isStarted()) {
       throw IllegalStateException(
         "Call to #start capturing is redundant as Sensor is currently capturing."
-      )
-    }
-    if (captureRequest !is CameraCaptureRequest) {
-      throw IllegalStateException(
-        "Invalid Request. CameraSensor needs a CameraCaptureRequest. Given = ${captureRequest::class.java}"
       )
     }
     if (internalCameraInitJob.isActive || !::internalListener.isInitialized) {
@@ -209,11 +211,11 @@ internal class CameraSensor(
       .onStart {
         isStarted.set(true)
         dataCount = 0
-        internalListener.onStarted(SensorType.CAMERA)
+        internalListener.onStarted(InternalSensorType.CAMERA)
       }
       .onEach {
         dataCount++
-        internalListener.onData(SensorType.CAMERA)
+        internalListener.onData(InternalSensorType.CAMERA)
       }
       .onCompletion {
         /**
@@ -231,7 +233,7 @@ internal class CameraSensor(
     if (isStarted()) {
       isStarted.set(false)
       internalImageAnalysis.clearAnalyzer()
-      internalListener.onStopped(SensorType.CAMERA)
+      internalListener.onStopped(InternalSensorType.CAMERA)
     }
   }
 
@@ -248,6 +250,8 @@ internal class CameraSensor(
   override fun getSensor() = camera
 
   override fun isStarted() = isStarted.get()
+
+  override fun getCaptureMode() = CaptureMode.ACTIVE
 
   /** TODO support VIDEO Data. */
   private suspend fun saveData(cameraData: CameraData) {
@@ -395,4 +399,9 @@ sealed class CameraCaptureRequest(
       bufferCapacity,
       maxDataCount
     )
+}
+
+internal object CameraSensorFactor : SensorFactory {
+  override fun create(context: Context, lifecycleOwner: LifecycleOwner, initConfig: InitConfig) =
+    CameraSensor(context, lifecycleOwner, initConfig as CameraInitConfig)
 }

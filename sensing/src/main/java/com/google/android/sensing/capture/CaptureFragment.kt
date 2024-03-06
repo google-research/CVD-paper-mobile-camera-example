@@ -48,7 +48,7 @@ import com.google.android.sensing.capture.sensors.CameraCaptureRequest
 import com.google.android.sensing.capture.sensors.CameraInitConfig
 import com.google.android.sensing.model.CaptureInfo
 import com.google.android.sensing.model.CaptureType
-import com.google.android.sensing.model.SensorType
+import com.google.android.sensing.model.InternalSensorType
 import java.util.Locale
 import java.util.Timer
 import java.util.TimerTask
@@ -129,7 +129,7 @@ class CaptureFragment : Fragment() {
   private fun prepareCapture(captureType: CaptureType) {
     lifecycleScope.launch {
       sensorManager.init(
-        SensorType.CAMERA,
+        InternalSensorType.CAMERA,
         requireContext(),
         viewLifecycleOwner,
         CameraInitConfig(
@@ -142,7 +142,7 @@ class CaptureFragment : Fragment() {
 
   override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
     super.onViewCreated(view, savedInstanceState)
-    with((sensorManager.getSensor(SensorType.CAMERA) as Camera).cameraControl) {
+    with((sensorManager.getSensor(InternalSensorType.CAMERA) as Camera).cameraControl) {
       this.enableTorch(true)
       Camera2CameraControl.from(this).captureRequestOptions =
         captureViewModel.getCaptureRequestOptions(false)
@@ -163,8 +163,8 @@ class CaptureFragment : Fragment() {
         recordTimer.text = "00 : ${captureViewModel.captureInfo.captureSettings.ppgTimer}"
         recordFab.setOnClickListener {
           lifecycleScope.launch {
-            if (sensorManager.isStarted(SensorType.CAMERA)) {
-              sensorManager.stop(SensorType.CAMERA)
+            if (sensorManager.isStarted(InternalSensorType.CAMERA)) {
+              sensorManager.stop(InternalSensorType.CAMERA)
             } else {
               captureViewModel.startTimer()
               val captureRequest =
@@ -176,7 +176,7 @@ class CaptureFragment : Fragment() {
                     bufferCapacity = Int.MAX_VALUE
                   )
                 }
-              sensorManager.start(SensorType.CAMERA, captureRequest)
+              sensorManager.start(InternalSensorType.CAMERA, captureRequest)
             }
           }
         }
@@ -190,7 +190,7 @@ class CaptureFragment : Fragment() {
           lifecycleScope.launch {
             with(captureViewModel.captureInfo) {
               sensorManager.start(
-                SensorType.CAMERA,
+                InternalSensorType.CAMERA,
                 CameraCaptureRequest.ImageRequest(
                   externalIdentifier = externalIdentifier,
                   outputFolder = captureFolder,
@@ -204,7 +204,7 @@ class CaptureFragment : Fragment() {
     }
     toggleFlashFab.setOnClickListener {
       toggleFlashWithView(
-        sensorManager.getSensor(SensorType.CAMERA)!! as Camera,
+        sensorManager.getSensor(InternalSensorType.CAMERA)!! as Camera,
         toggleFlashFab,
         requireContext()
       )
@@ -213,7 +213,7 @@ class CaptureFragment : Fragment() {
 
   private fun setupObservers() {
     sensorManager.registerListener(
-      sensorType = SensorType.CAMERA,
+      sensorType = InternalSensorType.CAMERA,
       listener =
         object : SensorManager.AppDataCaptureListener {
           override fun onStart(captureInfo: CaptureInfo) {
@@ -287,7 +287,7 @@ class CaptureFragment : Fragment() {
 
       captureViewModel.automaticallyStopCapturing.observe(viewLifecycleOwner) {
         if (it) {
-          lifecycleScope.launch { sensorManager.stop(SensorType.CAMERA) }
+          lifecycleScope.launch { sensorManager.stop(InternalSensorType.CAMERA) }
         }
       }
     }
@@ -295,7 +295,9 @@ class CaptureFragment : Fragment() {
 
   // Safe to ignore CameraControl futures
   private fun lockExposure() {
-    Camera2CameraControl.from((sensorManager.getSensor(SensorType.CAMERA) as Camera).cameraControl)
+    Camera2CameraControl.from(
+        (sensorManager.getSensor(InternalSensorType.CAMERA) as Camera).cameraControl
+      )
       .captureRequestOptions = captureViewModel.getCaptureRequestOptions(true)
   }
 

@@ -16,6 +16,7 @@
 
 package com.google.android.sensing.capture.sensors
 
+import com.google.android.sensing.capture.CaptureMode
 import com.google.android.sensing.capture.CaptureRequest
 import com.google.android.sensing.model.SensorType
 
@@ -65,7 +66,7 @@ import com.google.android.sensing.model.SensorType
  * * Sensor-specific restrictions on operations during capture. Refer to the documentation of the
  * specific sensor subclass for details.
  */
-internal interface Sensor {
+interface Sensor {
 
   /**
    * Internal interface for receiving notifications about lifecycle events and errors from
@@ -136,4 +137,6 @@ internal interface Sensor {
    * @return True if the sensor is in the "started" state, false otherwise.
    */
   fun isStarted(): Boolean
+
+  fun getCaptureMode(): CaptureMode
 }
