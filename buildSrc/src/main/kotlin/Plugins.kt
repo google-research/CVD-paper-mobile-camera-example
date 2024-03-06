@@ -27,7 +27,7 @@ object Plugins {
   // classpath plugins
   const val androidGradlePlugin = "com.android.tools.build:gradle:${Versions.androidGradlePlugin}"
   const val kotlinGradlePlugin =
-    "org.jetbrains.kotlin:kotlin-gradle-plugin:${Dependencies.Versions.Kotlin.stdlib}"
+    "org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.22"
   const val navSafeArgsGradlePlugin =
     "androidx.navigation:navigation-safe-args-gradle-plugin:${Dependencies.Versions.Androidx.navigation}"
 
