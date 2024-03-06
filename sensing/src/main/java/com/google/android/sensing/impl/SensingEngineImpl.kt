@@ -17,15 +17,11 @@
 package com.google.android.sensing.impl
 
 import android.content.Context
-import android.content.Intent
 import com.google.android.sensing.SensingEngine
-import com.google.android.sensing.ServerConfiguration
 import com.google.android.sensing.db.Database
 import com.google.android.sensing.db.ResourceNotFoundException
 import com.google.android.sensing.model.CaptureInfo
-import com.google.android.sensing.model.RequestStatus
 import com.google.android.sensing.model.ResourceInfo
-import com.google.android.sensing.model.UploadRequest
 import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -34,17 +30,11 @@ import kotlinx.coroutines.withContext
  * @param database Interface to interact with room database.
  * @param context [Context] to access fragmentManager, to launch fragments, to access files and
  * resources in the application context.
- * @param serverConfiguration
  */
 internal class SensingEngineImpl(
   private val database: Database,
   private val context: Context,
-  private val serverConfiguration: ServerConfiguration?,
 ) : SensingEngine {
-
-  override suspend fun captureSensorData(pendingIntent: Intent) {
-    TODO("Not yet implemented")
-  }
 
   override suspend fun listResourceInfoForExternalIdentifier(
     externalIdentifier: String
@@ -58,18 +48,6 @@ internal class SensingEngineImpl(
     } catch (e: ResourceNotFoundException) {
       null
     }
-  }
-
-  override suspend fun updateResourceInfo(resourceInfo: ResourceInfo) {
-    database.updateResourceInfo(resourceInfo)
-  }
-
-  override suspend fun updateUploadRequest(uploadRequest: UploadRequest) {
-    return database.updateUploadRequest(uploadRequest)
-  }
-
-  override suspend fun listUploadRequest(status: RequestStatus): List<UploadRequest> {
-    return database.listUploadRequests(status)
   }
 
   override suspend fun getCaptureInfo(captureId: String): CaptureInfo {
@@ -98,13 +76,5 @@ internal class SensingEngineImpl(
       }
     }
     return deleted
-  }
-
-  override suspend fun deleteSensorData(uploadURL: String) {
-    TODO("Not yet implemented")
-  }
-
-  override suspend fun deleteSensorMetaData(uploadURL: String) {
-    TODO("Not yet implemented")
   }
 }

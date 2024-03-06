@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Google LLC
+ * Copyright 2023-2024 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package com.google.android.sensing.upload
 
 import android.content.Context
+import com.google.android.sensing.SensingSyncDbInteractor
 import com.google.android.sensing.model.UploadResult
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.drop
@@ -24,10 +25,9 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.runningFold
 
-class SensingSynchronizer(
-  private val uploadRequestFetcher: UploadRequestFetcher,
+internal class SensingSynchronizer(
   private val uploader: Uploader,
-  private val uploadResultProcessor: UploadResultProcessor
+  private val sensingSyncDbInteractor: SensingSyncDbInteractor
 ) {
 
   /**
@@ -36,7 +36,7 @@ class SensingSynchronizer(
    * emits [SyncUploadState]s.
    */
   suspend fun synchronize(): Flow<SyncUploadState> = flow {
-    var uploadRequestList = uploadRequestFetcher.fetchForUpload()
+    var uploadRequestList = sensingSyncDbInteractor.fetchUploadRequestsToUpload()
     emit(SyncUploadState.Started(initialTotalRequests = uploadRequestList.size))
     var totalRequests = 0
     // Following is to bootstrap new state calculation based on previous "InProgress" states
@@ -47,13 +47,13 @@ class SensingSynchronizer(
       // upload() is a cold flow with finite emitted values. Hence it ends automatically.
       uploader
         .upload(uploadRequestList)
-        .onEach { uploadResultProcessor.process(it) }
+        .onEach { sensingSyncDbInteractor.processUploadResult(it) }
         .runningFold(initialSyncUploadState, ::calculateSyncUploadState)
         // initialSyncUploadState is dropped
         .drop(1)
         .collect { emit(it) }
       totalRequests += uploadRequestList.size
-      uploadRequestList = uploadRequestFetcher.fetchForUpload()
+      uploadRequestList = sensingSyncDbInteractor.fetchUploadRequestsToUpload()
     }
     emit(SyncUploadState.Completed(totalRequests))
   }
@@ -111,9 +111,8 @@ class SensingSynchronizer(
             ?: run {
               Uploader.getInstance(context)?.let {
                 SensingSynchronizer(
-                    UploadRequestFetcher.getInstance(context),
-                    it,
-                    UploadResultProcessor.getInstance(context)
+                    uploader = it,
+                    sensingSyncDbInteractor = SensingSyncDbInteractor.getInstance(context)
                   )
                   .also { instance = it }
               }
