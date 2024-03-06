@@ -20,6 +20,8 @@ import android.content.Context
 import androidx.lifecycle.LifecycleOwner
 import com.google.android.sensing.capture.CaptureRequest
 import com.google.android.sensing.capture.InitConfig
+import com.google.android.sensing.capture.sensors.CameraCaptureRequest
+import com.google.android.sensing.capture.sensors.CameraInitConfig
 import com.google.android.sensing.db.Database
 import com.google.android.sensing.impl.SensorManagerImpl
 import com.google.android.sensing.model.CaptureInfo
@@ -29,6 +31,27 @@ import com.google.android.sensing.model.SensorType
  * Core interface responsible for managing the lifecycle and capture operations of various sensors.
  * Implementations of this interface provide a unified way to initialize, start, stop, and configure
  * the behavior of supported sensors.
+ *
+ * **Key Responsibilities:**
+ * * **Sensor Lifecycle Management:** Ensures sensors transition through valid state changes
+ * (prepare -> start -> pause/resume -> stop -> reset). This includes preventing invalid operations
+ * (e.g., starting a sensor that hasn't been prepared).
+ *
+ * * **Error Handling:** Catches and manages errors arising from individual sensors, providing
+ * meaningful feedback to the application layer.
+ * * **Application Interface:** Provides a consistent API for the application to interact with
+ * sensors, hiding the complexities of managing individual sensor states and potential errors.
+ *
+ * * **Data Processing and Persistence:** Handles events from sensor implementations, potentially
+ * transforming raw sensor data, generating database records (e.g., CaptureInfo, ResourceInfo,
+ * UploadRequest), and performing data preparation tasks like zipping for efficient transmission.
+ *
+ * Important Notes:
+ * * Individual `Sensor` implementations may still perform basic state validations to ensure their
+ * internal integrity, even if the `SensorManager` enforces the overall state machine.
+ *
+ * * Applications using this interface should generally not interact with `Sensor` objects directly,
+ * relying on the `SensorManager` to orchestrate sensor operations.
  */
 interface SensorManager {
   /**
@@ -39,7 +62,7 @@ interface SensorManager {
    * @param context Android Context for accessing system resources.
    * @param lifecycleOwner A LifecycleOwner (typically Activity or Fragment) to tie the sensor's
    * lifecycle.
-   * @param initConfig Sensor-specific initialization configuration.
+   * @param initConfig Sensor-specific initialization configuration. Example [CameraInitConfig].
    * @throws IllegalStateException when
    * 1. [sensorType] is not compatible with [initConfig]
    * 2. [init] is called before [reset]-ting the previous capture
@@ -56,6 +79,7 @@ interface SensorManager {
    *
    * @param sensorType The type of sensor to start.
    * @param captureRequest Details about the capture requirements (e.g., resolution, frame rate).
+   * Example [CameraCaptureRequest].
    * @throws IllegalStateException when
    * 1. [start] is called before [init],
    * 2. [start] is called before [reset]-ting the previous capture,
@@ -105,6 +129,9 @@ interface SensorManager {
    *
    * @param sensorType The type of sensor for which to receive events.
    * @param listener The AppDataCaptureListener implementation to handle events.
+   * @throws IllegalStateException when
+   * 1. [registerListener] is called before [init]
+   * 2. [registerListener] is called after [start]
    */
   fun registerListener(sensorType: SensorType, listener: AppDataCaptureListener)
 

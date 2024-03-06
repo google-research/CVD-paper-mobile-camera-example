@@ -23,8 +23,10 @@ import android.hardware.camera2.CameraCaptureSession
 import android.hardware.camera2.CaptureRequest
 import android.hardware.camera2.CaptureResult
 import android.hardware.camera2.TotalCaptureResult
+import android.media.MediaRecorder
 import androidx.camera.camera2.interop.Camera2Interop
 import androidx.camera.core.Camera
+import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy
 import androidx.camera.core.UseCase
@@ -32,7 +34,6 @@ import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import com.google.android.fitbit.research.sensing.common.libraries.camera.storage.ImageEncoders
-import com.google.android.sensing.capture.CameraCaptureRequest
 import com.google.android.sensing.capture.InitConfig
 import com.google.android.sensing.capture.SharedCloseable
 import com.google.android.sensing.capture.use
@@ -72,7 +73,7 @@ data class CameraData(
 internal class CameraSensor(
   context: Context,
   private val lifecycleOwner: LifecycleOwner,
-  private val initConfig: InitConfig.CameraInitConfig,
+  private val initConfig: CameraInitConfig,
 ) : Sensor {
 
   private val internalStorage = context.filesDir
@@ -115,7 +116,7 @@ internal class CameraSensor(
   }
 
   private lateinit var currentCaptureRequest: CameraCaptureRequest
-  private lateinit var internalListener: Sensor.SensorListener
+  private lateinit var internalListener: Sensor.InternalSensorListener
 
   private lateinit var camera: Camera
 
@@ -173,7 +174,7 @@ internal class CameraSensor(
       }
   }
 
-  override suspend fun prepare(sensorListener: Sensor.SensorListener) {
+  override suspend fun prepare(internalSensorListener: Sensor.InternalSensorListener) {
     if (isStarted()) {
       Timber.w("Call to #prepare the capture is redundant as Sensor is currently capturing.")
       return
@@ -182,7 +183,7 @@ internal class CameraSensor(
     if (internalCameraInitJob.isActive) {
       kotlin.runCatching { internalCameraInitJob.join() }.onFailure(Timber::w)
     }
-    internalListener = sensorListener
+    internalListener = internalSensorListener
   }
 
   override suspend fun start(captureRequest: com.google.android.sensing.capture.CaptureRequest) {
@@ -194,6 +195,11 @@ internal class CameraSensor(
     if (captureRequest !is CameraCaptureRequest) {
       throw IllegalStateException(
         "Invalid Request. CameraSensor needs a CameraCaptureRequest. Given = ${captureRequest::class.java}"
+      )
+    }
+    if (internalCameraInitJob.isActive || !::internalListener.isInitialized) {
+      throw IllegalStateException(
+        "CameraProvider not yet available OR internal listener not initialized. Call #prepare first."
       )
     }
     currentCaptureRequest = captureRequest
@@ -310,4 +316,83 @@ internal class CameraSensor(
       return File(internalStorage, filePath)
     }
   }
+}
+
+data class CameraInitConfig(
+  val cameraSelector: CameraSelector = CameraSelector.DEFAULT_BACK_CAMERA,
+  val useCases: List<UseCase> = emptyList()
+) : InitConfig(CaptureMode.ACTIVE)
+
+sealed class CameraCaptureRequest(
+  override val externalIdentifier: String,
+  override val outputFolder: String,
+  override val outputFormat: String,
+  override val outputTitle: String,
+  open val compressionQuality: Int = 100,
+  open val bufferCapacity: Int = Int.MAX_VALUE,
+  open val maxDataCount: Int? = null,
+) :
+  com.google.android.sensing.capture.CaptureRequest(
+    externalIdentifier,
+    outputFolder,
+    outputFormat,
+    outputTitle
+  ) {
+
+  data class ImageRequest(
+    override val externalIdentifier: String,
+    override val outputTitle: String,
+    override val outputFolder: String,
+    override val outputFormat: String = "jpeg",
+    override val compressionQuality: Int = 100,
+  ) :
+    CameraCaptureRequest(
+      externalIdentifier,
+      outputFolder,
+      outputFormat,
+      outputTitle,
+      compressionQuality,
+      maxDataCount = 1
+    )
+
+  data class ImageStreamRequest(
+    override val externalIdentifier: String,
+    override val outputTitle: String,
+    override val outputFolder: String,
+    override val outputFormat: String = "jpeg",
+    override val compressionQuality: Int = 100,
+    override val bufferCapacity: Int,
+    override val maxDataCount: Int? = null,
+  ) :
+    CameraCaptureRequest(
+      externalIdentifier,
+      outputFolder,
+      outputFormat,
+      outputTitle,
+      compressionQuality,
+      bufferCapacity,
+      maxDataCount
+    )
+
+  // Not used currently
+  data class VideoRequest(
+    override val externalIdentifier: String,
+    override val outputFolder: String,
+    override val outputFormat: String = "video/mp4v-es",
+    override val outputTitle: String,
+    override val compressionQuality: Int = 100,
+    override val bufferCapacity: Int,
+    override val maxDataCount: Int? = null,
+    val videoEncoder: Int? = MediaRecorder.VideoEncoder.DEFAULT,
+    val audioEncoder: Int? = MediaRecorder.AudioEncoder.DEFAULT,
+  ) :
+    CameraCaptureRequest(
+      externalIdentifier,
+      outputFolder,
+      outputFormat,
+      outputTitle,
+      compressionQuality,
+      bufferCapacity,
+      maxDataCount
+    )
 }

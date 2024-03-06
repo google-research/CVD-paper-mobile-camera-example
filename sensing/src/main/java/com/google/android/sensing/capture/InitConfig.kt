@@ -16,24 +16,21 @@
 
 package com.google.android.sensing.capture
 
-import android.media.AudioFormat
-import androidx.camera.core.CameraSelector
-import androidx.camera.core.UseCase
-
-/** Configurations required for initializing Sensor. */
+/**
+ * Base class for sensor initialization configurations. Subclasses are used to provide
+ * sensor-specific settings during the initialization step within the [SensorManager].
+ *
+ * @param captureMode The desired capture mode for the sensor. See [CaptureMode] for details.
+ */
 open class InitConfig(open val captureMode: CaptureMode) {
+  /**
+   * Enumerates supported capture modes for a sensor. The terminology here relates to the technical
+   * behavior of the sensor, but the impact on the user experience can differ.
+   * * ACTIVE: Sensors that run in foreground and require user intervention, like button clicking.
+   * * PASSIVE: Sensors that run in background.
+   */
   enum class CaptureMode {
     ACTIVE,
     PASSIVE
   }
-  data class CameraInitConfig(
-    val cameraSelector: CameraSelector = CameraSelector.DEFAULT_BACK_CAMERA,
-    val useCases: List<UseCase> = emptyList()
-  ) : InitConfig(CaptureMode.ACTIVE)
-
-  data class MicrophoneInitConfig(
-    val sampleRate: Int = 44100, // Sample rate in Hz (common choices: 44100, 48000)
-    val channelConfig: Int = AudioFormat.CHANNEL_IN_MONO, // Mono or Stereo
-    val audioFormat: Int = AudioFormat.ENCODING_PCM_16BIT // 8-b
-  ) : InitConfig(CaptureMode.ACTIVE)
 }

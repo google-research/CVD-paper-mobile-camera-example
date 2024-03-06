@@ -44,6 +44,8 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.progressindicator.CircularProgressIndicator
 import com.google.android.sensing.R
 import com.google.android.sensing.SensorManager
+import com.google.android.sensing.capture.sensors.CameraCaptureRequest
+import com.google.android.sensing.capture.sensors.CameraInitConfig
 import com.google.android.sensing.model.CaptureInfo
 import com.google.android.sensing.model.CaptureType
 import com.google.android.sensing.model.SensorType
@@ -130,7 +132,7 @@ class CaptureFragment : Fragment() {
         SensorType.CAMERA,
         requireContext(),
         viewLifecycleOwner,
-        InitConfig.CameraInitConfig(
+        CameraInitConfig(
           cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA,
           useCases = listOf(preview!!)
         )

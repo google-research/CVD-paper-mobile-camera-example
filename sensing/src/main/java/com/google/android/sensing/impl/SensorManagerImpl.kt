@@ -21,10 +21,11 @@ import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import com.google.android.sensing.SensorManager
-import com.google.android.sensing.capture.CameraCaptureRequest
 import com.google.android.sensing.capture.CaptureRequest
 import com.google.android.sensing.capture.CaptureSettings
 import com.google.android.sensing.capture.InitConfig
+import com.google.android.sensing.capture.sensors.CameraCaptureRequest
+import com.google.android.sensing.capture.sensors.CameraInitConfig
 import com.google.android.sensing.capture.sensors.CameraSensor
 import com.google.android.sensing.capture.sensors.Sensor
 import com.google.android.sensing.db.Database
@@ -73,13 +74,12 @@ internal class SensorManagerImpl(context: Context, private val database: Databas
       // Initialize the sensor
       val sensor =
         when (sensorType) {
-          SensorType.CAMERA ->
-            CameraSensor(context, lifecycleOwner, initConfig as InitConfig.CameraInitConfig)
+          SensorType.CAMERA -> CameraSensor(context, lifecycleOwner, initConfig as CameraInitConfig)
           else -> TODO()
         }
 
       // Prepare sensor for capture
-      sensor.prepare(sensorListener = getSensorListener(context, lifecycleOwner))
+      sensor.prepare(internalSensorListener = getSensorListener(context, lifecycleOwner))
 
       // For Active mode capturing (eg, Camera) we reset the sensor if user navigates to a different
       // screen / app
@@ -101,12 +101,12 @@ internal class SensorManagerImpl(context: Context, private val database: Databas
   private fun getSensorListener(
     context: Context,
     lifecycleOwner: LifecycleOwner
-  ): Sensor.SensorListener {
+  ): Sensor.InternalSensorListener {
     /**
      * In these events we can fairly assume for captureRequest to be non-null in the [componentsMap]
      * entry.
      */
-    return object : Sensor.SensorListener {
+    return object : Sensor.InternalSensorListener {
       override fun onStarted(sensorType: SensorType) {
         // Offload DB tasks to IO pool of threads.
         CoroutineScope(Dispatchers.IO).launch {
@@ -219,7 +219,7 @@ internal class SensorManagerImpl(context: Context, private val database: Databas
 
   private fun isCompatible(sensorType: SensorType, initConfig: InitConfig): Boolean {
     return when (sensorType) {
-      SensorType.CAMERA -> initConfig is InitConfig.CameraInitConfig
+      SensorType.CAMERA -> initConfig is CameraInitConfig
       else -> TODO()
     }
   }
@@ -267,6 +267,17 @@ internal class SensorManagerImpl(context: Context, private val database: Databas
     sensorType: SensorType,
     listener: SensorManager.AppDataCaptureListener
   ) {
+    if (!componentsMap.containsKey(sensorType)) {
+      throw IllegalStateException("Sensor $sensorType not initialized. Call #init first.")
+    }
+    /**
+     * If a captureRequest is already present then it means that [start] has already been called.
+     */
+    if (componentsMap[sensorType]?.captureRequest != null) {
+      throw IllegalStateException(
+        "Sensor $sensorType has a pending capture request. Call to this should be prior to #start. Call #reset and start again from #init step."
+      )
+    }
     componentsMap[sensorType]?.let { it.listener = listener }
       ?: Timber.w("Cant register listener for Sensor $sensorType. Call #init first.")
   }
