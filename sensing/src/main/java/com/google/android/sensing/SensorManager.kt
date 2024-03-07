@@ -30,30 +30,21 @@ import com.google.android.sensing.model.InternalSensorType
 import com.google.android.sensing.model.SensorType
 
 /**
- * Core interface responsible for managing the lifecycle and capture operations of various sensors.
- * Implementations of this interface provide a unified way to initialize, start, stop, and configure
- * the behavior of supported sensors.
+ * Core interface for managing various sensors, with a focus on AI-powered analysis. The SenseAI
+ * Platform supports intelligent applications like remote patient monitoring. Key features include:
  *
- * **Key Responsibilities:**
- * * **Sensor Lifecycle Management:** Ensures sensors transition through valid state changes
- * (prepare -> start -> pause/resume -> stop -> reset). This includes preventing invalid operations
- * (e.g., starting a sensor that hasn't been prepared).
+ * * Unified Application Interface: Simplifies app-sensor interaction, masking complexities of
+ * sensor management.
+ * * Dynamic Sensor Registration: Enables flexible addition of new sensor types.
+ * * Sensor Lifecycle Control: Manages sensor states (prepare, start, pause, stop) for smooth
+ * operation.
+ * * Data Handling: Processes raw sensor data, prepares it for storage and transmission.
+ * * TODO Post-Processing Support: Hooks for data analysis and potential on-device AI inference.
+ * * Robust Error Handling: Catches sensor errors, provides informative feedback.
  *
- * * **Error Handling:** Catches and manages errors arising from individual sensors, providing
- * meaningful feedback to the application layer.
- * * **Application Interface:** Provides a consistent API for the application to interact with
- * sensors, hiding the complexities of managing individual sensor states and potential errors.
- *
- * * **Data Processing and Persistence:** Handles events from sensor implementations, potentially
- * transforming raw sensor data, generating database records (e.g., CaptureInfo, ResourceInfo,
- * UploadRequest), and performing data preparation tasks like zipping for efficient transmission.
- *
- * Important Notes:
+ * Important Note:
  * * Individual `Sensor` implementations may still perform basic state validations to ensure their
  * internal integrity, even if the `SensorManager` enforces the overall state machine.
- *
- * * Applications using this interface should generally not interact with `Sensor` objects directly,
- * relying on the `SensorManager` to orchestrate sensor operations.
  */
 interface SensorManager {
 
