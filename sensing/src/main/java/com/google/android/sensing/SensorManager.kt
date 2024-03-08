@@ -54,12 +54,9 @@ interface SensorManager {
    * for creating sensor instances of the given type when the `init` method is called.
    *
    * @param sensorType The unique type of sensor to register a factory for.
-   * @param sensorFactory The `SensorFactory` implementation responsible for creating sensors of
-   * ```
-   *                      the specified `sensorType`.
-   * @throws IllegalArgumentException
-   * ```
-   * if a factory is already registered for the given `sensorType`.
+   * @param sensorFactory The `SensorFactory` implementation responsible for creating sensors of the
+   * specified `sensorType`.
+   * @throws IllegalArgumentException if a factory is already registered for the given `sensorType`.
    */
   fun registerSensorFactory(sensorType: SensorType, sensorFactory: SensorFactory)
 
@@ -87,17 +84,11 @@ interface SensorManager {
    * 4. Preparing the sensor, setting up lifecycle observers, etc.
    *
    * @param sensorType The type of sensor to initialize (e.g., SensorType.CAMERA,
-   * ```
-   *                   SensorType.MICROPHONE)
-   * @param context
-   * ```
-   * Android Context for accessing system resources.
+   * SensorType.MICROPHONE)
+   * @param context Android Context for accessing system resources.
    * @param lifecycleOwner A LifecycleOwner (typically Activity or Fragment) to tie the sensor's
-   * ```
-   *                       lifecycle.
-   * @param initConfig
-   * ```
-   * Sensor-specific initialization configuration. Example [CameraInitConfig].
+   * lifecycle.
+   * @param initConfig Sensor-specific initialization configuration. Example [CameraInitConfig].
    * @throws IllegalStateException when:
    * 1. [SensorFactory] is not registered for [SensorType]
    * 2. [init] is called before [reset]-ting the previous capture

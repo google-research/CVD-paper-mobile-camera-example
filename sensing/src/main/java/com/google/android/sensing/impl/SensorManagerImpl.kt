@@ -297,11 +297,8 @@ internal class SensorManagerImpl(context: Context, private val database: Databas
    *
    * @param sensorType The type of sensor to validate.
    * @return The Mutex object associated with the provided `sensorType`.
-   * @throws IllegalStateException if a factory is not registered for the `sensorType`, or if
-   * ```
-   *                               the SensorManager is in an invalid state (e.g., trying to
-   *                               `start` an uninitialized sensor).
-   * ```
+   * @throws IllegalStateException if a factory is not registered for the `sensorType`, or if the
+   * SensorManager is in an invalid state (e.g., trying to `start` an uninitialized sensor).
    */
   @Synchronized
   private fun validate(sensorType: SensorType): Mutex {

@@ -32,10 +32,8 @@ interface SensingEngine {
    * Retrieves the CaptureInfo record associated with a specific capture session.
    *
    * @param captureId The unique identifier for a capture session.
-   * @return The CaptureInfo object containing metadata about the capture session,
-   * ```
-   *         or null if no record is found.
-   * ```
+   * @return The CaptureInfo object containing metadata about the capture session, or null if no
+   * record is found.
    */
   suspend fun getCaptureInfo(captureId: String): CaptureInfo
 
@@ -54,10 +52,8 @@ interface SensingEngine {
    *
    * @param externalIdentifier An identifier used to link resources, potentially across different
    * capture sessions.
-   * @return A list of ResourceInfo objects matching the external identifier.
-   * ```
-   *         The list may be empty if no resources are found.
-   * ```
+   * @return A list of ResourceInfo objects matching the external identifier. The list may be empty
+   * if no resources are found.
    */
   suspend fun listResourceInfoForExternalIdentifier(externalIdentifier: String): List<ResourceInfo>
 
