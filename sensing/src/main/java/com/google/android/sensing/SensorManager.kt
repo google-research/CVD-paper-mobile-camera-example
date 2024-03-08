@@ -30,8 +30,9 @@ import com.google.android.sensing.model.InternalSensorType
 import com.google.android.sensing.model.SensorType
 
 /**
- * Core interface for managing various sensors, with a focus on AI-powered analysis. The SenseAI
- * Platform supports intelligent applications like remote patient monitoring. Key features include:
+ * Core interface for managing various sensors, with a focus on AI-powered analysis. The
+ * SensorManager supports intelligent applications like remote patient monitoring. Key features
+ * include:
  *
  * * Unified Application Interface: Simplifies app-sensor interaction, masking complexities of
  * sensor management.
