@@ -27,21 +27,24 @@ import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.net.toUri
 import androidx.core.os.bundleOf
 import androidx.fragment.app.findFragment
+import androidx.lifecycle.lifecycleScope
 import com.bumptech.glide.Glide
 import com.google.android.fhir.datacapture.QuestionnaireFragment
 import com.google.android.fhir.datacapture.tryUnwrapContext
 import com.google.android.fhir.datacapture.views.QuestionnaireViewItem
 import com.google.android.fhir.datacapture.views.factories.QuestionnaireItemViewHolderDelegate
 import com.google.android.fhir.datacapture.views.factories.QuestionnaireItemViewHolderFactory
+import com.google.android.sensing.SensingEngine
 import com.google.android.sensing.capture.CaptureFragment
 import com.google.android.sensing.capture.CaptureSettings
-import com.google.android.sensing.capture.SensorCaptureResult
 import com.google.android.sensing.model.CaptureInfo
 import com.google.android.sensing.model.CaptureType
-import com.google.android.sensing.model.SensorType
+import com.google.android.sensing.model.InternalSensorType
 import com.google.android.sensory.InstructionsFragment
 import com.google.android.sensory.R
 import com.google.android.sensory.SensingApplication
+import java.io.File
+import kotlinx.coroutines.launch
 import org.hl7.fhir.r4.model.Coding
 import org.hl7.fhir.r4.model.QuestionnaireResponse
 
@@ -55,7 +58,10 @@ object PhotoCaptureViewHolderFactory :
       private lateinit var photoThumbnail: ImageView
       private lateinit var photoTitle: TextView
       private lateinit var context: AppCompatActivity
+      private lateinit var internalFilesDir: File
       private lateinit var QUESTION_TITLE: String
+
+      private lateinit var sensingEngine: SensingEngine
 
       override fun init(itemView: View) {
         ViewHolderFactoryUtil.removeUnwantedViews(itemView)
@@ -66,6 +72,8 @@ object PhotoCaptureViewHolderFactory :
           itemView.findViewById(com.google.android.fhir.datacapture.R.id.photo_thumbnail)
         photoTitle = itemView.findViewById(com.google.android.fhir.datacapture.R.id.photo_title)
         context = itemView.context.tryUnwrapContext()!!
+        internalFilesDir = context.filesDir
+        sensingEngine = SensingApplication.sensingEngine(context)
       }
 
       override fun bind(questionnaireViewItem: QuestionnaireViewItem) {
@@ -118,6 +126,36 @@ object PhotoCaptureViewHolderFactory :
             if (parentFragmentsChildFragmentManager.backStackEntryCount >= 1) {
               parentFragmentsChildFragmentManager.popBackStack()
             }
+
+            val captureId = result.getString(CaptureFragment.CAPTURED_ID, "")
+            context.lifecycleScope.launch {
+              sensingEngine.getCaptureInfo(captureId).resourceInfoList.forEach {
+                val answer =
+                  QuestionnaireResponse.QuestionnaireResponseItemAnswerComponent().apply {
+                    value =
+                      Coding().apply {
+                        // store captureId to recapture again
+                        code = captureId
+                        system = "${PPGSensorCaptureViewHolderFactory.WIDGET_EXTENSION}/CaptureInfo"
+                        display =
+                          ViewHolderFactoryUtil.getFirstOrNullImageUri(
+                              it.localLocation,
+                              it.contentType
+                            )
+                            ?.toString()
+                      }
+                  }
+                /**
+                 * Using setAnswer temporarily for single ResourceInfo scenarios.
+                 *
+                 * Ideally, switch to questionnaireViewItem.addAnswer when handling multiple sensors
+                 * (multiple ResourceInfo).
+                 *
+                 * Note: addAnswer API not yet released in the current library.
+                 */
+                questionnaireViewItem.setAnswer(answer)
+              }
+            }
           }
         }
         parentFragmentsChildFragmentManager.setFragmentResultListener(
@@ -145,37 +183,14 @@ object PhotoCaptureViewHolderFactory :
                     "Sensory_${SensingApplication.APP_VERSION}/Participant_$fhirPatientId/$QUESTION_TITLE",
                   captureSettings =
                     CaptureSettings(
-                      fileTypeMap = mapOf(SensorType.CAMERA to "jpeg"),
-                      metaDataTypeMap = mapOf(SensorType.CAMERA to "tsv"),
+                      fileTypeMap = mapOf(InternalSensorType.CAMERA to "jpeg"),
+                      metaDataTypeMap = mapOf(InternalSensorType.CAMERA to "tsv"),
                       captureTitle = QUESTION_TITLE
                     ),
                   recapture = captureId != null,
                   captureId = captureId,
                 )
               )
-              setSensorCaptureResultCollector { sensorCaptureResultFlow ->
-                sensorCaptureResultFlow.collect {
-                  if (it is SensorCaptureResult.ResourceInfoCreated) {
-                    val answer =
-                      QuestionnaireResponse.QuestionnaireResponseItemAnswerComponent().apply {
-                        value =
-                          Coding().apply {
-                            // store captureId to recapture again
-                            code = it.resourceInfo.captureId
-                            system =
-                              "${PPGSensorCaptureViewHolderFactory.WIDGET_EXTENSION}/CaptureInfo"
-                            display =
-                              ViewHolderFactoryUtil.getFirstOrNullImageUri(
-                                  it.resourceInfo.localLocation,
-                                  it.resourceInfo.contentType
-                                )
-                                ?.toString()
-                          }
-                      }
-                    questionnaireViewItem.setAnswer(answer)
-                  }
-                }
-              }
             }
           parentFragmentsChildFragmentManager
             .beginTransaction()

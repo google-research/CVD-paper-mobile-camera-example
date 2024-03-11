@@ -34,10 +34,9 @@ import com.google.android.fhir.datacapture.views.factories.QuestionnaireItemView
 import com.google.android.fhir.datacapture.views.factories.QuestionnaireItemViewHolderFactory
 import com.google.android.sensing.capture.CaptureFragment
 import com.google.android.sensing.capture.CaptureSettings
-import com.google.android.sensing.capture.SensorCaptureResult
 import com.google.android.sensing.model.CaptureInfo
 import com.google.android.sensing.model.CaptureType
-import com.google.android.sensing.model.SensorType
+import com.google.android.sensing.model.InternalSensorType
 import com.google.android.sensory.InstructionsFragment
 import com.google.android.sensory.R
 import com.google.android.sensory.SensingApplication
@@ -129,6 +128,18 @@ object PPGSensorCaptureViewHolderFactory :
             if (parentFragmentsChildFragmentManager.backStackEntryCount >= 1) {
               parentFragmentsChildFragmentManager.popBackStack()
             }
+            val captureId = result.getString(CaptureFragment.CAPTURED_ID, "")
+            val answer =
+              QuestionnaireResponse.QuestionnaireResponseItemAnswerComponent().apply {
+                value =
+                  Coding().apply {
+                    // store captureId to recapture again
+                    code = captureId
+                    system = "$WIDGET_EXTENSION/CaptureInfo"
+                    display = QUESTION_TITLE
+                  }
+              }
+            questionnaireViewItem.setAnswer(answer)
           }
         }
         parentFragmentsChildFragmentManager.setFragmentResultListener(
@@ -156,8 +167,8 @@ object PPGSensorCaptureViewHolderFactory :
                     "Sensory_${SensingApplication.APP_VERSION}/Participant_$fhirPatientId/$QUESTION_TITLE",
                   captureSettings =
                     CaptureSettings(
-                      fileTypeMap = mapOf(SensorType.CAMERA to "jpeg"),
-                      metaDataTypeMap = mapOf(SensorType.CAMERA to "tsv"),
+                      fileTypeMap = mapOf(InternalSensorType.CAMERA to "jpeg"),
+                      metaDataTypeMap = mapOf(InternalSensorType.CAMERA to "tsv"),
                       captureTitle = QUESTION_TITLE,
                       ppgTimer = 30
                     ),
@@ -165,31 +176,6 @@ object PPGSensorCaptureViewHolderFactory :
                   captureId = captureId,
                 )
               )
-              setSensorCaptureResultCollector { sensorCaptureResultFlow ->
-                sensorCaptureResultFlow.collect {
-                  if (it is SensorCaptureResult.ResourceInfoCreated) {
-                    val answer =
-                      QuestionnaireResponse.QuestionnaireResponseItemAnswerComponent().apply {
-                        value =
-                          Coding().apply {
-                            // store captureId to recapture again
-                            code = it.resourceInfo.captureId
-                            system = "$WIDGET_EXTENSION/CaptureInfo"
-                            display = it.resourceInfo.resourceTitle
-                          }
-                      }
-                    /**
-                     * Using setAnswer temporarily for single ResourceInfo scenarios.
-                     *
-                     * Ideally, switch to questionnaireViewItem.addAnswer when handling multiple
-                     * sensors (multiple ResourceInfo).
-                     *
-                     * Note: addAnswer API not yet released in the current library.
-                     */
-                    questionnaireViewItem.setAnswer(answer)
-                  }
-                }
-              }
             }
           parentFragmentsChildFragmentManager
             .beginTransaction()

@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Google LLC
+ * Copyright 2023-2024 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ import com.google.android.fitbit.research.sensing.common.libraries.camera.Camera
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.sensing.R
 import com.google.android.sensing.model.CaptureType
-import com.google.android.sensing.model.SensorType
+import com.google.android.sensing.model.InternalSensorType
 
 class CaptureUtil {
   companion object {
@@ -49,10 +49,10 @@ class CaptureUtil {
       }
     }
 
-    fun sensorsInvolved(captureType: CaptureType): List<SensorType> {
+    fun sensorsInvolved(captureType: CaptureType): List<InternalSensorType> {
       return when (captureType) {
-        CaptureType.VIDEO_PPG -> listOf(SensorType.CAMERA)
-        CaptureType.IMAGE -> listOf(SensorType.CAMERA)
+        CaptureType.VIDEO_PPG -> listOf(InternalSensorType.CAMERA)
+        CaptureType.IMAGE -> listOf(InternalSensorType.CAMERA)
       }
     }
   }

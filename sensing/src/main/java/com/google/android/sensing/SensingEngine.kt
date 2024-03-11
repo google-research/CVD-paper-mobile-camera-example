@@ -17,12 +17,10 @@
 package com.google.android.sensing
 
 import android.content.Context
-import com.google.android.sensing.capture.SensorCaptureResult
 import com.google.android.sensing.db.Database
 import com.google.android.sensing.impl.SensingEngineImpl
 import com.google.android.sensing.model.CaptureInfo
 import com.google.android.sensing.model.ResourceInfo
-import kotlinx.coroutines.flow.Flow
 
 /**
  * Interface defining interactions with a sensing engine, responsible for managing captured data and
@@ -34,10 +32,8 @@ interface SensingEngine {
    * Retrieves the CaptureInfo record associated with a specific capture session.
    *
    * @param captureId The unique identifier for a capture session.
-   * @return The CaptureInfo object containing metadata about the capture session,
-   * ```
-   *         or null if no record is found.
-   * ```
+   * @return The CaptureInfo object containing metadata about the capture session, or null if no
+   * record is found.
    */
   suspend fun getCaptureInfo(captureId: String): CaptureInfo
 
@@ -51,31 +47,13 @@ interface SensingEngine {
   suspend fun deleteDataInCapture(captureId: String): Boolean
 
   /**
-   * Responsible for creating resource records for captured data and completing upload setup. This
-   * API is triggered by [CaptureViewModel] after completion of capturing. Limitation: All captured
-   * data and metadata are stored in the same folder and zipped for uploading.
-   * 1. Save [CaptureInfo] in the database
-   * 2. read map for a capture type, for each sensor type:-
-   * ```
-   *      a. create [ResourceInfo] for it and save it in the database.
-   *      b. emit [SensorCaptureResult.StateChange].
-   *      c. zip the [captureInfo.captureFolder]/[sensorType] folder.
-   *      d. create [UploadRequest] for it and save it in the database.
-   * ```
-   * TODO: Support uploading of any mime type.
-   */
-  suspend fun onCaptureCompleteCallback(captureInfo: CaptureInfo): Flow<SensorCaptureResult>
-
-  /**
    * Retrieves a list of ResourceInfo objects associated with a given external identifier. This
    * search spans across multiple capture sessions.
    *
    * @param externalIdentifier An identifier used to link resources, potentially across different
    * capture sessions.
-   * @return A list of ResourceInfo objects matching the external identifier.
-   * ```
-   *         The list may be empty if no resources are found.
-   * ```
+   * @return A list of ResourceInfo objects matching the external identifier. The list may be empty
+   * if no resources are found.
    */
   suspend fun listResourceInfoForExternalIdentifier(externalIdentifier: String): List<ResourceInfo>
 
@@ -101,7 +79,7 @@ interface SensingEngine {
                   } else SensingEngineConfiguration()
                 with(sensingEngineConfiguration) {
                   val database = Database.getInstance(context, databaseConfiguration)
-                  SensingEngineImpl(database, context, serverConfiguration)
+                  SensingEngineImpl(database, context)
                 }
               }
               .also { instance = it }
