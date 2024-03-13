@@ -16,16 +16,16 @@
 
 package com.google.android.sensing.capture
 
-import com.google.android.sensing.model.SensorType
+import com.google.android.sensing.model.InternalSensorType
 
 data class CaptureSettings(
   /**
    * The mimetype map for files captured via a sensor. TODO: Need to have default types for each
    * sensor.
    */
-  val fileTypeMap: Map<SensorType, String>,
+  val fileTypeMap: Map<InternalSensorType, String>,
   /** The mimetype map for metadata files captured via a sensor. */
-  val metaDataTypeMap: Map<SensorType, String>,
+  val metaDataTypeMap: Map<InternalSensorType, String>,
   /**
    * The capture title is appended next to ParticipantID in a filename being produced while
    * capturing.

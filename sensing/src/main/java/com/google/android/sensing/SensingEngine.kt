@@ -17,72 +17,53 @@
 package com.google.android.sensing
 
 import android.content.Context
-import android.content.Intent
-import com.google.android.sensing.capture.SensorCaptureResult
 import com.google.android.sensing.db.Database
 import com.google.android.sensing.impl.SensingEngineImpl
 import com.google.android.sensing.model.CaptureInfo
-import com.google.android.sensing.model.RequestStatus
 import com.google.android.sensing.model.ResourceInfo
-import com.google.android.sensing.model.UploadRequest
-import kotlinx.coroutines.flow.Flow
 
 /**
- * The Sensing Engine interface that handles the local storage of captured resources.
- *
- * TODO: CRUD APIs for UploadRequest to use only the upload mechanism this Engine provides.
- *
- * TODO: Order APIs nicely
+ * Interface defining interactions with a sensing engine, responsible for managing captured data and
+ * metadata.
  */
 interface SensingEngine {
 
-  /** Get CaptureInfo record given @param captureId */
+  /**
+   * Retrieves the CaptureInfo record associated with a specific capture session.
+   *
+   * @param captureId The unique identifier for a capture session.
+   * @return The CaptureInfo object containing metadata about the capture session, or null if no
+   * record is found.
+   */
   suspend fun getCaptureInfo(captureId: String): CaptureInfo
 
-  /** Delete all data associated with [captureId] */
+  /**
+   * Deletes all data associated with a specific capture session. This includes sensor data,
+   * metadata (CaptureInfo), and potentially related resources.
+   *
+   * @param captureId The unique identifier for the capture session to be deleted.
+   * @return True if the deletion was successful, false otherwise.
+   */
   suspend fun deleteDataInCapture(captureId: String): Boolean
 
   /**
-   * Responsible for creating resource records for captured data and completing upload setup. This
-   * API is triggered by [CaptureViewModel] after completion of capturing. Limitation: All captured
-   * data and metadata are stored in the same folder and zipped for uploading.
-   * 1. Save [CaptureInfo] in the database
-   * 2. read map for a capture type, for each sensor type:-
-   * ```
-   *      a. create [ResourceInfo] for it and save it in the database.
-   *      b. emit [SensorCaptureResult.StateChange].
-   *      c. zip the [captureInfo.captureFolder]/[sensorType] folder.
-   *      d. create [UploadRequest] for it and save it in the database.
-   * ```
-   * TODO: Support uploading of any mime type.
-   */
-  suspend fun onCaptureCompleteCallback(captureInfo: CaptureInfo): Flow<SensorCaptureResult>
-
-  /**
-   * Lists all ResourceInfo given a externalIdentifier. This will return all ResourceInfo across
-   * multiple capturings.
+   * Retrieves a list of ResourceInfo objects associated with a given external identifier. This
+   * search spans across multiple capture sessions.
+   *
+   * @param externalIdentifier An identifier used to link resources, potentially across different
+   * capture sessions.
+   * @return A list of ResourceInfo objects matching the external identifier. The list may be empty
+   * if no resources are found.
    */
   suspend fun listResourceInfoForExternalIdentifier(externalIdentifier: String): List<ResourceInfo>
 
-  suspend fun getResourceInfo(resourceInfoId: String): ResourceInfo?
-
-  suspend fun updateResourceInfo(resourceInfo: ResourceInfo)
-
-  /** To support 3P apps */
-  suspend fun captureSensorData(pendingIntent: Intent)
-
-  /** Update given [uploadRequest] in database. */
-  suspend fun updateUploadRequest(uploadRequest: UploadRequest)
-
   /**
-   * Get [UploadRequest] corresponding to the [ResourceInfo] given [ResourceInfo.resourceInfoId].
-   * Application developers can use this API to monitor not just upload status but also progress.
+   * Retrieves a specific ResourceInfo object based on its unique ID.
+   *
+   * @param resourceInfoId The unique identifier of the ResourceInfo object.
+   * @return The ResourceInfo object if found, otherwise null.
    */
-  suspend fun listUploadRequest(status: RequestStatus): List<UploadRequest>
-
-  /** Delete data stored in blobstore */
-  suspend fun deleteSensorData(uploadURL: String)
-  suspend fun deleteSensorMetaData(uploadURL: String)
+  suspend fun getResourceInfo(resourceInfoId: String): ResourceInfo?
 
   companion object {
     @Volatile private var instance: SensingEngine? = null
@@ -98,7 +79,7 @@ interface SensingEngine {
                   } else SensingEngineConfiguration()
                 with(sensingEngineConfiguration) {
                   val database = Database.getInstance(context, databaseConfiguration)
-                  SensingEngineImpl(database, context, serverConfiguration)
+                  SensingEngineImpl(database, context)
                 }
               }
               .also { instance = it }
