@@ -22,8 +22,7 @@ android {
   buildTypes {
     release {
       isMinifyEnabled = false
-      // proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"),
-      // "proguard-rules.pro")
+      proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
     }
   }
 
@@ -44,9 +43,13 @@ dependencies {
   implementation(Dependencies.gson)
   implementation(Dependencies.timber)
   implementation(Dependencies.Navigation.navFragmentKtx)
-  implementation("androidx.navigation:navigation-ui-ktx:2.6.0")
 
+  // Essential dependencies for interacting with Google Cloud Vertex AI:
+  // google-cloud-aiplatform: Core library for accessing Vertex AI services, including
+  // PredictionServiceClient.
   implementation("com.google.cloud:google-cloud-aiplatform:3.35.0")
+  // grpc-okhttp: Provides gRPC transport functionality for efficient communication with Vertex AI
+  // endpoints.
   implementation("io.grpc:grpc-okhttp:1.61.0")
 
   testImplementation(Dependencies.junit)
