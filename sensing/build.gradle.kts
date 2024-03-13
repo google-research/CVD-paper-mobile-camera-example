@@ -10,6 +10,7 @@ android {
 
   defaultConfig {
     minSdk = Sdk.minSdk
+    targetSdk = Sdk.targetSdk
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     consumerProguardFiles("consumer-rules.pro")
@@ -21,7 +22,11 @@ android {
       proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
     }
   }
-  kotlin { jvmToolchain(17) }
+  compileOptions {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+  }
+  kotlinOptions { jvmTarget = "1.8" }
 }
 
 dependencies {

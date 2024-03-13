@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-2024 Google LLC
+ * Copyright 2023 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -113,18 +113,18 @@ object Dependencies {
 
   object Versions {
     object Androidx {
-      const val activity = "1.7.2"
-      const val appCompat = "1.6.1"
-      const val constraintLayout = "2.1.4"
-      const val coreKtx = "1.10.1"
+      const val activity = "1.2.1"
+      const val appCompat = "1.1.0"
+      const val constraintLayout = "2.1.1"
+      const val coreKtx = "1.2.0"
       const val datastorePref = "1.0.0"
-      const val fragmentKtx = "1.6.0"
-      const val lifecycle = "2.6.1"
-      const val navigation = "2.6.0"
-      const val recyclerView = "1.3.0"
-      const val room = "2.5.2"
-      const val sqliteKtx = "2.3.1"
-      const val workRuntimeKtx = "2.8.1"
+      const val fragmentKtx = "1.3.1"
+      const val lifecycle = "2.2.0"
+      const val navigation = "2.5.3"
+      const val recyclerView = "1.1.0"
+      const val room = "2.4.2"
+      const val sqliteKtx = "2.1.0"
+      const val workRuntimeKtx = "2.7.1"
     }
 
     object Glide {
@@ -132,24 +132,24 @@ object Dependencies {
     }
 
     object Kotlin {
-      const val kotlinCoroutinesCore = "1.7.2"
-      const val stdlib = "1.8.20"
+      const val kotlinCoroutinesCore = "1.6.4"
+      const val stdlib = "1.6.10"
     }
 
     object CameraX {
       const val cameraXVersion = "1.2.3"
     }
 
-    const val guava = "32.1.3-android"
-    const val material = "1.9.0"
-    const val sqlcipher = "4.5.4"
+    const val guava = "28.2-android"
+    const val material = "1.6.0"
+    const val sqlcipher = "4.5.0"
     const val timber = "5.0.1"
 
     object AndroidxTest {
-      const val extJunit = "1.1.5"
+      const val extJunit = "1.1.3"
     }
 
-    const val espresso = "3.5.1"
+    const val espresso = "3.4.0"
     const val junit = "4.13.2"
     const val gson = "2.9.1"
   }
