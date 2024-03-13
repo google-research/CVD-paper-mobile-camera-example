@@ -23,8 +23,12 @@ android {
       proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
     }
   }
-  buildFeatures { viewBinding = true }
-  packagingOptions { resources.excludes.addAll(listOf("META-INF/*")) }
+  buildFeatures {
+    buildConfig = true
+    viewBinding = true
+  }
+  packaging { resources.excludes.addAll(listOf("META-INF/*")) }
+  kotlin { jvmToolchain(17) }
 }
 
 dependencies {
