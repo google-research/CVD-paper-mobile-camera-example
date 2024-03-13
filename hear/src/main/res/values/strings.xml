@@ -1,0 +1,29 @@
+<resources>
+  <string name="app_name">HeAR</string>
+  <string name="app_title">HeAR Demo</string>
+
+  <string
+        name="instruction_heading"
+    >Pre-screen a cough to identify likely causes with a 5 second audio clip.</string>
+  <string name="instruction_body_1">Allow permissions to record audio </string>
+  <string name="instruction_body_2">Hold phone 5 inches away from face </string>
+  <string name="instruction_body_3">Record for 5 seconds while coughing</string>
+  <string name="get_started_button_text">Get started</string>
+
+  <string name="record_heading">Record your cough</string>
+  <string
+        name="record_body"
+    >Pre-screen a cough to identify likely causes with a 5 second audio clip.</string>
+  <string name="record_button">Start recording</string>
+
+  <string name="recording_heading">Recording...</string>
+  <string name="cancel_button_text">Cancel</string>
+  <string name="submit_button_text">Submit</string>
+  <string name="review_button_text">Review recording</string>
+
+  <string name="insight_title">Possible causes</string>
+  <string
+        name="insight_description"
+    >Based on the recording your cough may be caused by:</string>
+  <string name="record_again_button_text">Restart</string>
+</resources>

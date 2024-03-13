@@ -243,6 +243,8 @@ class CaptureFragment : Fragment() {
             setFragmentResult(TAG, bundleOf(CAPTURED to true, CAPTURED_ID to captureInfo.captureId))
           }
 
+          override fun onPostProcessed(result: String) {}
+
           override fun onError(exception: Exception, captureInfo: CaptureInfo?) {
             captureViewModel.endTimer()
             val toastText =

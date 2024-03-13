@@ -23,8 +23,10 @@ import com.google.android.sensing.capture.InitConfig
 import com.google.android.sensing.capture.sensors.CameraCaptureRequest
 import com.google.android.sensing.capture.sensors.CameraInitConfig
 import com.google.android.sensing.capture.sensors.CameraSensorFactor
+import com.google.android.sensing.capture.sensors.MicrophoneSensorFactory
 import com.google.android.sensing.db.Database
 import com.google.android.sensing.impl.SensorManagerImpl
+import com.google.android.sensing.inference.PostProcessor
 import com.google.android.sensing.model.CaptureInfo
 import com.google.android.sensing.model.InternalSensorType
 import com.google.android.sensing.model.SensorType
@@ -75,6 +77,12 @@ interface SensorManager {
    * @return `true` if a factory is registered for the `sensorType`, `false` otherwise.
    */
   fun checkRegistration(sensorType: SensorType): Boolean
+
+  fun registerPostProcessor(sensorType: SensorType, postProcessor: PostProcessor)
+
+  fun unregisterPostProcessor(sensorType: SensorType)
+
+  // TODO unregisterListener
 
   /**
    * Initializes a specified sensor in preparation for capturing data. This involves:
@@ -147,6 +155,7 @@ interface SensorManager {
   interface AppDataCaptureListener {
     fun onStart(captureInfo: CaptureInfo)
     fun onComplete(captureInfo: CaptureInfo)
+    fun onPostProcessed(result: String)
     fun onError(exception: Exception, captureInfo: CaptureInfo? = null)
   }
 
@@ -202,6 +211,7 @@ interface SensorManager {
                   val database = Database.getInstance(context, databaseConfiguration)
                   SensorManagerImpl(context, database).apply {
                     registerSensorFactory(InternalSensorType.CAMERA, CameraSensorFactor)
+                    registerSensorFactory(InternalSensorType.MICROPHONE, MicrophoneSensorFactory)
                   }
                 }
               }

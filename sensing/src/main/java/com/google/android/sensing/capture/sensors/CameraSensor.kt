@@ -81,6 +81,7 @@ internal class CameraSensor(
   private val internalStorage = context.filesDir
   private val internalCameraInitJob: Job
 
+  private lateinit var processCameraProvider: ProcessCameraProvider
   /**
    * Create an internal [ImageAnalysis] [UseCase] that constructs [_imageFlow] and [_metaDataFlow].
    */
@@ -110,8 +111,8 @@ internal class CameraSensor(
             }
           }
           .let {
-            //
-            buildData(it)
+            processCameraProvider = it
+            buildData()
             cancel()
           }
       }
@@ -140,7 +141,7 @@ internal class CameraSensor(
   private var dataCount = 0
 
   @SuppressLint("UnsafeOptInUsageError")
-  private fun buildData(processCameraProvider: ProcessCameraProvider) {
+  private fun buildData() {
     /** Build [_metaDataFlow]. */
     val captureCallback =
       object : CameraCaptureSession.CaptureCallback() {
@@ -235,6 +236,10 @@ internal class CameraSensor(
       internalImageAnalysis.clearAnalyzer()
       internalListener.onStopped(InternalSensorType.CAMERA)
     }
+  }
+
+  override suspend fun reset() {
+    processCameraProvider.unbindAll()
   }
 
   override suspend fun pause() {

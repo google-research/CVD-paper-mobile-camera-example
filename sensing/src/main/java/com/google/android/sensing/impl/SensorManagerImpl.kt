@@ -29,6 +29,7 @@ import com.google.android.sensing.capture.InitConfig
 import com.google.android.sensing.capture.sensors.Sensor
 import com.google.android.sensing.db.Database
 import com.google.android.sensing.db.ResourceNotFoundException
+import com.google.android.sensing.inference.PostProcessor
 import com.google.android.sensing.model.CaptureInfo
 import com.google.android.sensing.model.CaptureType
 import com.google.android.sensing.model.RequestStatus
@@ -41,6 +42,7 @@ import java.util.UUID
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
@@ -52,6 +54,7 @@ internal class SensorManagerImpl(context: Context, private val database: Databas
     val sensor: Sensor,
     var captureRequest: CaptureRequest? = null,
     var listener: SensorManager.AppDataCaptureListener? = null,
+    var postProcessor: PostProcessor? = null
   )
   private val componentsMap = mutableMapOf<SensorType, Components>()
 
@@ -158,7 +161,7 @@ internal class SensorManagerImpl(context: Context, private val database: Databas
       override fun onData(sensorType: SensorType) {}
 
       override fun onStopped(sensorType: SensorType) {
-        componentsMap.remove(sensorType)?.let {
+        componentsMap[sensorType]?.let {
           CoroutineScope(Dispatchers.IO).launch {
             it.captureRequest?.let { request ->
               with(request) {
@@ -183,8 +186,10 @@ internal class SensorManagerImpl(context: Context, private val database: Databas
                    */
                   val processedString =
                       withContext(lifecycleOwner.lifecycleScope.coroutineContext) {
-                        it.listener?.onComplete(captureInfo)
-                        /** TODO PostProcess. */
+                        it.listener?.apply {
+                          onComplete(captureInfo)
+                          it.postProcessor?.process(captureInfo)?.let { onPostProcessed(it) }
+                        }
                       }
                   }
                 } catch (e: ResourceNotFoundException) {
@@ -193,6 +198,8 @@ internal class SensorManagerImpl(context: Context, private val database: Databas
                 }
               }
             }
+            it.captureRequest = null
+            it.listener = null
             /** TODO zipping and creating UploadRequest */
           }
         }
@@ -238,6 +245,7 @@ internal class SensorManagerImpl(context: Context, private val database: Databas
         Timber.w("Sensor $sensorType not started. Nothing to stop.")
         return
       }
+      Timber.w("Stopping Sensor $sensorType.")
       componentsMap[sensorType]?.sensor?.stop()
     }
   }
@@ -258,6 +266,7 @@ internal class SensorManagerImpl(context: Context, private val database: Databas
     if (componentsMap[sensorType]?.sensor?.isStarted() == true) {
       componentsMap[sensorType]?.sensor?.kill()
     }
+    componentsMap.remove(sensorType).let { runBlocking { it?.sensor?.reset() } }
   }
 
   override fun registerListener(
@@ -272,11 +281,43 @@ internal class SensorManagerImpl(context: Context, private val database: Databas
      */
     if (componentsMap[sensorType]?.captureRequest != null) {
       throw IllegalStateException(
-        "Sensor $sensorType has a pending capture request. Call to this should be prior to #start. Call #reset and start again from #init step."
+        "Sensor $sensorType has a pending capture request. Call to #registerListener should be prior to #start. Call #reset and start again from #init step."
       )
     }
     componentsMap[sensorType]?.let { it.listener = listener }
       ?: Timber.w("Cant register listener for Sensor $sensorType. Call #init first.")
+  }
+
+  override fun registerPostProcessor(sensorType: SensorType, postProcessor: PostProcessor) {
+    if (!componentsMap.containsKey(sensorType)) {
+      throw IllegalStateException("Sensor $sensorType not initialized. Call #init first.")
+    }
+    /**
+     * If a captureRequest is already present then it means that [start] has already been called.
+     */
+    if (componentsMap[sensorType]?.captureRequest != null) {
+      throw IllegalStateException(
+        "Sensor $sensorType has a pending capture request. Call to #registerPostProcessor should be prior to #start. Call #reset and start again from #init step."
+      )
+    }
+    componentsMap[sensorType]?.let { it.postProcessor = postProcessor }
+      ?: Timber.w("Cant register post-processor for Sensor $sensorType. Call #init first.")
+  }
+
+  override fun unregisterPostProcessor(sensorType: SensorType) {
+    if (!componentsMap.containsKey(sensorType)) {
+      Timber.w("Sensor $sensorType not initialized. Call #init first.")
+    }
+    /**
+     * If a captureRequest is already present then it means that [start] has already been called.
+     */
+    if (componentsMap[sensorType]?.captureRequest != null) {
+      throw IllegalStateException(
+        "Sensor $sensorType has a pending capture request. Call to unregisterPostProcessor should be prior to #start. Call #reset and start again from #init step."
+      )
+    }
+
+    componentsMap[sensorType]?.postProcessor = null
   }
 
   override fun isStarted(sensorType: SensorType): Boolean {
