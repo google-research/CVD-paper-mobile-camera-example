@@ -107,6 +107,8 @@ interface Sensor {
   /** **[Async] Stops the sensor's data capture process.** Halts the active data collection. */
   suspend fun stop()
 
+  suspend fun reset()
+
   /**
    * **[Async] Temporarily pauses the sensor's data capture process.** Allows for resuming data
    * collection without a full stop/start cycle.
