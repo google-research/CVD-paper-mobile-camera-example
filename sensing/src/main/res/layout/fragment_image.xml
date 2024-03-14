@@ -14,7 +14,7 @@
     />
 
   <androidx.appcompat.widget.AppCompatImageView
-        android:id="@+id/btn_take_photo"
+        android:id="@+id/take_photo_buttton"
         android:layout_width="60dp"
         android:layout_height="60dp"
         android:src="@drawable/image_capture_button"

@@ -8,6 +8,7 @@ local.properties
 **/.DS_Store
 *.iml
 **/local.properties
+**/credentials.json
 **/captures
 .externalNativeBuild
 .cxx
