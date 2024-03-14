@@ -56,8 +56,10 @@ import kotlinx.coroutines.launch
 import timber.log.Timber
 
 /**
- * Fragment for [CameraSensor] capturing requests. This fragment is a sample intended to accompany
- * an upcoming research publication on models trained on mobile-sensor data to evaluate CVD risk.
+ * Reference fragment for capturing via [SensorManager] for SensorType [InternalSensorType.CAMERA].
+ * This fragment is a sample intended to accompany an upcoming research publication on models
+ * trained on mobile-sensor data to evaluate CVD risk. Feel free to use this, however you may need
+ * to modify this to tailor your needs.
  */
 @SuppressLint("UnsafeOptInUsageError")
 class CameraCaptureFragment : Fragment() {
