@@ -32,11 +32,8 @@ import com.google.android.fhir.datacapture.tryUnwrapContext
 import com.google.android.fhir.datacapture.views.QuestionnaireViewItem
 import com.google.android.fhir.datacapture.views.factories.QuestionnaireItemViewHolderDelegate
 import com.google.android.fhir.datacapture.views.factories.QuestionnaireItemViewHolderFactory
-import com.google.android.sensing.capture.CaptureFragment
-import com.google.android.sensing.capture.CaptureSettings
-import com.google.android.sensing.model.CaptureInfo
-import com.google.android.sensing.model.CaptureType
-import com.google.android.sensing.model.InternalSensorType
+import com.google.android.sensing.capture.sample.CameraCaptureFragment
+import com.google.android.sensing.capture.sensors.CameraCaptureRequest
 import com.google.android.sensory.InstructionsFragment
 import com.google.android.sensory.R
 import com.google.android.sensory.SensingApplication
@@ -118,17 +115,17 @@ object PPGSensorCaptureViewHolderFactory :
         val parentFragmentsChildFragmentManager =
           view.findFragment<QuestionnaireFragment>().parentFragmentManager
         parentFragmentsChildFragmentManager.setFragmentResultListener(
-          CaptureFragment.TAG,
+          CameraCaptureFragment.TAG,
           context
         ) { _, result ->
-          if (result.getBoolean(CaptureFragment.CAPTURED)) {
+          if (result.getBoolean(CameraCaptureFragment.CAPTURED)) {
             // Following condition arises when user presses back button from CaptureFragment and the
             // fragment is removed from backstack by the BackPressCallback defined in
             // ScreenerFragment
             if (parentFragmentsChildFragmentManager.backStackEntryCount >= 1) {
               parentFragmentsChildFragmentManager.popBackStack()
             }
-            val captureId = result.getString(CaptureFragment.CAPTURED_ID, "")
+            val captureId = result.getString(CameraCaptureFragment.CAPTURED_ID, "")
             val answer =
               QuestionnaireResponse.QuestionnaireResponseItemAnswerComponent().apply {
                 value =
@@ -156,31 +153,22 @@ object PPGSensorCaptureViewHolderFactory :
             context
               .getSharedPreferences(SensingApplication.SHARED_PREFS_KEY, Context.MODE_PRIVATE)
               .getString(SensingApplication.CURRENT_PATIENT_ID, null)!!
-          val captureId = questionnaireViewItem.answers.firstOrNull()?.valueCoding?.code
-          val captureFragment =
-            CaptureFragment().apply {
-              setCaptureInfo(
-                CaptureInfo(
+          val cameraCaptureFragment =
+            CameraCaptureFragment().apply {
+              setCaptureRequest(
+                CameraCaptureRequest.ImageStreamRequest(
                   externalIdentifier = fhirPatientId,
-                  captureType = CaptureType.VIDEO_PPG,
-                  captureFolder =
+                  outputFolder =
                     "Sensory_${SensingApplication.APP_VERSION}/Participant_$fhirPatientId/$QUESTION_TITLE",
-                  captureSettings =
-                    CaptureSettings(
-                      fileTypeMap = mapOf(InternalSensorType.CAMERA to "jpeg"),
-                      metaDataTypeMap = mapOf(InternalSensorType.CAMERA to "tsv"),
-                      captureTitle = QUESTION_TITLE,
-                      ppgTimer = 30
-                    ),
-                  recapture = captureId != null,
-                  captureId = captureId,
+                  outputTitle = QUESTION_TITLE,
+                  bufferCapacity = Int.MAX_VALUE
                 )
               )
             }
           parentFragmentsChildFragmentManager
             .beginTransaction()
-            .add(R.id.screener_container, captureFragment, CaptureFragment.TAG)
-            .addToBackStack(CaptureFragment.TAG)
+            .add(R.id.screener_container, cameraCaptureFragment, CameraCaptureFragment.TAG)
+            .addToBackStack(CameraCaptureFragment.TAG)
             .commit()
         }
         parentFragmentsChildFragmentManager

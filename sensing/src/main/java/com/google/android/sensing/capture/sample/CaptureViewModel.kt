@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.google.android.sensing.capture
+package com.google.android.sensing.capture.sample
 
 import android.annotation.SuppressLint
 import android.app.Application
@@ -25,24 +25,20 @@ import android.os.CountDownTimer
 import androidx.camera.camera2.interop.CaptureRequestOptions
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.MutableLiveData
-import com.google.android.sensing.model.CaptureInfo
-import com.google.android.sensing.model.CaptureType
 
 class CaptureViewModel(application: Application) : AndroidViewModel(application) {
-  lateinit var captureInfo: CaptureInfo
 
-  val isPhoneSafeToUse = MutableLiveData<Boolean>(false)
+  val isPhoneSafeToUse = MutableLiveData(false)
   private lateinit var countDownTimer: CountDownTimer
   val timerLiveData = MutableLiveData<Long>()
   val automaticallyStopCapturing = MutableLiveData<Boolean>()
 
   suspend fun startTimer() {
     countDownTimer =
-      object : CountDownTimer(1000L * captureInfo.captureSettings.ppgTimer, 1000) {
+      object : CountDownTimer(1000L * CameraCaptureFragment.IMAGE_STREAM_TIMER_SECONDS, 1000) {
           override fun onTick(millisUntilFinished: Long) {
             timerLiveData.postValue(millisUntilFinished)
           }
-
           override fun onFinish() {
             automaticallyStopCapturing.postValue(true)
           }
@@ -51,7 +47,7 @@ class CaptureViewModel(application: Application) : AndroidViewModel(application)
   }
 
   fun endTimer() {
-    if (captureInfo.captureType == CaptureType.VIDEO_PPG) countDownTimer.cancel()
+    countDownTimer.cancel()
   }
 
   @SuppressLint("UnsafeOptInUsageError")
