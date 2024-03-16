@@ -28,18 +28,7 @@
         tools:layout="@layout/fragment_instruction"
     >
     <action
-            android:id="@+id/action_instructionFragment_to_recordFragment"
-            app:destination="@id/recordFragment"
-        />
-  </fragment>
-  <fragment
-        android:id="@+id/recordFragment"
-        android:name="com.google.android.sensing.hear.fragments.RecordFragment"
-        android:label="fragment_components"
-        tools:layout="@layout/fragment_record"
-    >
-    <action
-            android:id="@+id/action_recordFragment_to_recordingFragment"
+            android:id="@+id/action_instructionFragment_to_recordingFragment"
             app:destination="@id/recordingFragment"
         />
   </fragment>

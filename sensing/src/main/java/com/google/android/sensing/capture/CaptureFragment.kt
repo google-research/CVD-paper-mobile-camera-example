@@ -49,6 +49,7 @@ import com.google.android.sensing.capture.sensors.CameraInitConfig
 import com.google.android.sensing.model.CaptureInfo
 import com.google.android.sensing.model.CaptureType
 import com.google.android.sensing.model.InternalSensorType
+import com.google.android.sensing.model.ProcessedInfo
 import java.util.Locale
 import java.util.Timer
 import java.util.TimerTask
@@ -232,7 +233,7 @@ class CaptureFragment : Fragment() {
             }
           }
 
-          override fun onComplete(captureInfo: CaptureInfo) {
+          override fun onStopped(captureInfo: CaptureInfo) {
             captureViewModel.endTimer()
             val toastText =
               when (captureViewModel.captureInfo.captureType) {
@@ -240,10 +241,19 @@ class CaptureFragment : Fragment() {
                 CaptureType.IMAGE -> "Image Saved"
               }
             Toast.makeText(requireContext(), toastText, Toast.LENGTH_SHORT).show()
+          }
+
+          override fun onCancelled(captureInfo: CaptureInfo?) {
+            TODO("Not yet implemented")
+          }
+
+          override fun onRecordSaved(captureInfo: CaptureInfo) {
             setFragmentResult(TAG, bundleOf(CAPTURED to true, CAPTURED_ID to captureInfo.captureId))
           }
 
-          override fun onPostProcessed(result: String) {}
+          override fun onPostProcessed(processedInfo: ProcessedInfo) {
+            TODO("Not yet implemented")
+          }
 
           override fun onError(exception: Exception, captureInfo: CaptureInfo?) {
             captureViewModel.endTimer()

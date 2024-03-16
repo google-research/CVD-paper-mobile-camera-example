@@ -3,5 +3,8 @@
   <color name="black">#FF000000</color>
   <color name="white">#FFFFFFFF</color>
   <color name="primary_blue_40">#185ABC</color>
+  <color name="primary_disabled_grey">#1F3C4043</color>
+  <color name="disabled_text_color">#613C4043</color>
   <color name="secondary_blue">#D2E3FC</color>
+  <color name="sub_title_text_color">#3C4043</color>
 </resources>

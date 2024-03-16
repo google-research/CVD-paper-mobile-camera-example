@@ -18,26 +18,28 @@ package com.google.android.sensing.hear
 
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MediatorLiveData
 import androidx.lifecycle.SavedStateHandle
+import androidx.lifecycle.viewModelScope
 import com.google.cloud.aiplatform.v1.EndpointName
 import com.google.cloud.aiplatform.v1.PredictRequest
 import com.google.cloud.aiplatform.v1.PredictionServiceClient
 import com.google.protobuf.ListValue
 import java.io.File
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 class MainActivityViewModel(application: Application, private val state: SavedStateHandle) :
   AndroidViewModel(application) {
 
-  private val _permissionsAvailable = MediatorLiveData<Boolean>()
-  val permissionsAvailable: LiveData<Boolean>
+  private val _permissionsAvailable = MutableSharedFlow<Boolean>()
+  val permissionsAvailable: Flow<Boolean>
     get() = _permissionsAvailable
 
   fun setPermissionsAvailability(b: Boolean) {
-    _permissionsAvailable.postValue(b)
+    viewModelScope.launch { _permissionsAvailable.emit(b) }
   }
 
   suspend fun predictWithAudio(
@@ -45,16 +47,16 @@ class MainActivityViewModel(application: Application, private val state: SavedSt
     endpointName: EndpointName,
     audioFile: File,
   ): String {
-    val audioFloats: FloatArray = WavToFloats.normalizeAudio(audioFile.toString())
+    val normalizedAudioInDouble = WavToFloats.normalizeAudio(audioFile)
     val maxSamples = 160000 // Maximum number of samples to process
 
     // Directly build the ListValue
     val listBuilder =
       ListValue.newBuilder()
         .addAllValues(
-          audioFloats
+          normalizedAudioInDouble
             .take(maxSamples) // Limit to maxSamples
-            .map { com.google.protobuf.Value.newBuilder().setNumberValue(it.toDouble()).build() }
+            .map { com.google.protobuf.Value.newBuilder().setNumberValue(it).build() }
         )
 
     val predictRequest =

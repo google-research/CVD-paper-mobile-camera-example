@@ -4,13 +4,14 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@null"
+    android:backgroundTint="@android:color/white"
 >
 
   <TextView
         android:id="@+id/instruction_title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:textColor="@color/sub_title_text_color"
         android:textAppearance="?attr/textAppearanceHeadlineSmall"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
@@ -21,10 +22,9 @@
         android:id="@+id/instruction_heading"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginHorizontal="6dp"
         android:layout_marginVertical="20dp"
         android:text="@string/instruction_heading"
-        android:textAppearance="?attr/textAppearanceTitleMedium"
+        android:textAppearance="?attr/textAppearanceBodyLarge"
         app:layout_constraintTop_toBottomOf="@id/instruction_title"
     />
 
@@ -34,13 +34,12 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:layout_marginTop="30dp"
-        android:layout_marginHorizontal="6dp"
         app:layout_constraintTop_toBottomOf="@id/instruction_heading"
     >
     <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:background="@drawable/circle"
+            android:background="@drawable/bg_circle_blue"
             android:text="1"
             android:textAppearance="?attr/textAppearanceBodyLarge"
             android:layout_gravity="center"
@@ -51,7 +50,7 @@
     <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginHorizontal="20dp"
+            android:layout_marginStart="20dp"
             android:layout_gravity="center"
             android:text="@string/instruction_body_1"
             android:textAppearance="?attr/textAppearanceBodyLarge"
@@ -64,13 +63,12 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:layout_marginTop="20dp"
-        android:layout_marginHorizontal="6dp"
         app:layout_constraintTop_toBottomOf="@id/instruction1_layout"
     >
     <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:background="@drawable/circle"
+            android:background="@drawable/bg_circle_blue"
             android:text="2"
             android:textAppearance="?attr/textAppearanceBodyLarge"
             android:layout_gravity="center"
@@ -81,7 +79,7 @@
     <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginHorizontal="20dp"
+            android:layout_marginStart="20dp"
             android:layout_gravity="center"
             android:text="@string/instruction_body_2"
             android:textAppearance="?attr/textAppearanceBodyLarge"
@@ -93,13 +91,12 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:layout_marginTop="20dp"
-        android:layout_marginHorizontal="6dp"
         app:layout_constraintTop_toBottomOf="@id/instruction2_layout"
     >
     <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:background="@drawable/circle"
+            android:background="@drawable/bg_circle_blue"
             android:text="3"
             android:textAppearance="?attr/textAppearanceBodyLarge"
             android:layout_gravity="center"
@@ -110,7 +107,7 @@
     <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginHorizontal="20dp"
+            android:layout_marginStart="20dp"
             android:layout_gravity="center"
             android:text="@string/instruction_body_3"
             android:textAppearance="?attr/textAppearanceBodyLarge"

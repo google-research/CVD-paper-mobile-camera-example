@@ -24,17 +24,14 @@ import java.nio.ShortBuffer
 
 object WavToFloats {
   @Throws(IOException::class)
-  fun normalizeAudio(filePath: String): FloatArray {
-    return File(filePath)
+  fun normalizeAudio(audioFile: File): DoubleArray {
+    return audioFile
       .readBytes()
       .let { ByteBuffer.wrap(it).order(ByteOrder.LITTLE_ENDIAN).asShortBuffer() }
-      .toFloatArray()
-      .map { it / Short.MAX_VALUE }
-      .toList()
-      .toFloatArray()
+      .toDoubleArray()
   }
 }
 
-fun ShortBuffer.toFloatArray(): FloatArray {
-  return FloatArray(remaining()) { get().toFloat() }
+fun ShortBuffer.toDoubleArray(): DoubleArray {
+  return DoubleArray(remaining()) { get().toDouble() / Short.MAX_VALUE }
 }

@@ -95,26 +95,30 @@ internal class CameraSensor(
          * instance asynchronously.
          */
         var resumeCount = 0
-        suspendCancellableCoroutine<ProcessCameraProvider> { continuation ->
-            if (resumeCount > 5) {
-              CancellationException("Failed to get CameraProvider.").let {
-                internalListener.onError(InternalSensorType.CAMERA, it)
-                cancel(it)
+        try {
+          suspendCancellableCoroutine<ProcessCameraProvider> { continuation ->
+              if (resumeCount > 5) {
+                CancellationException("Failed to get CameraProvider.").let {
+                  continuation.resumeWithException(it)
+                  cancel(it)
+                }
+              }
+              val cameraFutureProvider = ProcessCameraProvider.getInstance(context)
+              try {
+                continuation.resume(cameraFutureProvider.get())
+              } catch (e: ExecutionException) {
+                resumeCount++
+                continuation.resumeWithException(Exception("Failed to get CameraProvider."))
               }
             }
-            val cameraFutureProvider = ProcessCameraProvider.getInstance(context)
-            try {
-              continuation.resume(cameraFutureProvider.get())
-            } catch (e: ExecutionException) {
-              resumeCount++
-              continuation.resumeWithException(Exception("Failed to get CameraProvider."))
+            .let {
+              processCameraProvider = it
+              buildData()
+              cancel()
             }
-          }
-          .let {
-            processCameraProvider = it
-            buildData()
-            cancel()
-          }
+        } catch (e: Exception) {
+          internalListener.onError(InternalSensorType.CAMERA, e)
+        }
       }
   }
 
@@ -231,10 +235,14 @@ internal class CameraSensor(
   }
 
   override suspend fun stop() {
+    internalStop()
+    internalListener.onStopped(InternalSensorType.CAMERA)
+  }
+
+  private suspend fun internalStop() {
     if (isStarted()) {
       isStarted.set(false)
       internalImageAnalysis.clearAnalyzer()
-      internalListener.onStopped(InternalSensorType.CAMERA)
     }
   }
 
@@ -250,7 +258,10 @@ internal class CameraSensor(
     TODO("Not yet implemented")
   }
 
-  override fun kill() = runBlocking { stop() }
+  override fun cancel() = runBlocking {
+    internalStop()
+    internalListener.onCancelled(InternalSensorType.CAMERA)
+  }
 
   override fun getSensor() = camera
 

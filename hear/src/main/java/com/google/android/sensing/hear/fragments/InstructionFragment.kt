@@ -21,10 +21,12 @@ import android.view.View
 import android.widget.Button
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import com.google.android.sensing.hear.MainActivity
 import com.google.android.sensing.hear.MainActivityViewModel
 import com.google.android.sensing.hear.R
+import kotlinx.coroutines.launch
 
 /** Fragment for the component list. */
 class InstructionFragment : Fragment(R.layout.fragment_instruction) {
@@ -36,11 +38,13 @@ class InstructionFragment : Fragment(R.layout.fragment_instruction) {
     view.findViewById<Button>(R.id.button_get_started).setOnClickListener {
       (requireActivity() as MainActivity).run {
         if (this.checkAllPermissions()) {
-          findNavController().navigate(R.id.action_instructionFragment_to_recordFragment)
+          findNavController().navigate(R.id.action_instructionFragment_to_recordingFragment)
         } else {
-          mainActivityViewModel.permissionsAvailable.observe(viewLifecycleOwner) {
-            if (it) {
-              findNavController().navigate(R.id.action_instructionFragment_to_recordFragment)
+          lifecycleScope.launch {
+            mainActivityViewModel.permissionsAvailable.collect {
+              if (it) {
+                findNavController().navigate(R.id.action_instructionFragment_to_recordingFragment)
+              }
             }
           }
         }

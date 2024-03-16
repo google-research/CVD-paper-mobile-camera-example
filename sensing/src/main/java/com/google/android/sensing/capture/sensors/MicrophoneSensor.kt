@@ -31,16 +31,15 @@ import java.io.File
 import java.io.FileOutputStream
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import timber.log.Timber
 
 @SuppressLint("MissingPermission")
 internal class MicrophoneSensor(
   context: Context,
   private val lifecycleOwner: LifecycleOwner,
-  private val initConfig: MicrophoneInitConfig
+  initConfig: MicrophoneInitConfig
 ) : Sensor {
 
   private val internalStorage = context.filesDir
@@ -93,25 +92,23 @@ internal class MicrophoneSensor(
     currentCaptureRequest = captureRequest
     File(internalStorage, currentCaptureRequest.outputFolder).mkdirs()
 
-    audioRecord.startRecording()
     internalListener.onStarted(InternalSensorType.MICROPHONE)
+    audioRecord.startRecording()
     isStarted.set(true)
 
-    coroutineScope { // Create a coroutine scope for the recording task
-      launch(Dispatchers.IO) {
-        FileOutputStream(getDataFile()).use { outputStream ->
-          val audioData = ByteArray(minBufferSize)
+    withContext(Dispatchers.IO) {
+      FileOutputStream(getDataFile()).use { outputStream ->
+        val audioData = ByteArray(minBufferSize)
 
-          while (isStarted()) {
-            val read = audioRecord.read(audioData, 0, minBufferSize)
-            if (read != AudioRecord.ERROR_INVALID_OPERATION) {
-              outputStream.write(audioData, 0, read)
-            }
-          }
+        while (isStarted()) {
           val read = audioRecord.read(audioData, 0, minBufferSize)
           if (read != AudioRecord.ERROR_INVALID_OPERATION) {
             outputStream.write(audioData, 0, read)
           }
+        }
+        val read = audioRecord.read(audioData, 0, minBufferSize)
+        if (read != AudioRecord.ERROR_INVALID_OPERATION) {
+          outputStream.write(audioData, 0, read)
         }
       }
     }
@@ -127,9 +124,15 @@ internal class MicrophoneSensor(
 
   override suspend fun stop() {
     if (isStarted()) {
+      internalStop()
+      internalListener.onStopped(InternalSensorType.MICROPHONE)
+    }
+  }
+
+  private suspend fun internalStop() {
+    if (isStarted()) {
       isStarted.set(false)
       audioRecord.stop()
-      internalListener.onStopped(InternalSensorType.MICROPHONE)
     }
   }
 
@@ -137,7 +140,10 @@ internal class MicrophoneSensor(
     audioRecord.release()
   }
 
-  override fun kill() = runBlocking { stop() }
+  override fun cancel() = runBlocking {
+    internalStop()
+    internalListener.onCancelled(InternalSensorType.MICROPHONE)
+  }
 
   override fun getSensor() = audioRecord
 
