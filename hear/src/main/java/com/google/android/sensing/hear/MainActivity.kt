@@ -111,22 +111,6 @@ class MainActivity : AppCompatActivity() {
       ContextCompat.checkSelfPermission(this, it) == PackageManager.PERMISSION_GRANTED
     }
 
-  override fun onRequestPermissionsResult(
-    requestCode: Int,
-    permissions: Array<String>,
-    grantResults: IntArray
-  ) {
-    super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-    if (requestCode == REQUEST_CODE) {
-      if (allPermissionsGranted()) {
-        mainActivityViewModel.setPermissionsAvailability(true)
-      } else {
-        // Inform the user that the permissions are required
-        // Consider disabling features that rely on the permissions.
-      }
-    }
-  }
-
   companion object {
     const val REQUEST_CODE = 0
     private val requiredPermissions = arrayOf(Manifest.permission.RECORD_AUDIO)
