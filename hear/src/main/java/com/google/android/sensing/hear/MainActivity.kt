@@ -30,7 +30,9 @@ import com.google.android.sensing.inference.PostProcessor
 import com.google.android.sensing.model.CaptureInfo
 import com.google.android.sensing.model.InternalSensorType
 import java.io.File
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class MainActivity : AppCompatActivity() {
 
@@ -39,11 +41,17 @@ class MainActivity : AppCompatActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
     setContentView(R.layout.activity_main)
-    mainActivityViewModel.permissionsAvailable.observe(this) {
-      if (it) {
-        setupSensorManager()
+    lifecycleScope.launch {
+      mainActivityViewModel.permissionsAvailable.collect {
+        if (it) {
+          setupSensorManager()
+        }
       }
     }
+  }
+
+  override fun onResume() {
+    super.onResume()
     if (allPermissionsGranted()) mainActivityViewModel.setPermissionsAvailability(true)
     // else request for permissions is triggered in the InstructionFragment.
   }
@@ -74,16 +82,19 @@ class MainActivity : AppCompatActivity() {
       sensorManager.registerPostProcessor(
         InternalSensorType.MICROPHONE,
         object : PostProcessor {
-          override suspend fun process(captureInfo: CaptureInfo): String {
-            return getFirstOrNullImageUri(captureInfo.captureFolder, "wav")?.let {
-              mainActivityViewModel.predictWithAudio(
-                predictionServiceClient =
-                  HearApplication.getPredictionServiceClient(applicationContext),
-                endpointName = HearApplication.getEndpointName(applicationContext),
-                audioFile = it
-              )
+          override suspend fun process(captureInfo: CaptureInfo): String? {
+            return HearApplication.getPredictionServiceClient(applicationContext)?.let {
+              predictionServiceClient ->
+              withContext(Dispatchers.IO) {
+                getFirstOrNullImageUri(captureInfo.captureFolder, "wav")?.let {
+                  mainActivityViewModel.predictWithAudio(
+                    predictionServiceClient = predictionServiceClient,
+                    endpointName = HearApplication.getEndpointName(applicationContext),
+                    audioFile = it
+                  )
+                }
+              }
             }
-              ?: ""
           }
         }
       )
@@ -99,22 +110,6 @@ class MainActivity : AppCompatActivity() {
     requiredPermissions.all {
       ContextCompat.checkSelfPermission(this, it) == PackageManager.PERMISSION_GRANTED
     }
-
-  override fun onRequestPermissionsResult(
-    requestCode: Int,
-    permissions: Array<String>,
-    grantResults: IntArray
-  ) {
-    super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-    if (requestCode == REQUEST_CODE) {
-      if (allPermissionsGranted()) {
-        mainActivityViewModel.setPermissionsAvailability(true)
-      } else {
-        // Inform the user that the permissions are required
-        // Consider disabling features that rely on the permissions.
-      }
-    }
-  }
 
   companion object {
     const val REQUEST_CODE = 0

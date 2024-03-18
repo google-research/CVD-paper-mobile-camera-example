@@ -16,12 +16,16 @@
 
 package com.google.android.sensing.hear.fragments
 
+import android.content.res.ColorStateList
 import android.os.Bundle
 import android.os.CountDownTimer
-import android.util.Log
 import android.view.View
 import android.widget.Button
 import android.widget.TextView
+import android.widget.Toast
+import androidx.appcompat.widget.AppCompatImageView
+import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.core.content.ContextCompat
 import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.MutableLiveData
@@ -35,19 +39,24 @@ import com.google.android.sensing.hear.HearApplication
 import com.google.android.sensing.hear.R
 import com.google.android.sensing.model.CaptureInfo
 import com.google.android.sensing.model.InternalSensorType
+import com.google.android.sensing.model.ProcessedInfo
 import java.time.Instant
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
+import timber.log.Timber
 
 /** Fragment for the component list. */
 class RecordingFragment : Fragment(R.layout.fragment_recording) {
 
   private lateinit var recordHeadingTextView: TextView
-  private lateinit var circularProgressIndicator: CircularProgressIndicator
-  private lateinit var progressIndicator: LinearProgressIndicator
+  private lateinit var instructionTextView: TextView
+  private lateinit var layoutRecorder: ConstraintLayout
+  private lateinit var ivAudioState: AppCompatImageView
+  private lateinit var insightGenerateProgress: CircularProgressIndicator
+  private lateinit var audioRecordProgress: LinearProgressIndicator
   private lateinit var currentTimeTextView: TextView
   private lateinit var totalTimeTextView: TextView
   private lateinit var reviewButton: Button
+  private lateinit var startButton: Button
   private lateinit var cancelButton: Button
   private lateinit var submitButton: Button
 
@@ -55,116 +64,170 @@ class RecordingFragment : Fragment(R.layout.fragment_recording) {
 
   private lateinit var sensorManager: SensorManager
 
-  private var autoMoveToInsightPageWhenResultAvailable = false
-  private val recordingResult = MutableLiveData<String>()
+  private val recordingResult = MutableLiveData<String?>()
 
   override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
     super.onViewCreated(view, savedInstanceState)
     recordHeadingTextView = view.findViewById(R.id.record_heading)
-    circularProgressIndicator = view.findViewById(R.id.circularProgressBar)
-    progressIndicator = view.findViewById(R.id.progress)
+    instructionTextView = view.findViewById(R.id.instruction_body)
+    layoutRecorder = view.findViewById(R.id.layout_recorder)
+    ivAudioState = view.findViewById(R.id.iv_audio_state)
+    insightGenerateProgress = view.findViewById(R.id.insight_generate_progress)
+    audioRecordProgress = view.findViewById(R.id.aduio_record_progress)
     currentTimeTextView = view.findViewById(R.id.current_time)
     totalTimeTextView = view.findViewById(R.id.total_time)
+    startButton = view.findViewById(R.id.button_start_recording)
     reviewButton = view.findViewById(R.id.button_review)
     cancelButton = view.findViewById(R.id.button_cancel)
     submitButton = view.findViewById(R.id.button_submit)
+    sensorManager = HearApplication.getSensorManager(requireContext())
   }
 
   override fun onResume() {
     super.onResume()
-    circularProgressIndicator.visibility = View.GONE
-    progressIndicator.max = 5000
-    progressIndicator.progress = 0
+
+    // wait for sensorManager to be available for MICROPHONE
+    resetView()
+    setListeners()
+  }
+
+  private fun resetView() {
+    recordHeadingTextView.text = resources.getString(R.string.record_heading)
+    instructionTextView.visibility = View.VISIBLE
+    startButton.visibility = View.VISIBLE
+    layoutRecorder.visibility = View.GONE
+    insightGenerateProgress.visibility = View.GONE
+    cancelButton.visibility = View.GONE
+    submitButton.visibility = View.GONE
+    audioRecordProgress.max = 5000
+    audioRecordProgress.progress = 0
+    currentTimeTextView.text = "0.0 sec"
     totalTimeTextView.text = "5 sec"
+    ivAudioState.setImageResource(R.drawable.ic_audio_default)
+    if (::countDownTimer.isInitialized) {
+      countDownTimer.cancel()
+      countDownTimer.onTick(5000)
+    }
+    cancelButton.setOnClickListener(null)
+    submitButton.setOnClickListener(null)
+  }
+
+  private fun setListeners() {
+    sensorManager.registerListener(
+      InternalSensorType.MICROPHONE,
+      object : SensorManager.AppDataCaptureListener {
+        override fun onStart(captureInfo: CaptureInfo) {
+          handleOnStart()
+        }
+
+        override fun onStopped(captureInfo: CaptureInfo) {
+          handleOnStopped()
+        }
+
+        override fun onCancelled(captureInfo: CaptureInfo?) {
+          resetView()
+        }
+
+        override fun onRecordSaved(captureInfo: CaptureInfo) {}
+
+        override fun onPostProcessed(processedInfo: ProcessedInfo) {
+          processedInfo.result?.let { recordingResult.postValue(it) }
+            ?: Timber.w("Prediction not received. Have you configured the credentials correctly? ")
+        }
+
+        override fun onError(exception: Exception, captureInfo: CaptureInfo?) {
+          Timber.w("Error in prediction. ")
+          Toast.makeText(requireContext(), "Check internet connection.", Toast.LENGTH_LONG).show()
+        }
+      }
+    )
+
     countDownTimer =
-      object : CountDownTimer(5000L, 500) {
+      object : CountDownTimer(5000L, 100) {
         override fun onTick(millisUntilFinished: Long) {
-          progressIndicator.progress = 5000 - millisUntilFinished.toInt()
-          println("Progress = " + progressIndicator.progress)
-          val progressText = "%.1f".format((progressIndicator.progress / 1000.0))
+          audioRecordProgress.progress = 5000 - millisUntilFinished.toInt()
+          val progressText = "%.1f".format((audioRecordProgress.progress / 1000.0))
           currentTimeTextView.text = "$progressText sec"
         }
 
         override fun onFinish() {
           currentTimeTextView.text = "5 sec"
-          progressIndicator.progress = 5000
+          audioRecordProgress.progress = 5000
           stopRecording()
         }
       }
 
-    sensorManager = HearApplication.getSensorManager(requireContext())
-
-    lifecycleScope.launch {
-      sensorManager.registerListener(
-        InternalSensorType.MICROPHONE,
-        object : SensorManager.AppDataCaptureListener {
-          override fun onStart(captureInfo: CaptureInfo) {
-            countDownTimer.start()
-            recordHeadingTextView.text = "Recording.."
-          }
-
-          override fun onComplete(captureInfo: CaptureInfo) {
-            recordHeadingTextView.text = "Recording Complete"
-            if (::countDownTimer.isInitialized) countDownTimer.cancel()
-            if (autoMoveToInsightPageWhenResultAvailable) {
-              goToInsightFragment()
-            }
-          }
-
-          override fun onPostProcessed(result: String) {
-            recordingResult.postValue(result)
-            Log.d("predictWithAudio", "result: $result")
-          }
-
-          override fun onError(exception: Exception, captureInfo: CaptureInfo?) {
-            TODO("Not yet implemented")
-          }
-        }
-      )
-      sensorManager.start(
-        InternalSensorType.MICROPHONE,
-        MicrophoneCaptureRequest(
-          externalIdentifier = "Patient1",
-          outputFolder = "tbapp/recordings_${Instant.now()}",
-          outputTitle = "Audio",
-          outputFormat = "wav"
+    startButton.setOnClickListener {
+      lifecycleScope.launch {
+        sensorManager.start(
+          InternalSensorType.MICROPHONE,
+          MicrophoneCaptureRequest(
+            externalIdentifier = "Patient1",
+            outputFolder = "tbapp/recordings_${Instant.now()}",
+            outputTitle = "Audio",
+            outputFormat = "wav"
+          )
         )
-      )
-    }
-
-    cancelButton.setOnClickListener { stopRecording() }
-
-    submitButton.setOnClickListener {
-      if (sensorManager.isStarted(InternalSensorType.MICROPHONE)) {
-        autoMoveToInsightPageWhenResultAvailable = true
-        stopRecording()
-      } else {
-        autoMoveToInsightPageWhenResultAvailable = false
-        goToInsightFragment()
       }
     }
   }
 
-  private fun goToInsightFragment() {
-    recordHeadingTextView.text = "Analyzing..."
-    circularProgressIndicator.visibility = View.VISIBLE
-    progressIndicator.visibility = View.GONE
-    currentTimeTextView.visibility = View.GONE
-    totalTimeTextView.visibility = View.GONE
-    reviewButton.visibility = View.GONE
-    recordingResult.observe(viewLifecycleOwner) {
-      findNavController()
-        .navigate(R.id.action_recordingFragment_to_insightFragment, bundleOf("result" to it))
+  private fun handleOnStart() {
+    countDownTimer.start()
+    recordHeadingTextView.text = "Recording.."
+    instructionTextView.visibility = View.GONE
+    startButton.visibility = View.GONE
+    submitButton.visibility = View.VISIBLE
+    cancelButton.visibility = View.VISIBLE
+    layoutRecorder.visibility = View.VISIBLE
+    submitButton.backgroundTintList =
+      ColorStateList.valueOf(
+        ContextCompat.getColor(requireContext(), R.color.primary_disabled_grey)
+      )
+    submitButton.setTextColor(ContextCompat.getColor(requireContext(), R.color.disabled_text_color))
+    ivAudioState.setImageResource(R.drawable.ic_audio_recording)
+    cancelButton.setOnClickListener {
+      lifecycleScope.launch { sensorManager.cancel(InternalSensorType.MICROPHONE) }
     }
+  }
+
+  private fun handleOnStopped() {
+    recordHeadingTextView.text = "Recording complete"
+    if (::countDownTimer.isInitialized) countDownTimer.cancel()
+    ivAudioState.setImageResource(R.drawable.ic_audio_complete)
+    submitButton.backgroundTintList =
+      ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.primary_blue_40))
+    submitButton.setTextColor(ContextCompat.getColor(requireContext(), R.color.white))
+    submitButton.setOnClickListener {
+      recordHeadingTextView.text = "Analyzing..."
+      layoutRecorder.visibility = View.GONE
+      insightGenerateProgress.visibility = View.VISIBLE
+      recordingResult.value?.let { goToInsightFragment(it) }
+        ?: recordingResult.observe(viewLifecycleOwner) {
+          it?.let {
+            goToInsightFragment(it)
+            recordingResult.value = null
+          }
+        }
+    }
+  }
+
+  private fun goToInsightFragment(result: String) {
+    findNavController()
+      .navigate(R.id.action_recordingFragment_to_insightFragment, bundleOf("result" to result))
   }
 
   private fun stopRecording() {
     recordHeadingTextView.text = "Stopping Recording.."
-    runBlocking { sensorManager.stop(InternalSensorType.MICROPHONE) }
+    if (sensorManager.isStarted(InternalSensorType.MICROPHONE)) {
+      lifecycleScope.launch { sensorManager.stop(InternalSensorType.MICROPHONE) }
+    }
   }
 
-  override fun onStop() {
-    super.onStop()
-    runBlocking { sensorManager.stop(InternalSensorType.MICROPHONE) }
+  override fun onDestroyView() {
+    super.onDestroyView()
+    if (sensorManager.isStarted(InternalSensorType.MICROPHONE)) {
+      lifecycleScope.launch { sensorManager.cancel(InternalSensorType.MICROPHONE) }
+    }
   }
 }

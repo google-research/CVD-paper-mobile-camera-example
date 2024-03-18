@@ -19,7 +19,6 @@ package com.google.android.sensing.hear.fragments
 import android.os.Bundle
 import android.view.View
 import android.widget.Button
-import androidx.activity.OnBackPressedCallback
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
@@ -43,7 +42,7 @@ class InsightFragment : Fragment(R.layout.fragment_insight) {
     causesAdapter = CausesListAdapter(requireContext())
     restartButton = view.findViewById(R.id.button_re_start)
     restartButton.setOnClickListener {
-      findNavController().popBackStack(R.id.recordFragment, false)
+      findNavController().popBackStack(R.id.recordingFragment, false)
     }
 
     rvCauses.apply {
@@ -52,20 +51,10 @@ class InsightFragment : Fragment(R.layout.fragment_insight) {
     }
     val causesList =
       parseStructValue(args.result).fields.mapIndexed { index, item ->
-        CauseItem(index, item.getKeyDisplay(), item.getValueDisplay())
+        CauseItem(index + 1, item.getKeyDisplay(), item.getValueDisplay())
       }
 
     causesAdapter.submitList(causesList)
-
-    requireActivity()
-      .onBackPressedDispatcher.addCallback(
-        object : OnBackPressedCallback(true) {
-          override fun handleOnBackPressed() {
-            findNavController().popBackStack(R.id.recordFragment, false)
-            this.isEnabled = false
-          }
-        }
-      )
   }
 }
 

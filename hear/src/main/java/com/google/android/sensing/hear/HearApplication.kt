@@ -23,34 +23,44 @@ import com.google.auth.oauth2.GoogleCredentials
 import com.google.cloud.aiplatform.v1.EndpointName
 import com.google.cloud.aiplatform.v1.PredictionServiceClient
 import com.google.cloud.aiplatform.v1.PredictionServiceSettings
+import java.io.IOException
 import timber.log.Timber
 
 class HearApplication : Application() {
+
+  private lateinit var sensorManager: SensorManager
+  private var predictionServiceClient: PredictionServiceClient? = null
+  private lateinit var endpointName: EndpointName
 
   override fun onCreate() {
     super.onCreate()
     if (BuildConfig.DEBUG) {
       Timber.plant(Timber.DebugTree())
     }
+    // workaround for making them available as soon as applicationContext is available.
+    sensorManager = constructSensorManager()
+    predictionServiceClient = constructPredictionServiceClient()
+    endpointName = constructEndpointName()
   }
-
-  private val sensorManager by lazy { constructSensorManager() }
-  private val predictionServiceClient by lazy { constructPredictionServiceClient() }
-  private val endpointName by lazy { constructEndpointName() }
 
   private fun constructSensorManager() = SensorManager.getInstance(applicationContext)
 
-  private fun constructPredictionServiceClient(): PredictionServiceClient {
-    val credentialsInputStream = applicationContext.assets.open("credentials.json")
-    val sourceCredentials: GoogleCredentials =
-      GoogleCredentials.fromStream(credentialsInputStream)
-        .createScoped(listOf("https://www.googleapis.com/auth/cloud-platform"))
-    val predictionServiceSettings: PredictionServiceSettings =
-      PredictionServiceSettings.newBuilder()
-        .setEndpoint(TODO())
-        .setCredentialsProvider { sourceCredentials }
-        .build()
-    return PredictionServiceClient.create(predictionServiceSettings)
+  private fun constructPredictionServiceClient(): PredictionServiceClient? {
+    return try {
+      val credentialsInputStream = applicationContext.assets.open("credentials.json")
+      val sourceCredentials: GoogleCredentials =
+        GoogleCredentials.fromStream(credentialsInputStream)
+          .createScoped(listOf("https://www.googleapis.com/auth/cloud-platform"))
+      val predictionServiceSettings =
+        PredictionServiceSettings.newBuilder()
+          .setEndpoint(TODO())
+          .setCredentialsProvider { sourceCredentials }
+          .build()
+      PredictionServiceClient.create(predictionServiceSettings)
+    } catch (e: IOException) {
+      Timber.w("Credentials not correctly configured.")
+      null
+    }
   }
 
   private fun constructEndpointName(): EndpointName {

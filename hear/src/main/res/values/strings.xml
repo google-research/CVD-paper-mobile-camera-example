@@ -16,7 +16,7 @@
     >Pre-screen a cough to identify likely causes with a 5 second audio clip.</string>
   <string name="record_button">Start recording</string>
 
-  <string name="recording_heading">Recording...</string>
+  <string name="recording_heading">Recording..</string>
   <string name="cancel_button_text">Cancel</string>
   <string name="submit_button_text">Submit</string>
   <string name="review_button_text">Review recording</string>
@@ -26,4 +26,7 @@
         name="insight_description"
     >Based on the recording your cough may be caused by:</string>
   <string name="record_again_button_text">Restart</string>
+  <string
+        name="disclaimer"
+    >The concepts shown here are purely for illustrative purposes and are not products that are currently available for sale or market</string>
 </resources>

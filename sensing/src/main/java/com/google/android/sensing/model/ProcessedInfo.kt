@@ -14,10 +14,6 @@
  * limitations under the License.
  */
 
-package com.google.android.sensing.inference
+package com.google.android.sensing.model
 
-import com.google.android.sensing.model.CaptureInfo
-
-interface PostProcessor {
-  suspend fun process(captureInfo: CaptureInfo): String?
-}
+data class ProcessedInfo(val result: String?)
