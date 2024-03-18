@@ -16,7 +16,7 @@ providing the project settings (projectId, endpoint, etc).
 
 # App recording:-
 
-[Screen Recording 2024-03-13 at 21.59.25.mov](..%2F..%2F..%2FDesktop%2FScreen%20Recording%202024-03-13%20at%2021.59.25.mov)
+https://github.com/google-research/CVD-paper-mobile-camera-example/assets/22965002/00bfc810-aafc-4206-9d7f-e7336aeefb4f
 
 
 # Disclaimer
