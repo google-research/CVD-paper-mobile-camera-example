@@ -31,6 +31,9 @@ object Dependencies {
   object Kotlin {
     const val kotlinCoroutinesAndroid =
       "org.jetbrains.kotlinx:kotlinx-coroutines-android:${Versions.Kotlin.kotlinCoroutinesCore}"
+    const val kotlinTestJunit = "org.jetbrains.kotlin:kotlin-test-junit:${Versions.Kotlin.stdlib}"
+    const val kotlinCoroutinesTest =
+      "org.jetbrains.kotlinx:kotlinx-coroutines-test:${Versions.Kotlin.kotlinCoroutinesCore}"
   }
 
   object AndroidFhir {
@@ -48,6 +51,7 @@ object Dependencies {
     const val liveDataKtx =
       "androidx.lifecycle:lifecycle-livedata-ktx:${Versions.Androidx.lifecycle}"
     const val service = "androidx.lifecycle:lifecycle-service:${Versions.Androidx.lifecycle}"
+    const val runtimeTest = "androidx.lifecycle:lifecycle-runtime-testing"
   }
 
   object CameraX {
@@ -100,6 +104,7 @@ object Dependencies {
   const val timber = "com.jakewharton.timber:timber:${Versions.timber}"
 
   object AndroidxTest {
+    const val core = "androidx.test:core:${Versions.AndroidxTest.core}"
     const val extJunit = "androidx.test.ext:junit:${Versions.AndroidxTest.extJunit}"
   }
 
@@ -110,6 +115,10 @@ object Dependencies {
   const val androidJunitRunner = "androidx.test.runner.AndroidJUnitRunner"
   const val junit = "junit:junit:${Versions.junit}"
   const val gson = "com.google.code.gson:gson:${Versions.gson}"
+  const val mockitoKotlin = "org.mockito.kotlin:mockito-kotlin:${Versions.mockitoKotlin}"
+  const val mockitoInline = "org.mockito:mockito-inline:${Versions.mockitoInline}"
+  const val robolectric = "org.robolectric:robolectric:${Versions.robolectric}"
+  const val truth = "com.google.truth:truth:${Versions.truth}"
 
   object Versions {
     object Androidx {
@@ -147,10 +156,15 @@ object Dependencies {
 
     object AndroidxTest {
       const val extJunit = "1.1.5"
+      const val core = "1.5.0"
     }
 
     const val espresso = "3.5.1"
     const val junit = "4.13.2"
     const val gson = "2.9.1"
+    const val mockitoKotlin = "3.2.0"
+    const val mockitoInline = "4.0.0"
+    const val robolectric = "4.10.3"
+    const val truth = "1.1.5"
   }
 }

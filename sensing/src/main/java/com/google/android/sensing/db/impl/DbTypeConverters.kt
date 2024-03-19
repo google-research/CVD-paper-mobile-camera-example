@@ -17,6 +17,8 @@
 package com.google.android.sensing.db.impl
 
 import androidx.room.TypeConverter
+import com.google.android.sensing.capture.CaptureSettings
+import com.google.gson.Gson
 import java.time.Instant
 
 internal object DbTypeConverters {
@@ -25,4 +27,11 @@ internal object DbTypeConverters {
   @JvmStatic
   @TypeConverter
   fun longToInstant(value: Long?): Instant? = value?.let { Instant.ofEpochMilli(it) }
+
+  // TODO remove these when CaptureSettings is replaced by CaptureRequest
+  @JvmStatic @TypeConverter fun toString(value: CaptureSettings) = Gson().toJson(value)
+
+  @JvmStatic
+  @TypeConverter
+  fun toCaptureSettings(value: String) = Gson().fromJson(value, CaptureSettings::class.java)
 }
