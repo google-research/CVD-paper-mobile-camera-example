@@ -22,9 +22,11 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import com.google.android.sensing.SensorFactory
 import com.google.android.sensing.SensorManager
+import com.google.android.sensing.ServerConfiguration
 import com.google.android.sensing.capture.CaptureMode
 import com.google.android.sensing.capture.CaptureRequest
 import com.google.android.sensing.capture.CaptureSettings
+import com.google.android.sensing.capture.CaptureUtil
 import com.google.android.sensing.capture.InitConfig
 import com.google.android.sensing.capture.sensors.Sensor
 import com.google.android.sensing.db.Database
@@ -34,7 +36,9 @@ import com.google.android.sensing.model.CaptureType
 import com.google.android.sensing.model.RequestStatus
 import com.google.android.sensing.model.ResourceInfo
 import com.google.android.sensing.model.SensorType
+import com.google.android.sensing.model.UploadRequest
 import java.io.File
+import java.nio.file.Paths
 import java.time.Instant
 import java.util.Date
 import java.util.UUID
@@ -46,7 +50,11 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 
-internal class SensorManagerImpl(context: Context, private val database: Database) : SensorManager {
+internal class SensorManagerImpl(
+  context: Context,
+  private val database: Database,
+  private val serverConfiguration: ServerConfiguration?
+) : SensorManager {
   private val sensorFactoryMap = mutableMapOf<SensorType, SensorFactory>()
   data class Components(
     val sensor: Sensor,
@@ -162,6 +170,8 @@ internal class SensorManagerImpl(context: Context, private val database: Databas
           CoroutineScope(Dispatchers.IO).launch {
             it.captureRequest?.let { request ->
               with(request) {
+                val toUploadFullUrl =
+                  (serverConfiguration?.getBucketUrl() ?: "") + "/$outputFolder.zip"
                 database.addResourceInfo(
                   ResourceInfo(
                     resourceInfoId = UUID.randomUUID().toString(),
@@ -170,30 +180,29 @@ internal class SensorManagerImpl(context: Context, private val database: Databas
                     resourceTitle = outputTitle,
                     contentType = outputFormat,
                     localLocation = File(context.filesDir, outputFolder).absolutePath,
-                    /** TODO Update remoteLocation for Sensing1.0. */
-                    remoteLocation = "",
+                    remoteLocation = toUploadFullUrl,
                     status = RequestStatus.PENDING
                   )
                 )
                 try {
                   database.getCaptureInfo(this.captureId).let { captureInfo ->
-                  /**
-                   * Back to original coroutine context. For application this will generally run in
-                   * the main thread.
-                   */
-                  val processedString =
-                      withContext(lifecycleOwner.lifecycleScope.coroutineContext) {
-                        it.listener?.onComplete(captureInfo)
-                        /** TODO PostProcess. */
-                      }
+                    /**
+                     * Back to original coroutine context. For application this will generally run
+                     * in the main thread.
+                     */
+                    withContext(lifecycleOwner.lifecycleScope.coroutineContext) {
+                      it.listener?.onComplete(captureInfo)
+                      /** TODO PostProcess. */
+                    }
+                    /** TODO move this to a default PostProcessor. */
+                    createUploadRequest(captureInfo, it.captureRequest!!)
                   }
-                } catch (e: ResourceNotFoundException) {
+                } catch (e: Exception) {
                   it.listener?.onError(e)
                   stop(sensorType)
                 }
               }
             }
-            /** TODO zipping and creating UploadRequest */
           }
         }
       }
@@ -224,6 +233,40 @@ internal class SensorManagerImpl(context: Context, private val database: Databas
       withContext(Dispatchers.IO) { componentsMap[sensorType]?.sensor?.start(captureRequest) }
     } catch (e: IllegalStateException) {
       Timber.w(e.message)
+    }
+  }
+
+  /**
+   * Zips the folder data + metadata were captured to and add an UploadRequest in the database. TODO
+   * move captureRequest to captureInfo.
+   */
+  private suspend fun createUploadRequest(
+    captureInfo: CaptureInfo,
+    captureRequest: CaptureRequest
+  ) {
+    serverConfiguration?.let {
+      with(captureInfo) {
+        val absoluteFolder = resourceInfoList.first().localLocation
+        val targetZip = File("$absoluteFolder.zip")
+        CaptureUtil.zipDirectory(Paths.get(absoluteFolder), targetZip.toPath())
+        val toUploadRelativeUrl = "/${captureRequest.outputFolder}.zip"
+        val uploadRequest =
+          UploadRequest(
+            requestUuid = UUID.randomUUID(),
+            resourceInfoId = resourceInfoList.first().resourceInfoId,
+            zipFile = targetZip.absolutePath,
+            fileSize = targetZip.length(),
+            fileOffset = 0L,
+            bucketName = serverConfiguration.bucketName,
+            uploadRelativeURL = toUploadRelativeUrl,
+            isMultiPart = serverConfiguration.networkConfiguration.isMultiPart,
+            nextPart = 1,
+            uploadId = null,
+            status = RequestStatus.PENDING,
+            lastUpdatedTime = Date.from(Instant.now())
+          )
+        database.addUploadRequest(uploadRequest)
+      }
     }
   }
 
