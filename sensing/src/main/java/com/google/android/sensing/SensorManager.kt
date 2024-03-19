@@ -200,9 +200,12 @@ interface SensorManager {
                   } else SensingEngineConfiguration()
                 with(sensingEngineConfiguration) {
                   val database = Database.getInstance(context, databaseConfiguration)
-                  SensorManagerImpl(context, database).apply {
-                    registerSensorFactory(InternalSensorType.CAMERA, CameraSensorFactor)
-                  }
+                  SensorManagerImpl(
+                      context,
+                      database,
+                      sensingEngineConfiguration.serverConfiguration
+                    )
+                    .apply { registerSensorFactory(InternalSensorType.CAMERA, CameraSensorFactor) }
                 }
               }
               .also { instance = it }

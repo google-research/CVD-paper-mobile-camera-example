@@ -21,8 +21,10 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
+import com.google.android.sensing.capture.CaptureRequest
 import com.google.android.sensing.db.impl.entities.CaptureInfoEntity
 import com.google.android.sensing.model.CaptureInfo
+import com.google.gson.Gson
 import java.time.Instant
 import java.util.Date
 
@@ -55,20 +57,20 @@ internal abstract class CaptureInfoDao {
 
 internal fun CaptureInfo.toCaptureInfoEntity() =
   CaptureInfoEntity(
-    captureId = captureId!!,
+    captureId = captureId,
     externalIdentifier = externalIdentifier,
-    captureType = captureType,
+    captureRequestType = captureRequest::class.java.name,
+    captureRequest = Gson().toJson(captureRequest),
     captureFolder = captureFolder,
     captureTime = captureTime?.toInstant() ?: Instant.now(),
-    captureSettings = captureSettings
   )
 
 internal fun CaptureInfoEntity.toCaptureInfo() =
   CaptureInfo(
     captureId = captureId,
     externalIdentifier = externalIdentifier,
-    captureType = captureType,
+    captureRequest =
+      Gson().fromJson(captureRequest, Class.forName(captureRequestType)) as CaptureRequest,
     captureFolder = captureFolder,
-    captureSettings = captureSettings,
     captureTime = Date.from(captureTime)
   )

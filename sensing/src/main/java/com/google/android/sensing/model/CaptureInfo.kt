@@ -16,17 +16,16 @@
 
 package com.google.android.sensing.model
 
-import com.google.android.sensing.capture.CaptureSettings
+import com.google.android.sensing.capture.CaptureRequest
 import java.util.Date
 
 /** Data class equivalent to [CaptureInfoEntity] for usage outside database. */
 data class CaptureInfo(
-  var captureId: String? = null,
+  var captureId: String,
   val externalIdentifier: String,
-  val captureType: CaptureType,
+  val captureRequest: CaptureRequest,
   val captureFolder: String,
   var captureTime: Date? = null,
-  val captureSettings: CaptureSettings,
   val recapture: Boolean? = false,
   val resourceInfoList: List<ResourceInfo> = emptyList()
 )
