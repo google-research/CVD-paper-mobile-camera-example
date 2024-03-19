@@ -42,15 +42,7 @@ internal interface Database {
     fun getInstance(context: Context, databaseConfig: DatabaseConfiguration) =
       instance
         ?: synchronized(this) {
-          instance
-            ?: DatabaseImpl(
-                context,
-                DatabaseConfiguration(
-                  databaseConfig.enableEncryption,
-                  databaseConfig.databaseErrorStrategy
-                )
-              )
-              .also { instance = it }
+          instance ?: DatabaseImpl(context, databaseConfig).also { instance = it }
         }
   }
 }

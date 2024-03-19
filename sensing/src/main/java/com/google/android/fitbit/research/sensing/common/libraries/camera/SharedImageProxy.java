@@ -16,6 +16,7 @@
 
 package com.google.android.fitbit.research.sensing.common.libraries.camera;
 
+import android.annotation.SuppressLint;
 import android.media.Image;
 import androidx.camera.core.ImageProxy;
 import com.google.errorprone.annotations.CheckReturnValue;
@@ -45,6 +46,7 @@ import org.reactivestreams.Subscriber;
  * }</pre>
  */
 @CheckReturnValue
+@SuppressLint("UnsafeOptInUsageError")
 public final class SharedImageProxy extends RootShared<ImageProxy> {
 
   private final Shared<Image> image =

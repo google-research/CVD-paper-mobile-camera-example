@@ -56,7 +56,7 @@ interface SensorManager {
    * @param sensorType The unique type of sensor to register a factory for.
    * @param sensorFactory The `SensorFactory` implementation responsible for creating sensors of the
    * specified `sensorType`.
-   * @throws IllegalArgumentException if a factory is already registered for the given `sensorType`.
+   * @throws IllegalStateException if a factory is already registered for the given `sensorType`.
    */
   fun registerSensorFactory(sensorType: SensorType, sensorFactory: SensorFactory)
 

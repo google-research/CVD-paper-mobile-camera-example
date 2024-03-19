@@ -60,6 +60,7 @@ import org.reactivestreams.Subscription;
  * to a new stream.
  */
 @CheckReturnValue
+@SuppressLint("UnsafeOptInUsageError")
 public final class WriteJpegFutureSubscriber implements FutureSubscriber<Shared<Image>, Long> {
 
   private final Executor writeExecutor;
