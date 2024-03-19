@@ -54,11 +54,6 @@ dependencies {
   implementation(Dependencies.Minio.Extra.staxApi)
   implementation(Dependencies.Minio.Extra.aaltoXml)
 
-  implementation(Dependencies.FitbitSensingLibraryDeps.autoValueAnnotation)
-  implementation(Dependencies.FitbitSensingLibraryDeps.flogger)
-  implementation(Dependencies.FitbitSensingLibraryDeps.floggerBackend)
-  implementation(Dependencies.FitbitSensingLibraryDeps.commonsCsv)
-  kapt(Dependencies.FitbitSensingLibraryDeps.autoValue)
   kapt(Dependencies.Room.compiler)
 
   testImplementation(Dependencies.junit)

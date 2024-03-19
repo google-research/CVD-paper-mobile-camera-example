@@ -77,14 +77,6 @@ object Dependencies {
     }
   }
 
-  object FitbitSensingLibraryDeps {
-    const val autoValueAnnotation = "com.google.auto.value:auto-value-annotations:1.10.1"
-    const val autoValue = "com.google.auto.value:auto-value:1.10.1"
-    const val flogger = "com.google.flogger:flogger:0.7.4"
-    const val floggerBackend = "com.google.flogger:flogger-system-backend:0.7.4"
-    const val commonsCsv = "org.apache.commons:commons-csv:1.10.0"
-  }
-
   object Navigation {
     const val navFragmentKtx =
       "androidx.navigation:navigation-fragment-ktx:${Versions.Androidx.navigation}"
