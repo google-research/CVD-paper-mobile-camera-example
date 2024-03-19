@@ -25,14 +25,12 @@ import com.google.android.sensing.SensorManager
 import com.google.android.sensing.ServerConfiguration
 import com.google.android.sensing.capture.CaptureMode
 import com.google.android.sensing.capture.CaptureRequest
-import com.google.android.sensing.capture.CaptureSettings
 import com.google.android.sensing.capture.CaptureUtil
 import com.google.android.sensing.capture.InitConfig
 import com.google.android.sensing.capture.sensors.Sensor
 import com.google.android.sensing.db.Database
 import com.google.android.sensing.db.ResourceNotFoundException
 import com.google.android.sensing.model.CaptureInfo
-import com.google.android.sensing.model.CaptureType
 import com.google.android.sensing.model.RequestStatus
 import com.google.android.sensing.model.ResourceInfo
 import com.google.android.sensing.model.SensorType
@@ -137,10 +135,9 @@ internal class SensorManagerImpl(
                   CaptureInfo(
                     captureId = this.captureId,
                     externalIdentifier = externalIdentifier,
-                    captureType = CaptureType.VIDEO_PPG,
+                    captureRequest = request,
                     captureFolder = File(context.filesDir, outputFolder).absolutePath,
                     captureTime = Date.from(Instant.now()),
-                    captureSettings = CaptureSettings(emptyMap(), emptyMap(), "")
                   )
                 )
                 try {

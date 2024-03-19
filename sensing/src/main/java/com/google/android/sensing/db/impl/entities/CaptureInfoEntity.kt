@@ -19,19 +19,13 @@ package com.google.android.sensing.db.impl.entities
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
-import com.google.android.sensing.capture.CaptureSettings
-import com.google.android.sensing.model.CaptureType
+import com.google.android.sensing.capture.CaptureRequest
 import java.time.Instant
 
-/**
- * TODO Update this for Sensing1.0.
- * * Remove captureType, captureSettings.
- * * Rather store captureRequestType: String, requestType: [CaptureRequest].
- */
 @Entity(indices = [Index(value = ["captureFolder"], unique = true)])
 /**
- * Information about the capture: Which participant, type of capture, folder data being captured to,
- * and a captureId associated with this capture record. Later we could add capture settings as well.
+ * Information about the capture: id, request, time, output-folder, and an external-identifier for
+ * application's reference.
  */
 internal data class CaptureInfoEntity(
   /** Unique id for each capture. */
@@ -43,15 +37,15 @@ internal data class CaptureInfoEntity(
    */
   val externalIdentifier: String,
 
-  /** Tracking capture information like the ones below. May include [CaptureSettings] later. */
-  val captureType: CaptureType,
+  /** [CaptureRequest] type to deserialize back the request. */
+  val captureRequestType: String,
+
+  /** Serialized [CaptureRequest] used in a capture */
+  val captureRequest: String,
 
   /** Unique folder for each capture. */
   val captureFolder: String,
 
   /** Time of this capture. */
   val captureTime: Instant,
-
-  /** Different settings involved in this capture. */
-  val captureSettings: CaptureSettings,
 )
