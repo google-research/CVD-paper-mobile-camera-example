@@ -29,6 +29,8 @@ import androidx.core.os.bundleOf
 import androidx.fragment.app.findFragment
 import androidx.lifecycle.lifecycleScope
 import com.bumptech.glide.Glide
+import com.bumptech.glide.load.engine.DiskCacheStrategy
+import com.bumptech.glide.signature.ObjectKey
 import com.google.android.fhir.datacapture.QuestionnaireFragment
 import com.google.android.fhir.datacapture.tryUnwrapContext
 import com.google.android.fhir.datacapture.views.QuestionnaireViewItem
@@ -200,27 +202,24 @@ object PhotoCaptureViewHolderFactory :
 
       fun displayPreview(
         attachmentTitle: String,
-        attachmentByteArray: ByteArray? = null,
         attachmentUri: Uri? = null,
       ) {
         takePhotoButton.text = "Retake Image"
-        if (attachmentByteArray != null) {
-          loadPhotoPreview(attachmentByteArray, attachmentTitle)
-        } else if (attachmentUri != null) {
+        if (attachmentUri != null) {
           loadPhotoPreview(attachmentUri, attachmentTitle)
         }
       }
 
-      private fun loadPhotoPreview(byteArray: ByteArray, title: String) {
-        photoPreview.visibility = View.VISIBLE
-        Glide.with(context).load(byteArray).into(photoThumbnail)
-        photoTitle.text = title
-      }
-
       private fun loadPhotoPreview(uri: Uri, title: String) {
         photoPreview.visibility = View.VISIBLE
-        Glide.with(context).load(uri).into(photoThumbnail)
         photoTitle.text = title
+        Glide.with(context)
+          .asBitmap()
+          .load(uri)
+          .transform(ViewHolderFactoryUtil.Companion.RotateTransformation(context, uri))
+          .diskCacheStrategy(DiskCacheStrategy.NONE)
+          .skipMemoryCache(true)
+          .into(photoThumbnail)
       }
 
       fun clearPhotoPreview() {
