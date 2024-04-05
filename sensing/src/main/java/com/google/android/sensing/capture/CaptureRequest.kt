@@ -27,9 +27,9 @@ import java.util.UUID
  * @param outputTitle Label to display in place of the data.
  */
 open class CaptureRequest(
-  open val externalIdentifier: String,
-  open val outputFolder: String,
-  open val outputFormat: String,
-  open val outputTitle: String,
+  @Transient open val externalIdentifier: String,
+  @Transient open val outputFolder: String,
+  @Transient open val outputFormat: String,
+  @Transient open val outputTitle: String,
   val captureId: String = UUID.randomUUID().toString(),
 )

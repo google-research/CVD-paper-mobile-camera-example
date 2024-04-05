@@ -45,20 +45,12 @@ dependencies {
   implementation(Dependencies.CameraX.cameraView)
   implementation(Dependencies.gson)
 
-  implementation(Dependencies.ReactiveStreams.reactiveStreams)
-  implementation(Dependencies.ReactiveStreams.lifecycle)
-
   implementation(Dependencies.Minio.minio)
   implementation(Dependencies.Minio.Extra.poiOoxml)
   implementation(Dependencies.Minio.Extra.xmlbeans)
   implementation(Dependencies.Minio.Extra.staxApi)
   implementation(Dependencies.Minio.Extra.aaltoXml)
 
-  implementation(Dependencies.FitbitSensingLibraryDeps.autoValueAnnotation)
-  implementation(Dependencies.FitbitSensingLibraryDeps.flogger)
-  implementation(Dependencies.FitbitSensingLibraryDeps.floggerBackend)
-  implementation(Dependencies.FitbitSensingLibraryDeps.commonsCsv)
-  kapt(Dependencies.FitbitSensingLibraryDeps.autoValue)
   kapt(Dependencies.Room.compiler)
 
   testImplementation(Dependencies.junit)

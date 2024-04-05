@@ -59,11 +59,6 @@ object Dependencies {
     const val cameraView = "androidx.camera:camera-view:${Versions.CameraX.cameraXVersion}"
   }
 
-  object ReactiveStreams {
-    const val reactiveStreams = "org.reactivestreams:reactive-streams:1.0.0"
-    const val lifecycle = "androidx.lifecycle:lifecycle-reactivestreams-ktx:2.5.1"
-  }
-
   object Minio {
     const val minio = "io.minio:minio:8.5.2"
     // Minio is not out-of-the-box compatible with Android Studio. For fully working Minio following
@@ -75,14 +70,6 @@ object Dependencies {
       const val staxApi = "javax.xml.stream:stax-api:1.0"
       const val aaltoXml = "com.fasterxml:aalto-xml:1.2.2"
     }
-  }
-
-  object FitbitSensingLibraryDeps {
-    const val autoValueAnnotation = "com.google.auto.value:auto-value-annotations:1.10.1"
-    const val autoValue = "com.google.auto.value:auto-value:1.10.1"
-    const val flogger = "com.google.flogger:flogger:0.7.4"
-    const val floggerBackend = "com.google.flogger:flogger-system-backend:0.7.4"
-    const val commonsCsv = "org.apache.commons:commons-csv:1.10.0"
   }
 
   object Navigation {
