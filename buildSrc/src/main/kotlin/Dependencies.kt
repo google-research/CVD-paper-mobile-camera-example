@@ -59,11 +59,6 @@ object Dependencies {
     const val cameraView = "androidx.camera:camera-view:${Versions.CameraX.cameraXVersion}"
   }
 
-  object ReactiveStreams {
-    const val reactiveStreams = "org.reactivestreams:reactive-streams:1.0.0"
-    const val lifecycle = "androidx.lifecycle:lifecycle-reactivestreams-ktx:2.5.1"
-  }
-
   object Minio {
     const val minio = "io.minio:minio:8.5.2"
     // Minio is not out-of-the-box compatible with Android Studio. For fully working Minio following

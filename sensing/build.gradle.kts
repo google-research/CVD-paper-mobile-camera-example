@@ -45,9 +45,6 @@ dependencies {
   implementation(Dependencies.CameraX.cameraView)
   implementation(Dependencies.gson)
 
-  implementation(Dependencies.ReactiveStreams.reactiveStreams)
-  implementation(Dependencies.ReactiveStreams.lifecycle)
-
   implementation(Dependencies.Minio.minio)
   implementation(Dependencies.Minio.Extra.poiOoxml)
   implementation(Dependencies.Minio.Extra.xmlbeans)
