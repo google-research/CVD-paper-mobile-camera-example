@@ -20,3 +20,11 @@ allprojects {
   }
   configureSpotless()
 }
+
+subprojects {
+  // We have some empty folders like the :contrib root folder, which Gradle recognizes as projects.
+  // Don't configure plugins for those folders.
+  if (project.name.equals("sensing")) {
+    configureLicensee()
+  }
+}
