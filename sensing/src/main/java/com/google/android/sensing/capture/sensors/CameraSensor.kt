@@ -33,9 +33,9 @@ import androidx.camera.core.UseCase
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
-import com.google.android.fitbit.research.sensing.common.libraries.camera.storage.ImageEncoders
 import com.google.android.sensing.SensorFactory
 import com.google.android.sensing.capture.CaptureMode
+import com.google.android.sensing.capture.CaptureUtil
 import com.google.android.sensing.capture.InitConfig
 import com.google.android.sensing.capture.SharedCloseable
 import com.google.android.sensing.capture.use
@@ -264,16 +264,16 @@ internal class CameraSensor(
     // Convert Image to YuvImage immediately, then enqueue the YuvImage for writing.
     // This allows the Image to be released before the write completes, which unblocks the camera
     // and allows it to produce the next frame immediately.
-    val yuvImage = sharedImage.use { ImageEncoders.toYuvImage(it.image) }
+    val yuvImage = sharedImage.use { it.image?.let { image -> CaptureUtil.toYuvImage(image) } }
     withContext(Dispatchers.IO) {
       outputFile.outputStream().use {
         val success =
-          yuvImage.compressToJpeg(
+          yuvImage?.compressToJpeg(
             Rect(0, 0, yuvImage.width, yuvImage.height),
             currentCaptureRequest.compressionQuality,
             it
           )
-        if (!success) {
+        if (success != true) {
           throw Exception("Failed to compress YuvImage to JPEG")
         }
       }
@@ -328,13 +328,13 @@ data class CameraInitConfig(
 ) : InitConfig(CaptureMode.ACTIVE)
 
 sealed class CameraCaptureRequest(
-  override val externalIdentifier: String,
-  override val outputFolder: String,
-  override val outputFormat: String,
-  override val outputTitle: String,
-  open val compressionQuality: Int = 100,
-  open val bufferCapacity: Int = Int.MAX_VALUE,
-  open val maxDataCount: Int? = null,
+  @Transient override val externalIdentifier: String,
+  @Transient override val outputFolder: String,
+  @Transient override val outputFormat: String,
+  @Transient override val outputTitle: String,
+  @Transient open val compressionQuality: Int = 100,
+  @Transient open val bufferCapacity: Int = Int.MAX_VALUE,
+  @Transient open val maxDataCount: Int? = null,
 ) :
   com.google.android.sensing.capture.CaptureRequest(
     externalIdentifier,
