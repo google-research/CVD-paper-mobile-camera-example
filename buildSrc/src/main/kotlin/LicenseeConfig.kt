@@ -18,6 +18,14 @@ import org.gradle.api.Project
 import org.gradle.kotlin.dsl.apply
 import org.gradle.kotlin.dsl.configure
 
+/**
+ * Configures the Licensee Gradle plugin for the sensing module.
+ *
+ * Licensee helps manage and enforce allowed licenses for dependencies in your project, ensuring
+ * compliance with your chosen open source licenses.
+ *
+ * @see [Licensee Plugin](https://github.com/cashapp/licensee)
+ */
 fun Project.configureLicensee() {
   apply(plugin = "app.cash.licensee")
   configure<app.cash.licensee.LicenseeExtension> {
@@ -34,7 +42,7 @@ fun Project.configureLicensee() {
     // TODO remove this when BlobStoreServiceImpl is moved to application layer
     allowDependency("org.bouncycastle", "bcprov-jdk15on", "1.69") {
       because(
-        "This is a transitive dependency in minio-java - licensed under Apache 2.0, https://www.bouncycastle.org/licence.html"
+        "This is a transitive dependency in minio-java library - doesn't include its code or binaries., https://www.bouncycastle.org/licence.html"
       )
     }
 
