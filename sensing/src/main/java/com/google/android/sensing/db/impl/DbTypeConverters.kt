@@ -17,8 +17,6 @@
 package com.google.android.sensing.db.impl
 
 import androidx.room.TypeConverter
-import com.google.android.sensing.capture.CaptureSettings
-import com.google.gson.Gson
 import java.time.Instant
 
 internal object DbTypeConverters {

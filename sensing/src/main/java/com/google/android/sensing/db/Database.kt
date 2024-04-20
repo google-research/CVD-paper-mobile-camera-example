@@ -36,6 +36,7 @@ internal interface Database {
   suspend fun getResourceInfo(resourceInfoId: String): ResourceInfo
   suspend fun getCaptureInfo(captureId: String): CaptureInfo
   suspend fun deleteRecordsInCapture(captureId: String): Boolean
+  fun close()
 
   companion object {
     @Volatile private var instance: Database? = null
@@ -44,5 +45,10 @@ internal interface Database {
         ?: synchronized(this) {
           instance ?: DatabaseImpl(context, databaseConfig).also { instance = it }
         }
+
+    fun cleanup() {
+      instance?.close()
+      instance = null
+    }
   }
 }

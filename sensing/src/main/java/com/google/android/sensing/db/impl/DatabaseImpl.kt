@@ -97,6 +97,10 @@ internal class DatabaseImpl(context: Context, databaseConfig: DatabaseConfigurat
     return captureInfoDao.deleteCaptureInfo(captureId) == 1
   }
 
+  override fun close() {
+    db.close()
+  }
+
   companion object {
     const val ENCRYPTED_DATABASE_NAME = "sensor_resources_encrypted.db"
   }

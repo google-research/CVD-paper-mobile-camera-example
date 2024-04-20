@@ -210,5 +210,10 @@ interface SensorManager {
               }
               .also { instance = it }
         }
+
+    internal fun cleanup() {
+      Database.cleanup()
+      instance = null
+    }
   }
 }

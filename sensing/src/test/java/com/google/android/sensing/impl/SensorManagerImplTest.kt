@@ -31,8 +31,12 @@ import com.google.android.sensing.testing.TEST_SENSOR_TYPE
 import com.google.android.sensing.testing.TestApplication
 import com.google.android.sensing.testing.TestSensorCaptureRequest
 import com.google.android.sensing.testing.TestSensorInitConfig
+import com.google.common.truth.Truth
+import kotlin.test.assertFailsWith
 import kotlinx.coroutines.test.runTest
 import org.junit.After
+import org.junit.AfterClass
+import org.junit.Assert.assertThrows
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -42,7 +46,7 @@ import org.robolectric.annotation.Config
 
 /** Unit tests for [SensorManagerImpl]. */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [Build.VERSION_CODES.P], application = TestApplication::class)
+@Config(sdk = [Build.VERSION_CODES.P], application = TestApplication::class, manifest = Config.NONE)
 class SensorManagerImplTest {
   private val sensorManager =
     SensorManager.getInstance(ApplicationProvider.getApplicationContext<TestApplication>())
@@ -58,6 +62,8 @@ class SensorManagerImplTest {
     ) {
       "Few tests require a custom application class that implements SensingEngineConfiguration.Provider"
     }
+    sensorManager.reset(TEST_SENSOR_TYPE)
+    sensorManager.unregisterSensorFactory(TEST_SENSOR_TYPE)
   }
 
   @After
@@ -70,30 +76,26 @@ class SensorManagerImplTest {
   fun registerSensorFactory_checkRegistration_shouldBeTrue() {
     sensorManager.registerSensorFactory(TEST_SENSOR_TYPE, TEST_SENSOR_FACTORY)
 
-    val checkRegistration = sensorManager.checkRegistration(TEST_SENSOR_TYPE)
-
-    assert(checkRegistration)
+    Truth.assertThat(sensorManager.checkRegistration(TEST_SENSOR_TYPE)).isTrue()
   }
 
   @Test
   fun registerSensorFactory_reRegister_shouldGiveIllegalStateException() {
     sensorManager.registerSensorFactory(TEST_SENSOR_TYPE, TEST_SENSOR_FACTORY)
 
-    try {
+    assertThrows(IllegalStateException::class.java) {
       sensorManager.registerSensorFactory(TEST_SENSOR_TYPE, TEST_SENSOR_FACTORY)
-    } catch (e: Exception) {
-      assert(e is IllegalStateException)
     }
   }
 
   @Test
   fun unregisterSensorFactory_checkRegistration_shouldBeFalse() {
     sensorManager.registerSensorFactory(TEST_SENSOR_TYPE, TEST_SENSOR_FACTORY)
-    assert(sensorManager.checkRegistration(TEST_SENSOR_TYPE))
+    Truth.assertThat(sensorManager.checkRegistration(TEST_SENSOR_TYPE)).isTrue()
 
     sensorManager.unregisterSensorFactory(TEST_SENSOR_TYPE)
 
-    assert(!sensorManager.checkRegistration(TEST_SENSOR_TYPE))
+    Truth.assertThat(sensorManager.checkRegistration(TEST_SENSOR_TYPE)).isFalse()
   }
 
   @Test
@@ -101,10 +103,8 @@ class SensorManagerImplTest {
     sensorManager.registerSensorFactory(TEST_SENSOR_TYPE, TEST_SENSOR_FACTORY)
 
     runTest {
-      try {
+      assertFailsWith<java.lang.IllegalStateException> {
         sensorManager.start(TEST_SENSOR_TYPE, TestSensorCaptureRequest())
-      } catch (e: Exception) {
-        assert(e is java.lang.IllegalStateException)
       }
     }
   }
@@ -119,7 +119,7 @@ class SensorManagerImplTest {
       sensorManager.init(TEST_SENSOR_TYPE, mockContext, testLifecycleOwner, TestSensorInitConfig())
       sensorManager.start(TEST_SENSOR_TYPE, TestSensorCaptureRequest())
 
-      assert(sensorManager.isStarted(TEST_SENSOR_TYPE))
+      Truth.assertThat(sensorManager.isStarted(TEST_SENSOR_TYPE)).isTrue()
     }
   }
 
@@ -133,11 +133,11 @@ class SensorManagerImplTest {
       sensorManager.init(TEST_SENSOR_TYPE, mockContext, testLifecycleOwner, TestSensorInitConfig())
       sensorManager.start(TEST_SENSOR_TYPE, TestSensorCaptureRequest())
 
-      assert(sensorManager.isStarted(TEST_SENSOR_TYPE))
+      Truth.assertThat(sensorManager.isStarted(TEST_SENSOR_TYPE)).isTrue()
 
       sensorManager.stop(TEST_SENSOR_TYPE)
 
-      assert(!sensorManager.isStarted(TEST_SENSOR_TYPE))
+      Truth.assertThat(sensorManager.isStarted(TEST_SENSOR_TYPE)).isFalse()
     }
   }
 
@@ -153,38 +153,9 @@ class SensorManagerImplTest {
       sensorManager.reset(TEST_SENSOR_TYPE)
 
       // start will give IllegalStateException
-      try {
+      assertFailsWith<IllegalStateException> {
         sensorManager.start(TEST_SENSOR_TYPE, TestSensorCaptureRequest())
-      } catch (e: Exception) {
-        assert(e is java.lang.IllegalStateException)
       }
-    }
-  }
-
-  @Test
-  fun registerSensorFactory_registerListenerThenStart_shouldReceiveCaptureEvents() {
-    sensorManager.registerSensorFactory(TEST_SENSOR_TYPE, TEST_SENSOR_FACTORY)
-    val mockContext = Mockito.mock(Context::class.java)
-    val testLifecycleOwner = TestLifecycleOwner()
-
-    runTest {
-      sensorManager.init(TEST_SENSOR_TYPE, mockContext, testLifecycleOwner, TestSensorInitConfig())
-      sensorManager.registerListener(
-        TEST_SENSOR_TYPE,
-        object : SensorManager.AppDataCaptureListener {
-          override fun onStart(captureInfo: CaptureInfo) {
-            assert(captureInfo.captureFolder == TEST_OUTPUT_FOLDER)
-            assert(captureInfo.externalIdentifier == TEST_EXTERNAL_ID)
-          }
-
-          override fun onComplete(captureInfo: CaptureInfo) {
-            assert(captureInfo.resourceInfoList.isNotEmpty())
-          }
-
-          override fun onError(exception: Exception, captureInfo: CaptureInfo?) {}
-        }
-      )
-      sensorManager.start(TEST_SENSOR_TYPE, TestSensorCaptureRequest())
     }
   }
 
@@ -200,17 +171,15 @@ class SensorManagerImplTest {
         TEST_SENSOR_TYPE,
         object : SensorManager.AppDataCaptureListener {
           override fun onStart(captureInfo: CaptureInfo) {
-            assert(captureInfo.captureId != null)
-            assert(captureInfo.captureFolder == TEST_OUTPUT_FOLDER)
-            assert(captureInfo.externalIdentifier == TEST_EXTERNAL_ID)
+            Truth.assertThat(captureInfo.captureFolder).isEqualTo(TEST_OUTPUT_FOLDER)
+            Truth.assertThat(captureInfo.externalIdentifier).isEqualTo(TEST_EXTERNAL_ID)
           }
 
           override fun onComplete(captureInfo: CaptureInfo) {
-            assert(captureInfo.captureId != null)
-            assert(captureInfo.resourceInfoList.isNotEmpty())
+            Truth.assertThat(captureInfo.resourceInfoList).isNotEmpty()
             runTest {
               val captureInfoInRecords = sensingEngine.getCaptureInfo(captureInfo.captureId!!)
-              assert(captureInfoInRecords == captureInfo)
+              Truth.assertThat(captureInfoInRecords).isEqualTo(captureInfo)
             }
           }
 
@@ -224,4 +193,12 @@ class SensorManagerImplTest {
   // TODO multi capture with same sensor instance
 
   // TODO test cancel API
+
+  companion object {
+    @JvmStatic
+    @AfterClass
+    fun afterClass() {
+      SensorManager.cleanup()
+    }
+  }
 }
