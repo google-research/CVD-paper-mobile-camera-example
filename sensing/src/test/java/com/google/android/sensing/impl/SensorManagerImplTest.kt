@@ -31,7 +31,7 @@ import com.google.android.sensing.testing.TEST_SENSOR_TYPE
 import com.google.android.sensing.testing.TestApplication
 import com.google.android.sensing.testing.TestSensorCaptureRequest
 import com.google.android.sensing.testing.TestSensorInitConfig
-import com.google.common.truth.Truth
+import com.google.common.truth.Truth.assertThat
 import kotlin.test.assertFailsWith
 import kotlinx.coroutines.test.runTest
 import org.junit.After
@@ -76,7 +76,7 @@ class SensorManagerImplTest {
   fun registerSensorFactory_checkRegistration_shouldBeTrue() {
     sensorManager.registerSensorFactory(TEST_SENSOR_TYPE, TEST_SENSOR_FACTORY)
 
-    Truth.assertThat(sensorManager.checkRegistration(TEST_SENSOR_TYPE)).isTrue()
+    assertThat(sensorManager.checkRegistration(TEST_SENSOR_TYPE)).isTrue()
   }
 
   @Test
@@ -91,11 +91,11 @@ class SensorManagerImplTest {
   @Test
   fun unregisterSensorFactory_checkRegistration_shouldBeFalse() {
     sensorManager.registerSensorFactory(TEST_SENSOR_TYPE, TEST_SENSOR_FACTORY)
-    Truth.assertThat(sensorManager.checkRegistration(TEST_SENSOR_TYPE)).isTrue()
+    assertThat(sensorManager.checkRegistration(TEST_SENSOR_TYPE)).isTrue()
 
     sensorManager.unregisterSensorFactory(TEST_SENSOR_TYPE)
 
-    Truth.assertThat(sensorManager.checkRegistration(TEST_SENSOR_TYPE)).isFalse()
+    assertThat(sensorManager.checkRegistration(TEST_SENSOR_TYPE)).isFalse()
   }
 
   @Test
@@ -119,7 +119,7 @@ class SensorManagerImplTest {
       sensorManager.init(TEST_SENSOR_TYPE, mockContext, testLifecycleOwner, TestSensorInitConfig())
       sensorManager.start(TEST_SENSOR_TYPE, TestSensorCaptureRequest())
 
-      Truth.assertThat(sensorManager.isStarted(TEST_SENSOR_TYPE)).isTrue()
+      assertThat(sensorManager.isStarted(TEST_SENSOR_TYPE)).isTrue()
     }
   }
 
@@ -133,11 +133,11 @@ class SensorManagerImplTest {
       sensorManager.init(TEST_SENSOR_TYPE, mockContext, testLifecycleOwner, TestSensorInitConfig())
       sensorManager.start(TEST_SENSOR_TYPE, TestSensorCaptureRequest())
 
-      Truth.assertThat(sensorManager.isStarted(TEST_SENSOR_TYPE)).isTrue()
+      assertThat(sensorManager.isStarted(TEST_SENSOR_TYPE)).isTrue()
 
       sensorManager.stop(TEST_SENSOR_TYPE)
 
-      Truth.assertThat(sensorManager.isStarted(TEST_SENSOR_TYPE)).isFalse()
+      assertThat(sensorManager.isStarted(TEST_SENSOR_TYPE)).isFalse()
     }
   }
 
@@ -171,15 +171,15 @@ class SensorManagerImplTest {
         TEST_SENSOR_TYPE,
         object : SensorManager.AppDataCaptureListener {
           override fun onStart(captureInfo: CaptureInfo) {
-            Truth.assertThat(captureInfo.captureFolder).isEqualTo(TEST_OUTPUT_FOLDER)
-            Truth.assertThat(captureInfo.externalIdentifier).isEqualTo(TEST_EXTERNAL_ID)
+            assertThat(captureInfo.captureFolder).isEqualTo(TEST_OUTPUT_FOLDER)
+            assertThat(captureInfo.externalIdentifier).isEqualTo(TEST_EXTERNAL_ID)
           }
 
           override fun onComplete(captureInfo: CaptureInfo) {
-            Truth.assertThat(captureInfo.resourceInfoList).isNotEmpty()
+            assertThat(captureInfo.resourceInfoList).isNotEmpty()
             runTest {
               val captureInfoInRecords = sensingEngine.getCaptureInfo(captureInfo.captureId!!)
-              Truth.assertThat(captureInfoInRecords).isEqualTo(captureInfo)
+              assertThat(captureInfoInRecords).isEqualTo(captureInfo)
             }
           }
 
