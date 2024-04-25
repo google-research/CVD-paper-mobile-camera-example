@@ -74,8 +74,10 @@ internal class SensorManagerImpl(
   }
 
   override fun unregisterSensorFactory(sensorType: SensorType) {
-    sensorFactoryMap.remove(sensorType)
-    mutexMap.remove(sensorType)
+    mutexMap.remove(sensorType)?.let {
+      sensorFactoryMap.remove(sensorType)
+      reset(sensorType)
+    }
   }
 
   override fun checkRegistration(sensorType: SensorType) = sensorFactoryMap.containsKey(sensorType)

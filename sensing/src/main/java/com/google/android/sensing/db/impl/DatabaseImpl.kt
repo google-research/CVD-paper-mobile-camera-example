@@ -32,7 +32,11 @@ import net.sqlcipher.database.SupportFactory
 /** Implementation of [Database]. */
 internal class DatabaseImpl(context: Context, databaseConfig: DatabaseConfiguration) : Database {
   val db: ResourceDatabase =
-    Room.databaseBuilder(context, ResourceDatabase::class.java, ENCRYPTED_DATABASE_NAME)
+    if (databaseConfig.inMemory) {
+        Room.inMemoryDatabaseBuilder(context, ResourceDatabase::class.java)
+      } else {
+        Room.databaseBuilder(context, ResourceDatabase::class.java, ENCRYPTED_DATABASE_NAME)
+      }
       .apply {
         if (databaseConfig.enableEncryption) {
           openHelperFactory(SupportFactory(SQLiteDatabase.getBytes("PassPhrase".toCharArray())))
@@ -91,6 +95,10 @@ internal class DatabaseImpl(context: Context, databaseConfig: DatabaseConfigurat
   override suspend fun deleteRecordsInCapture(captureId: String): Boolean {
     /* We only need to delete CaptureInfo record as we CASCADE it. */
     return captureInfoDao.deleteCaptureInfo(captureId) == 1
+  }
+
+  override fun close() {
+    db.close()
   }
 
   companion object {

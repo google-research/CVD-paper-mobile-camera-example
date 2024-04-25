@@ -56,4 +56,13 @@ dependencies {
   testImplementation(Dependencies.junit)
   androidTestImplementation(Dependencies.AndroidxTest.extJunit)
   androidTestImplementation(Dependencies.Espresso.espressoCore)
+  testImplementation(Dependencies.AndroidxTest.core)
+  testImplementation(Dependencies.Kotlin.kotlinCoroutinesTest)
+  testImplementation(Dependencies.Kotlin.kotlinTestJunit)
+  testImplementation(Dependencies.junit)
+  testImplementation(Dependencies.mockitoInline)
+  testImplementation(Dependencies.mockitoKotlin)
+  testImplementation(Dependencies.robolectric)
+  testImplementation(Dependencies.truth)
+  testImplementation(Dependencies.Lifecycle.runtimeTest)
 }
