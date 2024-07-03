@@ -56,10 +56,28 @@ interface SensingEngine {
   suspend fun onCaptureCompleteCallback(captureInfo: CaptureInfo): Flow<SensorCaptureResult>
 
   /**
-   * Lists all ResourceInfo given a participantId. This will return all ResourceInfo across multiple
-   * capturings.
+   * Fetches resource infos for a given list of participants.
+   *
+   * This function retrieves resource infos associated with each participant in the provided list.
+   * Each participant can have multiple resource infos. The results are returned as a list of pairs,
+   * where each pair contains the participant id provided at the time of capture and a list of
+   * corresponding resource infos.
    */
-  suspend fun listResourceInfoForParticipant(participantId: String): List<ResourceInfo>
+  suspend fun listResourceInfoForParticipants(
+    participants: Set<String>
+  ): Map<String, List<ResourceInfo>>
+
+  /**
+   * Fetches upload requests for a given list of participants.
+   *
+   * This function retrieves upload requests associated with each participant in the provided list.
+   * Each participant can have multiple upload requests. The results are returned as a list of
+   * pairs, where each pair contains the participant identifier (e.g., email, ID) and a list of
+   * corresponding upload requests.
+   */
+  suspend fun listUploadRequestForParticipants(
+    participants: Set<String>
+  ): Map<String, List<UploadRequest>>
 
   /**
    * Lists all ResourceInfo given a captureId. This will return all ResourceInfo for a single

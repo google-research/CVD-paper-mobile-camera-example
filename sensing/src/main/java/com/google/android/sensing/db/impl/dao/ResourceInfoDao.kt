@@ -40,16 +40,20 @@ internal abstract class ResourceInfoDao {
     """
       SELECT *
       FROM ResourceInfoEntity
-      WHERE participantId = :participantId
+      WHERE participantId IN (:participants)
     """
   )
-  abstract suspend fun listResourceInfoEntitiesForParticipant(
-    participantId: String
+  abstract suspend fun listResourceInfoEntitiesForParticipants(
+    participants: Set<String>
   ): List<ResourceInfoEntity>
 
   @Transaction
-  open suspend fun listResourceInfoForParticipant(participantId: String): List<ResourceInfo> {
-    return listResourceInfoEntitiesForParticipant(participantId).map { it.toResourceInfo() }
+  open suspend fun listResourceInfoForParticipants(
+    participants: Set<String>
+  ): Map<String, List<ResourceInfo>> {
+    return listResourceInfoEntitiesForParticipants(participants)
+      .map { it.toResourceInfo() }
+      .groupBy { it.participantId }
   }
 
   @Query(

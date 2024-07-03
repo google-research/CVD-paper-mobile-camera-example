@@ -57,6 +57,21 @@ internal abstract class UploadRequestDao {
   open suspend fun listUploadRequests(status: RequestStatus): List<UploadRequest> {
     return listUploadRequestEntities(status).map { it.toUploadRequest() }
   }
+
+  @Query(
+    """
+      SELECT * 
+      FROM uploadrequestentity
+      WHERE resourceInfoId IN (:resourceInfoIds)
+  """
+  )
+  abstract suspend fun listUploadRequestEntities(
+    resourceInfoIds: List<String>
+  ): List<UploadRequestEntity>
+
+  open suspend fun listUploadRequests(resourceInfoIds: List<String>): List<UploadRequest> {
+    return listUploadRequestEntities(resourceInfoIds).map { it.toUploadRequest() }
+  }
 }
 
 internal fun UploadRequestEntity.toUploadRequest() =
