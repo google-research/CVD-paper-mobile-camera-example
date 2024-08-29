@@ -140,8 +140,16 @@ internal class SensingEngineImpl(
     TODO("Not yet implemented")
   }
 
-  override suspend fun listResourceInfoForParticipant(participantId: String): List<ResourceInfo> {
-    return database.listResourceInfoForParticipant(participantId)
+  override suspend fun listResourceInfoForParticipants(
+    participants: Set<String>
+  ): Map<String, List<ResourceInfo>> {
+    return database.listResourceInfoForParticipants(participants)
+  }
+
+  override suspend fun listUploadRequestForParticipants(
+    participants: Set<String>
+  ): Map<String, List<UploadRequest>> {
+    return database.listUploadRequestForParticipants(participants)
   }
 
   override suspend fun listResourceInfoInCapture(captureId: String): List<ResourceInfo> {

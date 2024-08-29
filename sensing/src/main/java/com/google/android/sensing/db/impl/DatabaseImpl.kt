@@ -18,6 +18,7 @@ package com.google.android.sensing.db.impl
 
 import android.content.Context
 import androidx.room.Room
+import androidx.room.withTransaction
 import com.google.android.sensing.DatabaseConfiguration
 import com.google.android.sensing.db.Database
 import com.google.android.sensing.db.ResourceNotFoundException
@@ -55,8 +56,22 @@ internal class DatabaseImpl(context: Context, databaseConfig: DatabaseConfigurat
     return uploadRequestDao.insertUploadRequest(uploadRequest)
   }
 
-  override suspend fun listResourceInfoForParticipant(participantId: String): List<ResourceInfo> {
-    return resourceInfoDao.listResourceInfoForParticipant(participantId)
+  override suspend fun listResourceInfoForParticipants(
+    participants: Set<String>
+  ): Map<String, List<ResourceInfo>> {
+    return resourceInfoDao.listResourceInfoForParticipants(participants)
+  }
+
+  override suspend fun listUploadRequestForParticipants(
+    participants: Set<String>
+  ): Map<String, List<UploadRequest>> {
+
+    return db.withTransaction {
+      resourceInfoDao
+        .listResourceInfoForParticipants(participants)
+        .map { it.key to uploadRequestDao.listUploadRequests(it.value.map { it.resourceInfoId }) }
+        .toMap()
+    }
   }
 
   override suspend fun listResourceInfoInCapture(captureId: String): List<ResourceInfo> {
