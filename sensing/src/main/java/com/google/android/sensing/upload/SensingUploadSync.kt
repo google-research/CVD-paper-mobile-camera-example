@@ -45,23 +45,24 @@ object SensingUploadSync {
 
   fun oneTimeSyncUpload(
     context: Context,
-    retryConfiguration: RetryConfiguration = defaultRetryConfiguration,
+    workManagerSyncConfiguration: WorkManagerSyncConfiguration =
+      defaultWorkManagerSyncConfiguration,
   ): Flow<SyncUploadState> {
     WorkManager.getInstance(context)
       .enqueueUniqueWork(
         oneTimeWorkUniqueName,
         ExistingWorkPolicy.KEEP,
-        createOneTimeWorkRequest(retryConfiguration)
+        createOneTimeWorkRequest(workManagerSyncConfiguration)
       )
     return getUploadProgressFlow(context, oneTimeWorkUniqueName)
   }
 
   @PublishedApi
   internal fun createOneTimeWorkRequest(
-    retryConfiguration: RetryConfiguration?
+    workManagerSyncConfiguration: WorkManagerSyncConfiguration
   ): OneTimeWorkRequest {
     val oneTimeWorkRequestBuilder = OneTimeWorkRequest.Builder(SensorDataUploadWorker::class.java)
-    retryConfiguration?.let {
+    workManagerSyncConfiguration.retryConfiguration?.let {
       oneTimeWorkRequestBuilder.setBackoffCriteria(
         it.backoffCriteria.backoffPolicy,
         it.backoffCriteria.backoffDelay,
@@ -71,35 +72,37 @@ object SensingUploadSync {
         Data.Builder().putInt(MAX_RETRIES_ALLOWED, it.maxRetries).build()
       )
     }
+    oneTimeWorkRequestBuilder.setConstraints(workManagerSyncConfiguration.syncConstraints)
     return oneTimeWorkRequestBuilder.build()
   }
 
   fun periodicSyncUpload(
     context: Context,
-    periodicSyncConfiguration: PeriodicSyncConfiguration = defaultPeriodicSyncConfiguration,
+    workManagerSyncConfiguration: WorkManagerSyncConfiguration =
+      defaultWorkManagerSyncConfiguration,
   ): Flow<SyncUploadState> {
     WorkManager.getInstance(context)
       .enqueueUniquePeriodicWork(
         periodicWorkUniqueName,
         ExistingPeriodicWorkPolicy.KEEP,
-        createPeriodicWorkRequest(periodicSyncConfiguration)
+        createPeriodicWorkRequest(workManagerSyncConfiguration)
       )
     return getUploadProgressFlow(context, periodicWorkUniqueName)
   }
 
   @PublishedApi
   internal fun createPeriodicWorkRequest(
-    periodicSyncConfiguration: PeriodicSyncConfiguration
+    workManagerSyncConfiguration: WorkManagerSyncConfiguration
   ): PeriodicWorkRequest {
     val periodicWorkRequestBuilder =
       PeriodicWorkRequest.Builder(
           SensorDataUploadWorker::class.java,
-          periodicSyncConfiguration.repeat.interval,
-          periodicSyncConfiguration.repeat.timeUnit
+          workManagerSyncConfiguration.repeat.interval,
+          workManagerSyncConfiguration.repeat.timeUnit
         )
-        .setConstraints(periodicSyncConfiguration.syncConstraints)
+        .setConstraints(workManagerSyncConfiguration.syncConstraints)
 
-    periodicSyncConfiguration.retryConfiguration?.let {
+    workManagerSyncConfiguration.retryConfiguration?.let {
       periodicWorkRequestBuilder.setBackoffCriteria(
         it.backoffCriteria.backoffPolicy,
         it.backoffCriteria.backoffDelay,

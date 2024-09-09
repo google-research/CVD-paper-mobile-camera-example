@@ -18,6 +18,7 @@ package com.google.android.sensing.upload
 
 import androidx.work.BackoffPolicy
 import androidx.work.Constraints
+import androidx.work.NetworkType
 import java.util.concurrent.TimeUnit
 
 /** Constant for the max number of retries in case of sync failure */
@@ -26,20 +27,20 @@ import java.util.concurrent.TimeUnit
 val defaultRetryConfiguration =
   RetryConfiguration(BackoffCriteria(BackoffPolicy.LINEAR, 30, TimeUnit.SECONDS), 3)
 
-val defaultPeriodicSyncConfiguration =
-  PeriodicSyncConfiguration(
-    syncConstraints = Constraints.Builder().build(),
+val defaultWorkManagerSyncConfiguration =
+  WorkManagerSyncConfiguration(
+    syncConstraints = Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build(),
     repeat = RepeatInterval(interval = 15, timeUnit = TimeUnit.MINUTES),
     retryConfiguration = defaultRetryConfiguration
   )
 
 /** Configuration for period synchronisation */
-class PeriodicSyncConfiguration(
+class WorkManagerSyncConfiguration(
   /**
    * Constraints that specify the requirements needed before the synchronisation is triggered. E.g.
    * network type (Wifi, 3G etc), the device should be charging etc.
    */
-  val syncConstraints: Constraints = Constraints.Builder().build(),
+  val syncConstraints: Constraints,
 
   /**
    * The interval at which the sync should be triggered in. It must be greater than or equal to
@@ -48,7 +49,7 @@ class PeriodicSyncConfiguration(
   val repeat: RepeatInterval,
 
   /** Configuration for synchronization retry */
-  val retryConfiguration: RetryConfiguration? = defaultRetryConfiguration,
+  val retryConfiguration: RetryConfiguration? = null,
 )
 
 data class RepeatInterval(
