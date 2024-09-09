@@ -49,7 +49,10 @@ class SensingSynchronizer(
       val failedOrNullState =
         uploader
           .upload(uploadRequestList)
-          .onEach(uploadResultProcessor::process)
+          .onEach {
+            uploadResultProcessor.process(it)
+            if (it is UploadResult.Completed) totalRequests++
+          }
           .runningFold(initialSyncUploadState, ::calculateSyncUploadState)
           // initialSyncUploadState is dropped
           .drop(1)
@@ -59,7 +62,6 @@ class SensingSynchronizer(
         // The state has already been emitted. Return from the flow.
         return@flow
       }
-      totalRequests += uploadRequestList.size
       uploadRequestList = uploadRequestFetcher.fetchForUpload()
     }
     emit(SyncUploadState.Completed(totalRequests))
