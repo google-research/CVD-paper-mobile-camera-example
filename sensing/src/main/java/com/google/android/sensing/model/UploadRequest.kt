@@ -33,4 +33,5 @@ data class UploadRequest(
   var uploadId: String? = null,
   var status: RequestStatus,
   var lastUpdatedTime: Date,
+  var failedSyncAttempts: Int = 0,
 )

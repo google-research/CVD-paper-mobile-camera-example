@@ -87,7 +87,8 @@ internal fun UploadRequestEntity.toUploadRequest() =
     nextPart = nextPart,
     uploadId = uploadId,
     status = status,
-    lastUpdatedTime = Date.from(lastUpdatedTime)
+    lastUpdatedTime = Date.from(lastUpdatedTime),
+    failedSyncAttempts = failedSyncAttempts,
   )
 
 internal fun UploadRequest.toUploadRequestEntity() =
@@ -103,5 +104,6 @@ internal fun UploadRequest.toUploadRequestEntity() =
     nextPart = nextPart,
     uploadId = uploadId,
     status = status,
-    lastUpdatedTime = lastUpdatedTime.toInstant()
+    lastUpdatedTime = lastUpdatedTime.toInstant(),
+    failedSyncAttempts = failedSyncAttempts,
   )

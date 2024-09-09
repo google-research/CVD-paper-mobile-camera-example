@@ -59,6 +59,7 @@ private class DefaultUploadResultProcessor(private val sensingEngine: SensingEng
           status = RequestStatus.UPLOADING
           uploadId = uploadResult.uploadId
           nextPart = 1
+          failedSyncAttempts = 0
         }
       }
       is UploadResult.Success -> {
@@ -66,6 +67,7 @@ private class DefaultUploadResultProcessor(private val sensingEngine: SensingEng
           lastUpdatedTime = uploadResult.lastUploadTime
           fileOffset = uploadRequest.fileOffset + uploadResult.bytesUploaded
           nextPart = uploadRequest.nextPart + 1
+          failedSyncAttempts = 0
         }
       }
       is UploadResult.Completed -> {
@@ -73,6 +75,7 @@ private class DefaultUploadResultProcessor(private val sensingEngine: SensingEng
         uploadRequest.apply {
           lastUpdatedTime = uploadResult.completeTime
           status = RequestStatus.UPLOADED
+          failedSyncAttempts = 0
         }
         /** Delete the zipped file as its no longer required. */
         File(uploadRequest.zipFile).delete()
@@ -80,7 +83,10 @@ private class DefaultUploadResultProcessor(private val sensingEngine: SensingEng
       is UploadResult.Failure -> {
         uploadRequest.apply {
           lastUpdatedTime = uploadRequest.lastUpdatedTime
-          status = RequestStatus.FAILED
+          failedSyncAttempts++
+          status =
+            if (failedSyncAttempts >= MAX_FAILED_ATTEMPTS) RequestStatus.FAILED
+            else uploadRequest.status
         }
       }
     }
@@ -91,5 +97,9 @@ private class DefaultUploadResultProcessor(private val sensingEngine: SensingEng
       resourceInfo.apply { status = uploadRequest.status }
       sensingEngine.updateResourceInfo(resourceInfo)
     }
+  }
+
+  companion object {
+    const val MAX_FAILED_ATTEMPTS = 3
   }
 }

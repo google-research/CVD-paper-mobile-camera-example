@@ -37,6 +37,7 @@ internal class DatabaseImpl(context: Context, databaseConfig: DatabaseConfigurat
         if (databaseConfig.enableEncryption) {
           openHelperFactory(SupportFactory(SQLiteDatabase.getBytes("PassPhrase".toCharArray())))
         }
+        addMigrations(MIGRATION_1_2)
       }
       .build()
 

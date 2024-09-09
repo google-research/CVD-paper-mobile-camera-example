@@ -19,6 +19,8 @@ package com.google.android.sensing.db.impl
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 import com.google.android.sensing.db.impl.dao.CaptureInfoDao
 import com.google.android.sensing.db.impl.dao.ResourceInfoDao
 import com.google.android.sensing.db.impl.dao.UploadRequestDao
@@ -28,7 +30,7 @@ import com.google.android.sensing.db.impl.entities.UploadRequestEntity
 
 @Database(
   entities = [CaptureInfoEntity::class, ResourceInfoEntity::class, UploadRequestEntity::class],
-  version = 1,
+  version = 2,
   exportSchema = false
 )
 @TypeConverters(DbTypeConverters::class)
@@ -37,3 +39,12 @@ internal abstract class ResourceDatabase : RoomDatabase() {
   abstract fun resourceInfoDao(): ResourceInfoDao
   abstract fun uploadRequestDao(): UploadRequestDao
 }
+
+internal val MIGRATION_1_2 =
+  object : Migration(1, 2) {
+    override fun migrate(database: SupportSQLiteDatabase) {
+      database.execSQL(
+        "ALTER TABLE UploadRequestEntity ADD COLUMN failedSyncAttempts INTEGER NOT NULL DEFAULT 0"
+      )
+    }
+  }

@@ -20,6 +20,7 @@ import android.content.Context
 import com.google.android.sensing.model.UploadResult
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.runningFold
@@ -45,13 +46,19 @@ class SensingSynchronizer(
 
     while (uploadRequestList.isNotEmpty()) {
       // upload() is a cold flow with finite emitted values. Hence it ends automatically.
-      uploader
-        .upload(uploadRequestList)
-        .onEach { uploadResultProcessor.process(it) }
-        .runningFold(initialSyncUploadState, ::calculateSyncUploadState)
-        // initialSyncUploadState is dropped
-        .drop(1)
-        .collect { emit(it) }
+      val failedOrNullState =
+        uploader
+          .upload(uploadRequestList)
+          .onEach(uploadResultProcessor::process)
+          .runningFold(initialSyncUploadState, ::calculateSyncUploadState)
+          // initialSyncUploadState is dropped
+          .drop(1)
+          .onEach(::emit)
+          .firstOrNull { it is SyncUploadState.Failed }
+      if (failedOrNullState is SyncUploadState.Failed) {
+        // The state has already been emitted. Return from the flow.
+        return@flow
+      }
       totalRequests += uploadRequestList.size
       uploadRequestList = uploadRequestFetcher.fetchForUpload()
     }

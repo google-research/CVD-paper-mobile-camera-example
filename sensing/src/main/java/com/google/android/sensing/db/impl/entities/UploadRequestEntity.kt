@@ -81,4 +81,7 @@ internal data class UploadRequestEntity(
 
   /** Time of initialization or successful part upload or completion. */
   val lastUpdatedTime: Instant,
+
+  /** Number of times sync has been attempted for this request. */
+  val failedSyncAttempts: Int = 0,
 )
