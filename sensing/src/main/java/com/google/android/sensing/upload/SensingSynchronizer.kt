@@ -37,7 +37,7 @@ class SensingSynchronizer(
    * collects [UploadResult]s and processes them using [uploadResultProcessor]. At each stage it
    * emits [SyncUploadState]s.
    */
-  fun synchronize(): Flow<SyncUploadState> =
+  suspend fun synchronize(): Flow<SyncUploadState> =
     flow {
         var uploadRequestList = uploadRequestFetcher.fetchAll()
         emit(SyncUploadState.Started(initialTotalRequests = uploadRequestList.size))
