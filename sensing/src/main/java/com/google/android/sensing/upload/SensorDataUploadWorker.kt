@@ -27,6 +27,8 @@ import com.google.gson.GsonBuilder
 import java.time.OffsetDateTime
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.onEach
 import timber.log.Timber
 
 /** A WorkManager Worker that handles onetime and periodic requests to upload. */
@@ -55,14 +57,18 @@ class SensorDataUploadWorker(appContext: Context, workerParams: WorkerParameters
     try {
       var failed = false
       SensingSynchronizer.getInstance(applicationContext)?.let {
-        it.synchronize().collect {
-          setProgress(buildWorkData(it))
-          if (it is SyncUploadState.Failed) {
-            delay(20) // So that final progress is also received on the application's end.
-            failed = true
-            Timber.e("Synchronization Exception: ${it.exception}")
+        it
+          .synchronize()
+          .onEach {
+            setProgress(buildWorkData(it))
+            if (it is SyncUploadState.Failed) {
+              delay(20) // So that final progress is also received on the application's end.
+              failed = true
+              println("Synchronization Exception: ${it.exception}")
+              Timber.e("Synchronization Exception: ${it.exception}")
+            }
           }
-        }
+          .firstOrNull { it is SyncUploadState.Completed }
       }
         ?: throw SynchronizerException(
           "Synchronizer instance not created! Have you configured the server correctly ?"
