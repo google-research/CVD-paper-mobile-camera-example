@@ -64,7 +64,6 @@ class SensorDataUploadWorker(appContext: Context, workerParams: WorkerParameters
             if (it is SyncUploadState.Failed) {
               delay(20) // So that final progress is also received on the application's end.
               failed = true
-              println("Synchronization Exception: ${it.exception}")
               Timber.e("Synchronization Exception: ${it.exception}")
             }
           }
