@@ -56,7 +56,7 @@ class SensingApplication :
      */
     FhirEngineProvider.init(
       FhirEngineConfiguration(
-        enableEncryptionIfSupported = false,
+        enableEncryptionIfSupported = true,
         databaseErrorStrategy = DatabaseErrorStrategy.RECREATE_AT_OPEN,
         serverConfiguration =
           getLocalProperties()?.let {
