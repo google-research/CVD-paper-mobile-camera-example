@@ -43,14 +43,16 @@ class SensingSynchronizer(
 
         emit(SyncUploadState.Started(initialTotalRequests = uploadRequestList.size))
         var completedRequests = 0
+        var initialSyncUploadState = SyncUploadState.InProgress(currentTotalRequests = 0)
 
         while (uploadRequestList.isNotEmpty()) {
           // upload() is a cold flow with finite emitted values. Hence it ends automatically.
           uploadRequestList.forEach { uploadRequest ->
             // Following is to bootstrap new state calculation based on previous "InProgress" states
-            val initialSyncUploadState =
+            initialSyncUploadState =
               SyncUploadState.InProgress(
-                currentTotalRequests = uploadRequestList.size,
+                currentTotalRequests =
+                  initialSyncUploadState.currentTotalRequests + uploadRequestList.size,
                 completedRequests = completedRequests
               )
             uploader
