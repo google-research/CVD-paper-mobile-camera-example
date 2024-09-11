@@ -42,11 +42,11 @@ internal abstract class CaptureInfoDao {
   @Query("""
     SELECT * FROM CaptureInfoEntity WHERE captureId=:captureId
   """)
-  abstract suspend fun getCaptureInfoEntity(captureId: String): CaptureInfoEntity?
+  abstract suspend fun getCaptureInfoEntity(captureId: String): List<CaptureInfoEntity>
 
   @Transaction
   open suspend fun getCaptureInfo(captureId: String): CaptureInfo? {
-    return getCaptureInfoEntity(captureId)?.toCaptureInfo()
+    return getCaptureInfoEntity(captureId).firstOrNull()?.toCaptureInfo()
   }
 
   @Query("""

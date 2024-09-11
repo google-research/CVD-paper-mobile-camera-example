@@ -1,7 +1,7 @@
 plugins {
   id(Plugins.BuildPlugins.androidLib)
   id(Plugins.BuildPlugins.kotlinAndroid)
-  id(Plugins.BuildPlugins.kotlinKapt)
+  id(Plugins.BuildPlugins.kotlinKsp)
 }
 
 android {
@@ -21,7 +21,11 @@ android {
       proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
     }
   }
-  kotlin { jvmToolchain(17) }
+  compileOptions {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+  }
+  kotlinOptions { jvmTarget = "17" }
 }
 
 dependencies {
@@ -51,7 +55,7 @@ dependencies {
   implementation(Dependencies.Minio.Extra.staxApi)
   implementation(Dependencies.Minio.Extra.aaltoXml)
 
-  kapt(Dependencies.Room.compiler)
+  ksp(Dependencies.Room.compiler)
 
   testImplementation(Dependencies.junit)
   androidTestImplementation(Dependencies.AndroidxTest.extJunit)
