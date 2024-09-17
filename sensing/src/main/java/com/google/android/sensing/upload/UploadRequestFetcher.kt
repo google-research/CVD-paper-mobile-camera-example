@@ -24,7 +24,8 @@ import com.google.android.sensing.model.UploadRequest
 
 /** Responsible for fetching [UploadRequest] that are pending to be uploaded. */
 interface UploadRequestFetcher {
-  suspend fun fetchForUpload(): List<UploadRequest>
+  suspend fun fetchAll(): List<UploadRequest>
+  suspend fun fetchNew(): List<UploadRequest>
 
   // https://www.baeldung.com/kotlin/singleton-classes#1-companion-object
   companion object {
@@ -43,8 +44,12 @@ interface UploadRequestFetcher {
 
 private class DefaultUploadRequestFetcher(private val sensingEngine: SensingEngine) :
   UploadRequestFetcher {
-  override suspend fun fetchForUpload(): List<UploadRequest> {
+  override suspend fun fetchAll(): List<UploadRequest> {
     return (sensingEngine.listUploadRequest(status = RequestStatus.UPLOADING) +
       sensingEngine.listUploadRequest(status = RequestStatus.PENDING))
+  }
+
+  override suspend fun fetchNew(): List<UploadRequest> {
+    return fetchAll().filter { it.failedSyncAttempts == 0 }
   }
 }
