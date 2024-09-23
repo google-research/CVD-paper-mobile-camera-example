@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:paddingVertical="10dp"
+>
+
+  <TextView
+        android:id="@+id/rank"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="@drawable/bg_circle_blue"
+        android:textStyle="bold"
+        android:gravity="center"
+        android:textColor="@color/primary_blue_40"
+        android:textAppearance="?attr/textAppearanceTitleMedium"
+        android:text="1"
+    />
+
+  <TextView
+        android:id="@+id/cause"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:paddingLeft="16dp"
+        android:layout_gravity="center"
+        android:textAppearance="?attr/textAppearanceBodyLarge"
+        android:text="Tuberculosis"
+    />
+
+  <TextView
+        android:id="@+id/likelyhood"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:textAppearance="?attr/textAppearanceBodyLarge"
+        android:text="87% likely"
+    />
+
+</LinearLayout>
