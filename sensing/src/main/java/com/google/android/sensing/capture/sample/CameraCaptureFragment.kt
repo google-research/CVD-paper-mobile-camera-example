@@ -128,8 +128,12 @@ class CameraCaptureFragment : Fragment() {
               handleOnStart(captureInfo)
             }
 
-            override fun onComplete(captureInfo: CaptureInfo) {
+            override fun onStopped(captureInfo: CaptureInfo) {
               handleOnComplete(captureInfo)
+            }
+
+            override fun onCancelled(captureInfo: CaptureInfo?) {
+              TODO("Not yet implemented")
             }
 
             override fun onError(exception: Exception, captureInfo: CaptureInfo?) {

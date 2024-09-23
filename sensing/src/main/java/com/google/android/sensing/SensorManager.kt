@@ -1,19 +1,3 @@
-/*
- * Copyright 2024 Google LLC
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package com.google.android.sensing
 
 import android.content.Context
@@ -23,6 +7,7 @@ import com.google.android.sensing.capture.InitConfig
 import com.google.android.sensing.capture.sensors.CameraCaptureRequest
 import com.google.android.sensing.capture.sensors.CameraInitConfig
 import com.google.android.sensing.capture.sensors.CameraSensorFactor
+import com.google.android.sensing.capture.sensors.MicrophoneSensorFactory
 import com.google.android.sensing.db.Database
 import com.google.android.sensing.impl.SensorManagerImpl
 import com.google.android.sensing.model.CaptureInfo
@@ -56,7 +41,7 @@ interface SensorManager {
    * @param sensorType The unique type of sensor to register a factory for.
    * @param sensorFactory The `SensorFactory` implementation responsible for creating sensors of the
    * specified `sensorType`.
-   * @throws IllegalStateException if a factory is already registered for the given `sensorType`.
+   * @throws IllegalArgumentException if a factory is already registered for the given `sensorType`.
    */
   fun registerSensorFactory(sensorType: SensorType, sensorFactory: SensorFactory)
 
@@ -87,7 +72,8 @@ interface SensorManager {
    * SensorType.MICROPHONE)
    * @param context Android Context for accessing system resources.
    * @param lifecycleOwner A LifecycleOwner (typically Activity or Fragment) to tie the sensor's
-   * lifecycle.
+   * lifecycle. [CoroutineContext] from [lifecycleOwner.lifecycleScop.coroutineContext] is used to
+   * invoke all application callbacks.
    * @param initConfig Sensor-specific initialization configuration. Example [CameraInitConfig].
    * @throws IllegalStateException when:
    * 1. [SensorFactory] is not registered for [SensorType]
@@ -108,7 +94,7 @@ interface SensorManager {
    * Example [CameraCaptureRequest].
    * @throws IllegalStateException when
    * 1. [start] is called before [init],
-   * 2. [start] is called before [reset]-ting the previous capture,
+   * 2. [start] is called before [stop]-ing the previous capture,
    * 3. [sensorType] is not compatible with the given [captureRequest]
    */
   suspend fun start(sensorType: SensorType, captureRequest: CaptureRequest)
@@ -135,18 +121,30 @@ interface SensorManager {
   suspend fun resume(sensorType: SensorType)
 
   /**
-   * Resets SensorManager for the specified sensor, killing the sensor if its capturing and
-   * releasing any acquired resources. Call it after [stop]. If called before [stop] capturing is
-   * [kill]ed.
+   * Cancel the ongoing capturing. However, you can still use the [Sensor] instance without doing an [init] again.
+   *
+   * @param sensorType The type of sensor to cancel.
+   */
+  suspend fun cancel(sensorType: SensorType)
+
+  /**
+   * Resets SensorManager for the specified [sensorType] by invoking [Sensor].reset. Call it after
+   * [stop]. If called before [stop] capturing is [cancel]ed. Post this, the same sensor instance
+   * will not be available and to capture with [sensorType] you would need to [init] the sensor type
+   * again.
    *
    * @param sensorType The type of sensor to reset.
    */
-  fun reset(sensorType: SensorType)
+  suspend fun reset(sensorType: SensorType)
 
-  /** Interface for receiving notifications about sensor capture events and results. */
+  /**
+   * Interface for receiving notifications about sensor capture events and results. These events are
+   * invoked within [CoroutineContext] provided by application.
+   */
   interface AppDataCaptureListener {
     fun onStart(captureInfo: CaptureInfo)
-    fun onComplete(captureInfo: CaptureInfo)
+    fun onStopped(captureInfo: CaptureInfo)
+    fun onCancelled(captureInfo: CaptureInfo?)
     fun onError(exception: Exception, captureInfo: CaptureInfo? = null)
   }
 
@@ -193,27 +191,25 @@ interface SensorManager {
         ?: synchronized(this) {
           instance
             ?: run {
-                val appContext = context.applicationContext
-                val sensingEngineConfiguration =
-                  if (appContext is SensingEngineConfiguration.Provider) {
-                    appContext.getSensingEngineConfiguration()
-                  } else SensingEngineConfiguration()
-                with(sensingEngineConfiguration) {
-                  val database = Database.getInstance(context, databaseConfiguration)
-                  SensorManagerImpl(
-                      context,
-                      database,
-                      sensingEngineConfiguration.serverConfiguration
-                    )
-                    .apply { registerSensorFactory(InternalSensorType.CAMERA, CameraSensorFactor) }
+              val appContext = context.applicationContext
+              val sensingEngineConfiguration =
+                if (appContext is SensingEngineConfiguration.Provider) {
+                  appContext.getSensingEngineConfiguration()
+                } else SensingEngineConfiguration()
+              with(sensingEngineConfiguration) {
+                val database = Database.getInstance(context, databaseConfiguration)
+                SensorManagerImpl(
+                  context,
+                  database,
+                  sensingEngineConfiguration.serverConfiguration
+                )
+                  .apply {
+                  registerSensorFactory(InternalSensorType.CAMERA, CameraSensorFactor)
+                  registerSensorFactory(InternalSensorType.MICROPHONE, MicrophoneSensorFactory)
                 }
               }
+            }
               .also { instance = it }
         }
-
-    internal fun cleanup() {
-      Database.cleanup()
-      instance = null
-    }
   }
 }
