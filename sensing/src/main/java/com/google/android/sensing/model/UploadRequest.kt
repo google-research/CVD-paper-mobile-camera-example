@@ -16,6 +16,7 @@
 
 package com.google.android.sensing.model
 
+import com.google.android.sensing.upload.Part
 import java.util.Date
 import java.util.UUID
 
@@ -34,4 +35,5 @@ data class UploadRequest(
   var status: RequestStatus,
   var lastUpdatedTime: Date,
   var failedSyncAttempts: Int = 0,
+  val parts: MutableList<Part> = mutableListOf()
 )
