@@ -20,9 +20,6 @@ import android.content.Context
 import com.google.android.sensing.model.UploadRequest
 import com.google.android.sensing.model.UploadResult
 import com.google.common.collect.HashMultimap
-import io.minio.ListPartsResponse
-import io.minio.UploadPartResponse
-import io.minio.messages.Part
 import java.io.File
 import java.io.FileInputStream
 import java.time.Instant
@@ -116,29 +113,12 @@ private class UploaderImpl(private val blobstoreService: BlobstoreService) : Upl
       .flowOn(Dispatchers.IO)
 
   private fun mergeMultipartUpload(uploadRequest: UploadRequest): UploadResult {
-    val parts = arrayOfNulls<Part>(1000)
-    val partResult: ListPartsResponse =
-      blobstoreService.listMultipart(
-        uploadRequest.bucketName,
-        null,
-        uploadRequest.uploadRelativeURL,
-        1000,
-        0,
-        uploadRequest.uploadId,
-        null,
-        null
-      )
-    var partNumber = 1
-    for (part in partResult.result().partList()) {
-      parts[partNumber - 1] = Part(partNumber, part.etag())
-      partNumber++
-    }
     blobstoreService.mergeMultipartUpload(
       uploadRequest.bucketName,
       null,
       uploadRequest.uploadRelativeURL,
-      uploadRequest.uploadId,
-      parts,
+      uploadRequest.uploadId!!,
+      uploadRequest.parts,
       null,
       null
     )
@@ -150,16 +130,18 @@ private class UploaderImpl(private val blobstoreService: BlobstoreService) : Upl
     data: ByteArray,
     chunkSize: Long,
   ) {
-    blobstoreService.uploadFilePart(
-      uploadRequest.bucketName,
-      null,
-      uploadRequest.uploadRelativeURL,
-      data,
-      chunkSize,
-      uploadRequest.uploadId,
-      uploadRequest.nextPart,
-      null,
-      null
-    )
+    val response =
+      blobstoreService.uploadFilePart(
+        uploadRequest.bucketName,
+        null,
+        uploadRequest.uploadRelativeURL,
+        data,
+        chunkSize,
+        uploadRequest.uploadId!!,
+        uploadRequest.nextPart,
+        null,
+        null
+      )
+    uploadRequest.parts.add(Part(response.partNumber, response.etag))
   }
 }

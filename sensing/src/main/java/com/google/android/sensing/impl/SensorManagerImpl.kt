@@ -284,9 +284,10 @@ internal class SensorManagerImpl(
             zipFile = targetZip.absolutePath,
             fileSize = targetZip.length(),
             fileOffset = 0L,
-            bucketName = serverConfiguration.bucketName,
+            bucketName = it.blobstoreService?.getBucketName() ?: it.bucketName!!,
             uploadRelativeURL = toUploadRelativeUrl,
-            isMultiPart = serverConfiguration.networkConfiguration.isMultiPart,
+            isMultiPart = it.blobstoreService?.isMultiPart()
+                ?: it.networkConfiguration!!.isMultiPart,
             nextPart = 1,
             uploadId = null,
             status = RequestStatus.PENDING,

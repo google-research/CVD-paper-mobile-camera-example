@@ -16,6 +16,8 @@
 
 package com.google.android.sensing
 
+import com.google.android.sensing.upload.BlobstoreService
+
 /**
  * A configuration which describes the database setup and error recovery.
  *
@@ -58,12 +60,18 @@ data class DatabaseConfiguration(
 
 /** A configuration to provide necessary params for network connection. */
 data class ServerConfiguration(
+  /** An instance of [BlobstoreService] provided by the application. */
+  val blobstoreService: BlobstoreService? = null,
+
   /** Url of the remote blob-storage server. */
-  val baseUrl: String,
+  val baseUrl: String? = null,
+
   /** The access url for a blob-storage server can be different. */
-  val baseAccessUrl: String,
+  val baseAccessUrl: String? = null,
+
   /** Bucket name in the blob-storage. */
-  val bucketName: String,
+  val bucketName: String? = null,
+
   /** A configuration to provide the network connection parameters. */
   val networkConfiguration: NetworkConfiguration = NetworkConfiguration(),
   /**
@@ -72,7 +80,19 @@ data class ServerConfiguration(
    */
   val authenticator: Authenticator? = null
 ) {
-  fun getBucketUrl() = "$baseAccessUrl/$bucketName"
+  init {
+    // Ensure that either blobstoreService is provided, or all other fields are present
+    if (blobstoreService == null) {
+      requireNotNull(baseUrl) { "baseUrl is required when blobstoreService is not provided" }
+      requireNotNull(baseAccessUrl) {
+        "baseAccessUrl is required when blobstoreService is not provided"
+      }
+      requireNotNull(bucketName) { "bucketName is required when blobstoreService is not provided" }
+      requireNotNull(networkConfiguration) {
+        "networkConfiguration is required when blobstoreService is not provided"
+      }
+    }
+  }
 
   /** A configuration to provide the network connection parameters. */
   data class NetworkConfiguration(
