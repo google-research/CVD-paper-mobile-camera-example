@@ -1,7 +1,7 @@
 plugins {
   id(Plugins.BuildPlugins.application)
   id(Plugins.BuildPlugins.kotlinAndroid)
-  id(Plugins.BuildPlugins.kotlinKapt)
+  id(Plugins.BuildPlugins.kotlinKsp)
   id(Plugins.BuildPlugins.navSafeArgs)
 }
 
@@ -28,7 +28,11 @@ android {
     viewBinding = true
   }
   packaging { resources.excludes.addAll(listOf("META-INF/*")) }
-  kotlin { jvmToolchain(17) }
+  compileOptions {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+  }
+  kotlinOptions { jvmTarget = "17" }
 }
 
 dependencies {
