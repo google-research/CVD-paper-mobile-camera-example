@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Google LLC
+ * Copyright 2023-2024 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,7 +45,11 @@ open class SyncUploadState {
   data class Completed(val totalRequests: Int) : SyncUploadState()
 
   /** The sync failed for some [exception]. */
-  data class Failed(val resourceInfoId: String?, val exception: Exception) : SyncUploadState()
+  data class Failed(
+    val resourceInfoId: String?,
+    val exceptionMessage: String,
+    val stacktrace: String
+  ) : SyncUploadState()
 
   /**
    * This state indicates no operation. This is currently used to indicate that user's request to

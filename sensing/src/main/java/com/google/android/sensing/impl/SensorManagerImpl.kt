@@ -35,13 +35,13 @@ import com.google.android.sensing.model.RequestStatus
 import com.google.android.sensing.model.ResourceInfo
 import com.google.android.sensing.model.SensorType
 import com.google.android.sensing.model.UploadRequest
-import kotlinx.coroutines.CoroutineScope
 import java.io.File
 import java.nio.file.Paths
 import java.time.Instant
 import java.util.Date
 import java.util.UUID
 import kotlin.coroutines.CoroutineContext
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -106,7 +106,7 @@ internal class SensorManagerImpl(
       // Prepare sensor for capture
       sensor.prepare(
         internalSensorListener =
-        getSensorListener(context, lifecycleOwner.lifecycleScope.coroutineContext)
+          getSensorListener(context, lifecycleOwner.lifecycleScope.coroutineContext)
       )
 
       // For Active mode capturing (eg, Camera) we reset the sensor if user navigates to a different
@@ -173,9 +173,7 @@ internal class SensorManagerImpl(
         }
       }
 
-      override suspend fun onData(sensorType: SensorType) {
-        TODO("Not yet implemented")
-      }
+      override suspend fun onData(sensorType: SensorType) {}
 
       override suspend fun onStopped(sensorType: SensorType) {
         componentsMap[sensorType]?.let { captureComponents ->

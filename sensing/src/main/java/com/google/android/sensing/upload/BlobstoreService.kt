@@ -21,8 +21,6 @@ import com.google.android.sensing.SensingEngineConfiguration
 import com.google.common.collect.Multimap
 import io.minio.ListPartsResponse
 import io.minio.MinioAsyncClient
-import io.minio.ObjectWriteResponse
-import io.minio.UploadPartResponse
 import io.minio.errors.ErrorResponseException
 import io.minio.errors.InsufficientDataException
 import io.minio.errors.InternalException
@@ -56,7 +54,7 @@ interface BlobstoreService {
     partNumber: Int,
     extraHeaders: Multimap<String?, String?>?,
     extraQueryParams: Multimap<String?, String?>?,
-  ): UploadPartResponse?
+  )
 
   fun mergeMultipartUpload(
     bucketName: String?,
@@ -66,7 +64,7 @@ interface BlobstoreService {
     parts: Array<Part?>?,
     extraHeaders: Multimap<String?, String?>?,
     extraQueryParams: Multimap<String?, String?>?,
-  ): ObjectWriteResponse?
+  )
 
   fun listMultipart(
     bucketName: String,
@@ -149,8 +147,8 @@ private class BlobstoreServiceMinioImpl(client: MinioAsyncClient) :
     partNumber: Int,
     extraHeaders: Multimap<String?, String?>?,
     extraQueryParams: Multimap<String?, String?>?,
-  ): UploadPartResponse? {
-    return this.uploadPartAsync(
+  ) {
+    this.uploadPartAsync(
         bucketName,
         region,
         objectName,
@@ -185,8 +183,8 @@ private class BlobstoreServiceMinioImpl(client: MinioAsyncClient) :
     parts: Array<Part?>?,
     extraHeaders: Multimap<String?, String?>?,
     extraQueryParams: Multimap<String?, String?>?,
-  ): ObjectWriteResponse? {
-    return completeMultipartUploadAsync(
+  ){
+    completeMultipartUploadAsync(
         bucketName,
         region,
         objectName,

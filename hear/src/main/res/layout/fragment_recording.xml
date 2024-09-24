@@ -76,13 +76,12 @@
         />
 
     <Button
-            android:id="@+id/button_review"
+            android:id="@+id/button_play_audio"
             style="@style/Widget.Material3.Button.TextButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/review_button_text"
             android:textColor="@color/primary_blue_40"
-            android:visibility="gone"
             android:layout_marginTop="30dp"
             app:layout_constraintLeft_toLeftOf="parent"
             app:layout_constraintRight_toRightOf="parent"

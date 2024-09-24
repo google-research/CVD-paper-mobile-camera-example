@@ -19,5 +19,6 @@ package com.google.android.sensing.model
 interface SensorType
 
 enum class InternalSensorType : SensorType {
-  CAMERA, MICROPHONE
+  CAMERA,
+  MICROPHONE
 }

@@ -18,15 +18,16 @@ package com.google.android.sensing.hear
 
 import android.app.Application
 import android.content.Context
+import com.google.android.sensing.DatabaseConfiguration
+import com.google.android.sensing.MinioInternalIDPAuthenticator
+import com.google.android.sensing.SensingEngineConfiguration
 import com.google.android.sensing.SensorManager
-import com.google.auth.oauth2.GoogleCredentials
-import com.google.cloud.aiplatform.v1.EndpointName
-import com.google.cloud.aiplatform.v1.PredictionServiceClient
-import com.google.cloud.aiplatform.v1.PredictionServiceSettings
+import com.google.android.sensing.ServerConfiguration
 import java.io.IOException
+import java.util.Properties
 import timber.log.Timber
 
-class HearApplication : Application() {
+class HearApplication : Application(), SensingEngineConfiguration.Provider {
 
   private lateinit var sensorManager: SensorManager
 
@@ -41,8 +42,38 @@ class HearApplication : Application() {
 
   private fun constructSensorManager() = SensorManager.getInstance(applicationContext)
 
-  companion
-  object {
+  override fun getSensingEngineConfiguration(): SensingEngineConfiguration {
+    return SensingEngineConfiguration(
+      databaseConfiguration = DatabaseConfiguration(enableEncryption = false),
+      serverConfiguration =
+        getLocalProperties()?.let {
+          ServerConfiguration(
+            baseUrl = it.getProperty("BLOBSTORE_BASE_URL"),
+            baseAccessUrl = it.getProperty("BLOBSTORE_BASE_ACCESS_URL"),
+            bucketName = it.getProperty("BLOBSTORE_BUCKET_NAME"),
+            authenticator =
+              /* Implement MinioInternalIDPAuthenticator directly when built-in IDP is required. */
+              object : MinioInternalIDPAuthenticator() {
+                override fun getUserName() = it.getProperty("BLOBSTORE_USER")
+                override fun getPassword() = it.getProperty("BLOBSTORE_PASSWORD")
+              }
+            /* Implement Authenticator interface directly when external IDP is OpenIDP or LDAP. */
+            /* Implement MinioIDPPluginAuthenticator when external IDP is a custom one. */
+            )
+        }
+    )
+  }
+
+  private fun getLocalProperties(): Properties? {
+    return try {
+      Properties().apply { load(applicationContext.assets.open("local.properties")) }
+    } catch (e: IOException) {
+      Timber.d("No local.properties file. Moving with application defined configuration!")
+      null
+    }
+  }
+
+  companion object {
     fun getSensorManager(context: Context) =
       (context.applicationContext as HearApplication).sensorManager
   }

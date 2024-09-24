@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Google LLC
+ * Copyright 2023-2024 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import java.time.OffsetDateTime
 import java.util.concurrent.atomic.AtomicBoolean
+import kotlinx.coroutines.delay
 import timber.log.Timber
 
 /** A WorkManager Worker that handles onetime and periodic requests to upload. */
@@ -57,8 +58,9 @@ class SensorDataUploadWorker(appContext: Context, workerParams: WorkerParameters
         it.synchronize().collect {
           setProgress(buildWorkData(it))
           if (it is SyncUploadState.Failed) {
+            delay(20) // So that final progress is also received on the application's end.
             failed = true
-            Timber.e("Synchronization Exception: ${it.exception}")
+            Timber.e("Synchronization Exception: ${it.exceptionMessage}")
           }
         }
       }
@@ -67,7 +69,16 @@ class SensorDataUploadWorker(appContext: Context, workerParams: WorkerParameters
         )
       return if (failed) Result.retry() else Result.success()
     } catch (exception: Exception) {
-      setProgress(buildWorkData(SyncUploadState.Failed(null, exception)))
+      setProgress(
+        buildWorkData(
+          SyncUploadState.Failed(
+            null,
+            exception.message ?: "Unknown Error",
+            exception.stackTraceToString()
+          )
+        )
+      )
+      delay(20) // So that final progress is also received on the application's end.
       Timber.e("Synchronization Exception: $exception")
       return Result.retry()
     } finally {

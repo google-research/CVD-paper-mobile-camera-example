@@ -27,7 +27,6 @@ import androidx.lifecycle.lifecycleScope
 import com.google.android.sensing.SensorManager
 import com.google.android.sensing.capture.sensors.MicrophoneInitConfig
 import com.google.android.sensing.model.InternalSensorType
-import java.io.File
 import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity() {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Google LLC
+ * Copyright 2023-2024 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ import androidx.navigation.fragment.findNavController
 import com.google.android.sensing.upload.SyncUploadState
 import com.google.android.sensory.databinding.FragmentHomeBinding
 import kotlinx.coroutines.launch
+import timber.log.Timber
 
 class HomeFragment : Fragment() {
   private var _binding: FragmentHomeBinding? = null
@@ -95,7 +96,7 @@ class HomeFragment : Fragment() {
           is SyncUploadState.Completed -> hideSyncBanner(it)
           is SyncUploadState.Failed -> hideSyncBanner(it)
           is SyncUploadState.NoOp -> {
-            println("No operation required. Sync is in progress")
+            Timber.i("No operation required. Sync is in progress")
           }
         }
       }

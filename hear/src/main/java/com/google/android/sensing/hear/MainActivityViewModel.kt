@@ -22,16 +22,9 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import com.google.android.sensing.upload.SensingUploadSync
 import com.google.android.sensing.upload.SyncUploadState
-import com.google.cloud.aiplatform.v1.EndpointName
-import com.google.cloud.aiplatform.v1.PredictRequest
-import com.google.cloud.aiplatform.v1.PredictionServiceClient
-import com.google.protobuf.ListValue
-import java.io.File
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 class MainActivityViewModel(application: Application, private val state: SavedStateHandle) :
   AndroidViewModel(application) {

@@ -17,6 +17,11 @@
 package com.google.android.sensing.hear.fragments
 
 import android.content.res.ColorStateList
+import android.media.AudioFormat
+import android.media.AudioFormat.CHANNEL_OUT_MONO
+import android.media.AudioManager
+import android.media.AudioTrack
+import android.media.MediaPlayer
 import android.os.Bundle
 import android.os.CountDownTimer
 import android.view.View
@@ -27,18 +32,18 @@ import androidx.appcompat.widget.AppCompatImageView
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.progressindicator.CircularProgressIndicator
 import com.google.android.material.progressindicator.LinearProgressIndicator
 import com.google.android.sensing.SensorManager
 import com.google.android.sensing.capture.sensors.MicrophoneCaptureRequest
+import com.google.android.sensing.capture.sensors.MicrophoneInitConfig
 import com.google.android.sensing.hear.HearApplication
-import com.google.android.sensing.hear.MainActivityViewModel
 import com.google.android.sensing.hear.R
 import com.google.android.sensing.model.CaptureInfo
 import com.google.android.sensing.model.InternalSensorType
-import com.google.android.sensing.upload.SyncUploadState
+import java.io.File
+import java.io.FileInputStream
 import java.time.Instant
 import kotlinx.coroutines.launch
 import timber.log.Timber
@@ -54,7 +59,7 @@ class RecordingFragment : Fragment(R.layout.fragment_recording) {
   private lateinit var audioRecordProgress: LinearProgressIndicator
   private lateinit var currentTimeTextView: TextView
   private lateinit var totalTimeTextView: TextView
-  private lateinit var reviewButton: Button
+  private lateinit var playAudioButton: Button
   private lateinit var startButton: Button
   private lateinit var cancelButton: Button
   private lateinit var submitButton: Button
@@ -62,8 +67,8 @@ class RecordingFragment : Fragment(R.layout.fragment_recording) {
   private lateinit var countDownTimer: CountDownTimer
 
   private lateinit var sensorManager: SensorManager
-
-  private val mainActivityViewModel: MainActivityViewModel by activityViewModels()
+  private var mediaPlayer: MediaPlayer? = null
+  var directoryPathOfRecentlyCapturedAudio: String? = null
 
   override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
     super.onViewCreated(view, savedInstanceState)
@@ -76,11 +81,10 @@ class RecordingFragment : Fragment(R.layout.fragment_recording) {
     currentTimeTextView = view.findViewById(R.id.current_time)
     totalTimeTextView = view.findViewById(R.id.total_time)
     startButton = view.findViewById(R.id.button_start_recording)
-    reviewButton = view.findViewById(R.id.button_review)
+    playAudioButton = view.findViewById(R.id.button_play_audio)
     cancelButton = view.findViewById(R.id.button_cancel)
     submitButton = view.findViewById(R.id.button_submit)
     sensorManager = HearApplication.getSensorManager(requireContext())
-    setupSyncUploadProgress()
   }
 
   override fun onResume() {
@@ -122,6 +126,7 @@ class RecordingFragment : Fragment(R.layout.fragment_recording) {
 
         override fun onStopped(captureInfo: CaptureInfo) {
           handleOnStopped()
+          directoryPathOfRecentlyCapturedAudio = captureInfo.captureFolder
         }
 
         override fun onCancelled(captureInfo: CaptureInfo?) {
@@ -163,6 +168,90 @@ class RecordingFragment : Fragment(R.layout.fragment_recording) {
         )
       }
     }
+
+    playAudioButton.setOnClickListener {
+      directoryPathOfRecentlyCapturedAudio?.let {
+        val filePath = getSingleFilePathFromDirectory(it)
+
+        if (filePath != null) {
+          playAudioFromPrivateDirectory(filePath)
+        } else {
+          // Handle the case where there's no file or multiple files
+        }
+      }
+    }
+  }
+
+  private fun getSingleFilePathFromDirectory(directoryPath: String): String? {
+    val directory = File(directoryPath)
+
+    if (directory.exists() && directory.isDirectory) {
+      val files = directory.listFiles()
+      if (files != null && files.size == 1) {
+        return files[0].absolutePath
+      }
+    }
+
+    return null
+  }
+
+  private val initConfigUsed =
+    MicrophoneInitConfig(
+      sampleRate = 16000,
+      channelConfig = AudioFormat.CHANNEL_IN_MONO,
+      audioFormat = AudioFormat.ENCODING_PCM_16BIT
+    )
+
+  private fun playAudioFromPrivateDirectory(filePath: String) {
+    val file = File(filePath) // Access file from private directory
+
+    if (!file.exists()) {
+      Timber.w("Audio file not found! Something went wrong!")
+      return
+    }
+
+    try {
+      FileInputStream(file).use { audioInputStream ->
+        val bufferSize =
+          AudioTrack.getMinBufferSize(
+            initConfigUsed.sampleRate, // Common sample rate
+            CHANNEL_OUT_MONO,
+            initConfigUsed.audioFormat
+          )
+
+        val audioTrack =
+          AudioTrack(
+            AudioManager.STREAM_MUSIC,
+            initConfigUsed.sampleRate,
+            CHANNEL_OUT_MONO,
+            initConfigUsed.audioFormat,
+            bufferSize,
+            AudioTrack.MODE_STREAM
+          )
+
+        audioTrack.play()
+
+        val buffer = ByteArray(bufferSize)
+        var bytesRead: Int
+        do {
+          bytesRead = audioInputStream.read(buffer)
+          if (bytesRead > 0) {
+            audioTrack.write(buffer, 0, bytesRead)
+          }
+        } while (bytesRead > 0)
+
+        audioTrack.stop()
+        audioTrack.release()
+      }
+    } catch (e: Exception) {
+      Timber.w("Audio capture encountered error = ${e.stackTraceToString()}")
+    }
+  }
+
+  override fun onStop() {
+    super.onStop()
+    mediaPlayer?.release()
+    mediaPlayer = null
   }
 
   private fun handleOnStart() {
@@ -191,35 +280,13 @@ class RecordingFragment : Fragment(R.layout.fragment_recording) {
     submitButton.backgroundTintList =
       ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.primary_blue_40))
     submitButton.setTextColor(ContextCompat.getColor(requireContext(), R.color.white))
-    submitButton.setOnClickListener {
-      recordHeadingTextView.text = "Syncing..."
-      layoutRecorder.visibility = View.GONE
-      insightGenerateProgress.visibility = View.VISIBLE
-      mainActivityViewModel.triggerOneTimeSync()
-    }
+    submitButton.setOnClickListener { parentFragmentManager.popBackStack() }
   }
-
 
   private fun stopRecording() {
     recordHeadingTextView.text = "Stopping Recording.."
     if (sensorManager.isStarted(InternalSensorType.MICROPHONE)) {
       lifecycleScope.launch { sensorManager.stop(InternalSensorType.MICROPHONE) }
-    }
-  }
-
-  private fun setupSyncUploadProgress() {
-    lifecycleScope.launch {
-      mainActivityViewModel.syncUploadState.collect {
-        when (it) {
-          is SyncUploadState.Started,
-          is SyncUploadState.InProgress -> println("DEBUG Sync is in proper progress.")
-          is SyncUploadState.Completed -> println("DEBUG Sync completed.")
-          is SyncUploadState.Failed -> println("DEBUG Sync Failed.")
-          is SyncUploadState.NoOp -> {
-            println("DEBUG Sync No operation required. Sync is in progress")
-          }
-        }
-      }
     }
   }
 
