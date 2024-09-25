@@ -19,9 +19,11 @@ package com.google.android.sensing.upload
 import android.content.Context
 import com.google.android.sensing.SensingSyncDbInteractor
 import com.google.android.sensing.model.UploadResult
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.runningFold
 
@@ -35,28 +37,40 @@ internal class SensingSynchronizer(
    * collects [UploadResult]s and processes them using [uploadResultProcessor]. At each stage it
    * emits [SyncUploadState]s.
    */
-  suspend fun synchronize(): Flow<SyncUploadState> = flow {
-    var uploadRequestList = sensingSyncDbInteractor.fetchUploadRequestsToUpload()
-    emit(SyncUploadState.Started(initialTotalRequests = uploadRequestList.size))
-    var totalRequests = 0
-    // Following is to bootstrap new state calculation based on previous "InProgress" states
-    val initialSyncUploadState =
-      SyncUploadState.InProgress(currentTotalRequests = uploadRequestList.size)
+  suspend fun synchronize(): Flow<SyncUploadState> =
+    flow {
+        var uploadRequestList = sensingSyncDbInteractor.fetchAll()
+        emit(SyncUploadState.Started(initialTotalRequests = uploadRequestList.size))
+        var completedRequests = 0
+        var totalRequests = 0
 
-    while (uploadRequestList.isNotEmpty()) {
-      // upload() is a cold flow with finite emitted values. Hence it ends automatically.
-      uploader
-        .upload(uploadRequestList)
-        .onEach { sensingSyncDbInteractor.processUploadResult(it) }
-        .runningFold(initialSyncUploadState, ::calculateSyncUploadState)
-        // initialSyncUploadState is dropped
-        .drop(1)
-        .collect { emit(it) }
-      totalRequests += uploadRequestList.size
-      uploadRequestList = sensingSyncDbInteractor.fetchUploadRequestsToUpload()
-    }
-    emit(SyncUploadState.Completed(totalRequests))
-  }
+        while (uploadRequestList.isNotEmpty()) {
+          totalRequests += uploadRequestList.size
+          uploadRequestList.forEach { uploadRequest ->
+            // Following is to bootstrap new state calculation based on previous "InProgress" states
+            val initialSyncUploadState =
+              SyncUploadState.InProgress(
+                currentTotalRequests = totalRequests,
+                completedRequests = completedRequests
+              )
+
+            // upload() is a cold flow with finite emitted values. Hence it ends automatically.
+            uploader
+              .upload(uploadRequest)
+              .onEach {
+                sensingSyncDbInteractor.processUploadResult(it)
+                if (it is UploadResult.Completed) completedRequests++
+              }
+              .runningFold(initialSyncUploadState, ::calculateSyncUploadState)
+              // initialSyncUploadState is dropped
+              .drop(1)
+              .collect(::emit)
+          }
+          uploadRequestList = sensingSyncDbInteractor.fetchNew()
+        }
+        emit(SyncUploadState.Completed(completedRequests))
+      }
+      .flowOn(Dispatchers.IO)
 
   private fun calculateSyncUploadState(
     lastSyncUploadState: SyncUploadState,
@@ -95,8 +109,9 @@ internal class SensingSynchronizer(
             )
         is UploadResult.Failure ->
           SyncUploadState.Failed(
-            uploadResult.uploadRequest.resourceInfoId,
-            exception = uploadResult.uploadError
+            resourceInfoId = uploadResult.uploadRequest.resourceInfoId,
+            exceptionMessage = uploadResult.uploadError.message ?: "Unknown Error",
+            stacktrace = uploadResult.uploadError.stackTraceToString()
           )
       }
     }

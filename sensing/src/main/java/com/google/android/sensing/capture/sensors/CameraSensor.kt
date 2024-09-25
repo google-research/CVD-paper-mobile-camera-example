@@ -67,11 +67,6 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 
-data class CameraData(
-  val sharedImageProxy: SharedCloseable<ImageProxy>,
-  val captureResult: CaptureResult
-)
-
 internal class CameraSensor(
   context: Context,
   private val lifecycleOwner: LifecycleOwner,
@@ -81,6 +76,7 @@ internal class CameraSensor(
   private val internalStorage = context.filesDir
   private val internalCameraInitJob: Job
 
+  private lateinit var processCameraProvider: ProcessCameraProvider
   /**
    * Create an internal [ImageAnalysis] [UseCase] that constructs [_imageFlow] and [_metaDataFlow].
    */
@@ -94,26 +90,30 @@ internal class CameraSensor(
          * instance asynchronously.
          */
         var resumeCount = 0
-        suspendCancellableCoroutine<ProcessCameraProvider> { continuation ->
-            if (resumeCount > 5) {
-              CancellationException("Failed to get CameraProvider.").let {
-                internalListener.onError(InternalSensorType.CAMERA, it)
-                cancel(it)
+        try {
+          suspendCancellableCoroutine<ProcessCameraProvider> { continuation ->
+              if (resumeCount > 5) {
+                CancellationException("Failed to get CameraProvider.").let {
+                  continuation.resumeWithException(it)
+                  cancel(it)
+                }
+              }
+              val cameraFutureProvider = ProcessCameraProvider.getInstance(context)
+              try {
+                continuation.resume(cameraFutureProvider.get())
+              } catch (e: ExecutionException) {
+                resumeCount++
+                continuation.resumeWithException(Exception("Failed to get CameraProvider."))
               }
             }
-            val cameraFutureProvider = ProcessCameraProvider.getInstance(context)
-            try {
-              continuation.resume(cameraFutureProvider.get())
-            } catch (e: ExecutionException) {
-              resumeCount++
-              continuation.resumeWithException(Exception("Failed to get CameraProvider."))
+            .let {
+              processCameraProvider = it
+              buildData()
+              cancel()
             }
-          }
-          .let {
-            //
-            buildData(it)
-            cancel()
-          }
+        } catch (e: Exception) {
+          internalListener.onError(InternalSensorType.CAMERA, e)
+        }
       }
   }
 
@@ -140,7 +140,7 @@ internal class CameraSensor(
   private var dataCount = 0
 
   @SuppressLint("UnsafeOptInUsageError")
-  private fun buildData(processCameraProvider: ProcessCameraProvider) {
+  private fun buildData() {
     /** Build [_metaDataFlow]. */
     val captureCallback =
       object : CameraCaptureSession.CaptureCallback() {
@@ -215,7 +215,7 @@ internal class CameraSensor(
       }
       .onEach {
         dataCount++
-        internalListener.onData(InternalSensorType.CAMERA)
+        internalListener.onData(InternalSensorType.CAMERA, it)
       }
       .onCompletion {
         /**
@@ -245,7 +245,14 @@ internal class CameraSensor(
     TODO("Not yet implemented")
   }
 
-  override fun kill() = runBlocking { stop() }
+  override fun cancel() = runBlocking {
+    stop()
+    internalListener.onCancelled(InternalSensorType.CAMERA)
+  }
+
+  override suspend fun reset() {
+    processCameraProvider.unbindAll()
+  }
 
   override fun getSensor() = camera
 
@@ -405,3 +412,8 @@ internal object CameraSensorFactor : SensorFactory {
   override fun create(context: Context, lifecycleOwner: LifecycleOwner, initConfig: InitConfig) =
     CameraSensor(context, lifecycleOwner, initConfig as CameraInitConfig)
 }
+
+data class CameraData(
+  val sharedImageProxy: SharedCloseable<ImageProxy>,
+  val captureResult: CaptureResult
+) : SensorData

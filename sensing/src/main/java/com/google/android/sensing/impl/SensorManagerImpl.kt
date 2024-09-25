@@ -28,6 +28,7 @@ import com.google.android.sensing.capture.CaptureRequest
 import com.google.android.sensing.capture.CaptureUtil
 import com.google.android.sensing.capture.InitConfig
 import com.google.android.sensing.capture.sensors.Sensor
+import com.google.android.sensing.capture.sensors.SensorData
 import com.google.android.sensing.db.Database
 import com.google.android.sensing.db.ResourceNotFoundException
 import com.google.android.sensing.model.CaptureInfo
@@ -40,9 +41,11 @@ import java.nio.file.Paths
 import java.time.Instant
 import java.util.Date
 import java.util.UUID
+import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
@@ -57,8 +60,13 @@ internal class SensorManagerImpl(
   data class Components(
     val sensor: Sensor,
     var captureRequest: CaptureRequest? = null,
+    var captureInfo: CaptureInfo? = null,
     var listener: SensorManager.AppDataCaptureListener? = null,
   )
+  /**
+   * This map is needed for faster lookup of capturing components enabling real time feedback to
+   * application.
+   */
   private val componentsMap = mutableMapOf<SensorType, Components>()
 
   private val mutexMap = mutableMapOf<SensorType, Mutex>()
@@ -74,10 +82,8 @@ internal class SensorManagerImpl(
   }
 
   override fun unregisterSensorFactory(sensorType: SensorType) {
-    mutexMap.remove(sensorType)?.let {
-      sensorFactoryMap.remove(sensorType)
-      reset(sensorType)
-    }
+    sensorFactoryMap.remove(sensorType)
+    mutexMap.remove(sensorType)
   }
 
   override fun checkRegistration(sensorType: SensorType) = sensorFactoryMap.containsKey(sensorType)
@@ -99,7 +105,10 @@ internal class SensorManagerImpl(
       val sensor = sensorFactoryMap[sensorType]!!.create(context, lifecycleOwner, initConfig)
 
       // Prepare sensor for capture
-      sensor.prepare(internalSensorListener = getSensorListener(context, lifecycleOwner))
+      sensor.prepare(
+        internalSensorListener =
+          getSensorListener(context, lifecycleOwner.lifecycleScope.coroutineContext)
+      )
 
       // For Active mode capturing (eg, Camera) we reset the sensor if user navigates to a different
       // screen / app
@@ -107,7 +116,7 @@ internal class SensorManagerImpl(
         lifecycleOwner.lifecycle.addObserver(
           object : DefaultLifecycleObserver {
             override fun onPause(owner: LifecycleOwner) {
-              reset(sensorType)
+              componentsMap[sensorType]?.let { runBlocking { reset(sensorType) } }
             }
           }
         )
@@ -120,40 +129,43 @@ internal class SensorManagerImpl(
 
   private fun getSensorListener(
     context: Context,
-    lifecycleOwner: LifecycleOwner
+    applicationCoroutineContext: CoroutineContext,
   ): Sensor.InternalSensorListener {
     /**
      * In these events we can fairly assume for captureRequest to be non-null in the [componentsMap]
      * entry.
      */
     return object : Sensor.InternalSensorListener {
-      override fun onStarted(sensorType: SensorType) {
-        // Offload DB tasks to IO pool of threads.
-        CoroutineScope(Dispatchers.IO).launch {
-          componentsMap[sensorType]?.let {
-            it.captureRequest?.let { request ->
+      override suspend fun onStarted(sensorType: SensorType) {
+        componentsMap[sensorType]?.let { captureComponents ->
+          captureComponents.captureRequest?.let { request ->
+            /**
+             * Real time feedback to application is more important than waiting for a likely
+             * successful database transaction below.
+             */
+            val captureInfoToBeSaved =
               with(request) {
-                database.addCaptureInfo(
-                  CaptureInfo(
-                    captureId = this.captureId,
-                    externalIdentifier = externalIdentifier,
-                    captureRequest = request,
-                    captureFolder = File(context.filesDir, outputFolder).absolutePath,
-                    captureTime = Date.from(Instant.now()),
-                  )
+                CaptureInfo(
+                  captureId = captureId,
+                  externalIdentifier = externalIdentifier,
+                  captureRequest = request,
+                  captureFolder = File(context.filesDir, outputFolder).absolutePath,
+                  captureTime = Date.from(Instant.now()),
                 )
-                try {
-                  database.getCaptureInfo(this.captureId).let { captureInfo ->
-                    /**
-                     * Back to original coroutine context. For application this will generally run
-                     * in the main thread.
-                     */
-                    withContext(lifecycleOwner.lifecycleScope.coroutineContext) {
-                      it.listener?.onStart(captureInfo)
-                    }
-                  }
-                } catch (e: ResourceNotFoundException) {
-                  it.listener?.onError(e)
+              }
+            withContext(applicationCoroutineContext) {
+              captureComponents.listener?.onStart(captureInfoToBeSaved)
+            }
+
+            // Offload DB tasks to IO pool of threads.
+            CoroutineScope(Dispatchers.IO).launch {
+              try {
+                database.addCaptureInfo(captureInfoToBeSaved)
+                captureComponents.captureInfo = captureInfoToBeSaved
+              } catch (e: ResourceNotFoundException) {
+                Timber.e("SensorManagerImpl: Could not fetch CaptureInfo. Error: $e")
+                withContext(applicationCoroutineContext) {
+                  captureComponents.listener?.onError(e, captureInfoToBeSaved)
                   stop(sensorType)
                 }
               }
@@ -162,42 +174,54 @@ internal class SensorManagerImpl(
         }
       }
 
-      override fun onData(sensorType: SensorType) {}
+      override suspend fun onData(sensorType: SensorType, data: SensorData) {
+        componentsMap[sensorType]?.let { captureComponents ->
+          captureComponents.listener?.onData(data)
+        }
+      }
 
-      override fun onStopped(sensorType: SensorType) {
-        componentsMap.remove(sensorType)?.let {
-          CoroutineScope(Dispatchers.IO).launch {
-            it.captureRequest?.let { request ->
-              with(request) {
-                val toUploadFullUrl =
-                  (serverConfiguration?.getBucketUrl() ?: "") + "/$outputFolder.zip"
-                database.addResourceInfo(
-                  ResourceInfo(
-                    resourceInfoId = UUID.randomUUID().toString(),
-                    captureId = this.captureId,
-                    externalIdentifier = externalIdentifier,
-                    resourceTitle = outputTitle,
-                    contentType = outputFormat,
-                    localLocation = File(context.filesDir, outputFolder).absolutePath,
-                    remoteLocation = toUploadFullUrl,
-                    status = RequestStatus.PENDING
-                  )
+      override suspend fun onStopped(sensorType: SensorType) {
+        componentsMap[sensorType]?.let { captureComponents ->
+          captureComponents.captureRequest?.let { captureRequest ->
+            // We can safely assume captureInfo is non-null here
+            val captureInfo = captureComponents.captureInfo!!
+            /** Remove captureRequest for new captures to start. */
+            captureComponents.apply {
+              this.captureRequest = null
+              this.captureInfo = null
+            }
+            /**
+             * Real time feedback to application is more important than waiting for a likely
+             * successful database transaction below.
+             */
+            val resourceInfoToBeSaved =
+              with(captureRequest) {
+                ResourceInfo(
+                  resourceInfoId = UUID.randomUUID().toString(),
+                  captureId = this.captureId,
+                  externalIdentifier = externalIdentifier,
+                  resourceTitle = outputTitle,
+                  contentType = outputFormat,
+                  localLocation = File(context.filesDir, outputFolder).absolutePath,
+                  /** TODO Update remoteLocation for Sensing1.0. */
+                  remoteLocation = "",
+                  status = RequestStatus.PENDING
                 )
-                try {
-                  database.getCaptureInfo(this.captureId).let { captureInfo ->
-                    /**
-                     * Back to original coroutine context. For application this will generally run
-                     * in the main thread.
-                     */
-                    withContext(lifecycleOwner.lifecycleScope.coroutineContext) {
-                      it.listener?.onComplete(captureInfo)
-                      /** TODO PostProcess. */
-                    }
-                    /** TODO move this to a default PostProcessor. */
-                    createUploadRequest(captureInfo, it.captureRequest!!)
-                  }
-                } catch (e: Exception) {
-                  it.listener?.onError(e)
+              }
+            val newCaptureInfo = captureInfo.copy(resourceInfoList = listOf(resourceInfoToBeSaved))
+            withContext(applicationCoroutineContext) {
+              captureComponents.listener?.onStopped(newCaptureInfo)
+            }
+
+            // Offload DB tasks to IO pool of threads.
+            CoroutineScope(Dispatchers.IO).launch {
+              try {
+                database.addResourceInfo(resourceInfoToBeSaved)
+                createUploadRequest(newCaptureInfo, captureRequest)
+              } catch (e: ResourceNotFoundException) {
+                Timber.e("SensorManagerImpl: Could not fetch updated CaptureInfo. Error: $e")
+                withContext(applicationCoroutineContext) {
+                  captureComponents.listener?.onError(e, newCaptureInfo)
                   stop(sensorType)
                 }
               }
@@ -206,8 +230,17 @@ internal class SensorManagerImpl(
         }
       }
 
-      override fun onError(sensorType: SensorType, exception: Exception) {
-        CoroutineScope(Dispatchers.IO).launch { stop(sensorType) }
+      override suspend fun onCancelled(sensorType: SensorType) {
+        componentsMap[sensorType]?.let { captureComponents ->
+          withContext(applicationCoroutineContext) {
+            captureComponents.listener?.onCancelled(captureComponents.captureInfo)
+          }
+          captureComponents.captureInfo = null
+        }
+      }
+
+      override suspend fun onError(sensorType: SensorType, exception: Exception) {
+        stop(sensorType)
       }
     }
   }
@@ -256,9 +289,10 @@ internal class SensorManagerImpl(
             zipFile = targetZip.absolutePath,
             fileSize = targetZip.length(),
             fileOffset = 0L,
-            bucketName = serverConfiguration.bucketName,
+            bucketName = it.blobstoreService?.getBucketName() ?: it.bucketName!!,
             uploadRelativeURL = toUploadRelativeUrl,
-            isMultiPart = serverConfiguration.networkConfiguration.isMultiPart,
+            isMultiPart = it.blobstoreService?.isMultiPart()
+                ?: it.networkConfiguration!!.isMultiPart,
             nextPart = 1,
             uploadId = null,
             status = RequestStatus.PENDING,
@@ -276,12 +310,13 @@ internal class SensorManagerImpl(
         Timber.w("Sensor $sensorType not initialized. Nothing to stop.")
         return
       }
-      if (componentsMap[sensorType]?.sensor == null) {
+      if (componentsMap[sensorType]?.captureRequest == null) {
         Timber.w("Sensor $sensorType not started. Nothing to stop.")
         return
       }
-      componentsMap[sensorType]?.sensor?.stop()
+      Timber.w("Stopping Sensor $sensorType.")
     }
+    componentsMap[sensorType]?.sensor?.stop()
   }
 
   override suspend fun pause(sensorType: SensorType) {
@@ -292,14 +327,34 @@ internal class SensorManagerImpl(
     TODO("Not yet implemented")
   }
 
-  override fun reset(sensorType: SensorType) {
+  override suspend fun cancel(sensorType: SensorType) {
+    val sensorTypeMutex = validate(sensorType)
     if (!componentsMap.containsKey(sensorType)) {
       Timber.w("Sensor $sensorType has not been initialized. ")
       return
     }
-    if (componentsMap[sensorType]?.sensor?.isStarted() == true) {
-      componentsMap[sensorType]?.sensor?.kill()
+    if (componentsMap[sensorType]?.captureRequest == null) {
+      Timber.w("Sensor $sensorType not started. Nothing to cancel.")
+      return
     }
+    componentsMap[sensorType]?.let {
+      sensorTypeMutex.withLock { it.captureRequest = null }
+      if (it.sensor.isStarted()) it.sensor.cancel()
+    }
+  }
+
+  override suspend fun reset(sensorType: SensorType) {
+    if (!componentsMap.containsKey(sensorType)) {
+      Timber.w("Sensor $sensorType has not been initialized. ")
+      return
+    }
+    val sensorTypeMutex = validate(sensorType)
+    sensorTypeMutex
+      .withLock { componentsMap.remove(sensorType) }
+      ?.let {
+        if (it.sensor.isStarted()) it.sensor.cancel()
+        it.sensor.reset()
+      }
   }
 
   override fun registerListener(
@@ -314,7 +369,7 @@ internal class SensorManagerImpl(
      */
     if (componentsMap[sensorType]?.captureRequest != null) {
       throw IllegalStateException(
-        "Sensor $sensorType has a pending capture request. Call to this should be prior to #start. Call #reset and start again from #init step."
+        "Sensor $sensorType has a pending capture request. Call to #registerListener should be prior to #start. Call #reset and start again from #init step."
       )
     }
     componentsMap[sensorType]?.let { it.listener = listener }
@@ -334,11 +389,11 @@ internal class SensorManagerImpl(
   override fun getSupportedSensors() = sensorFactoryMap.keys.toList()
 
   /**
-   * Fetches the appropriate SensorFactory, Sensor, and Mutex objects for the given `sensorType`. If
-   * necessary, throws appropriate exceptions based on the state of the SensorManager.
+   * Validates and fetches the appropriate [Mutex] object for the given `sensorType`. If necessary,
+   * throws appropriate exceptions based on the state of the SensorManager.
    *
    * @param sensorType The type of sensor to validate.
-   * @return The Mutex object associated with the provided `sensorType`.
+   * @return The [Mutex] object associated with the provided `sensorType`.
    * @throws IllegalStateException if a factory is not registered for the `sensorType`, or if the
    * SensorManager is in an invalid state (e.g., trying to `start` an uninitialized sensor).
    */

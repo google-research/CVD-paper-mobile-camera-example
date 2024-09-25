@@ -79,10 +79,11 @@ interface Sensor {
    * management.
    */
   interface InternalSensorListener {
-    fun onStarted(sensorType: SensorType)
-    fun onData(sensorType: SensorType)
-    fun onStopped(sensorType: SensorType)
-    fun onError(sensorType: SensorType, exception: Exception)
+    suspend fun onStarted(sensorType: SensorType)
+    suspend fun onData(sensorType: SensorType, data: SensorData)
+    suspend fun onStopped(sensorType: SensorType)
+    suspend fun onCancelled(sensorType: SensorType)
+    suspend fun onError(sensorType: SensorType, exception: Exception)
   }
 
   /**
@@ -104,8 +105,14 @@ interface Sensor {
    */
   suspend fun start(captureRequest: CaptureRequest)
 
-  /** **[Async] Stops the sensor's data capture process.** Halts the active data collection. */
+  /** [Async] Stops the sensor's data capture process. */
   suspend fun stop()
+
+  /**
+   * [Async] Resets the sensor by releasing underlying resources. Post this the instance will not be
+   * usable.
+   */
+  suspend fun reset()
 
   /**
    * **[Async] Temporarily pauses the sensor's data capture process.** Allows for resuming data
@@ -120,7 +127,7 @@ interface Sensor {
    * Immediately aborts the sensor's capture process and releases any held resources.** This is a
    * more forceful way to stop the sensor compared to the regular 'stop' function.
    */
-  fun kill()
+  fun cancel()
 
   /**
    * Retrieves the underlying platform-specific sensor object. Use with caution, as direct
@@ -140,3 +147,5 @@ interface Sensor {
 
   fun getCaptureMode(): CaptureMode
 }
+
+interface SensorData

@@ -46,6 +46,7 @@ import com.google.android.sensing.R
 import com.google.android.sensing.SensorManager
 import com.google.android.sensing.capture.sensors.CameraCaptureRequest
 import com.google.android.sensing.capture.sensors.CameraInitConfig
+import com.google.android.sensing.capture.sensors.SensorData
 import com.google.android.sensing.model.CaptureInfo
 import com.google.android.sensing.model.InternalSensorType
 import java.util.Locale
@@ -128,9 +129,13 @@ class CameraCaptureFragment : Fragment() {
               handleOnStart(captureInfo)
             }
 
-            override fun onComplete(captureInfo: CaptureInfo) {
+            override fun onData(data: SensorData) {}
+
+            override fun onStopped(captureInfo: CaptureInfo) {
               handleOnComplete(captureInfo)
             }
+
+            override fun onCancelled(captureInfo: CaptureInfo?) {}
 
             override fun onError(exception: Exception, captureInfo: CaptureInfo?) {
               handleOnError(exception, captureInfo)

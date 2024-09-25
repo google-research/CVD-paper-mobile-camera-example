@@ -47,7 +47,14 @@ internal interface SensingSyncDbInteractor {
    *
    * @return A list of UploadRequest objects pending upload.
    */
-  suspend fun fetchUploadRequestsToUpload(): List<UploadRequest>
+  suspend fun fetchAll(): List<UploadRequest>
+
+  /**
+   * Retrieves a list of new UploadRequest objects added to the db while sync was progressing.
+   *
+   * @return A list of UploadRequest objects pending upload.
+   */
+  suspend fun fetchNew(): List<UploadRequest>
 
   /**
    * Processes the result of an upload operation and updates the database accordingly. This may
@@ -93,9 +100,13 @@ internal class SensingSyncDbInteractorImpl(private val database: Database) :
     return database.updateUploadRequest(uploadRequest)
   }
 
-  override suspend fun fetchUploadRequestsToUpload(): List<UploadRequest> {
+  override suspend fun fetchAll(): List<UploadRequest> {
     return (database.listUploadRequests(status = RequestStatus.UPLOADING) +
       database.listUploadRequests(status = RequestStatus.PENDING))
+  }
+
+  override suspend fun fetchNew(): List<UploadRequest> {
+    return fetchAll().filter { it.failedSyncAttempts == 0 }
   }
 
   override suspend fun processUploadResult(uploadResult: UploadResult) {
@@ -116,6 +127,7 @@ internal class SensingSyncDbInteractorImpl(private val database: Database) :
           lastUpdatedTime = uploadResult.lastUploadTime
           fileOffset = uploadRequest.fileOffset + uploadResult.bytesUploaded
           nextPart = uploadRequest.nextPart + 1
+          failedSyncAttempts = 0
         }
       }
       is UploadResult.Completed -> {
@@ -123,6 +135,7 @@ internal class SensingSyncDbInteractorImpl(private val database: Database) :
         uploadRequest.apply {
           lastUpdatedTime = uploadResult.completeTime
           status = RequestStatus.UPLOADED
+          failedSyncAttempts = 0
         }
         /** Delete the zipped file as its no longer required. */
         File(uploadRequest.zipFile).delete()
@@ -131,15 +144,23 @@ internal class SensingSyncDbInteractorImpl(private val database: Database) :
         uploadRequest.apply {
           lastUpdatedTime = uploadRequest.lastUpdatedTime
           status = RequestStatus.FAILED
+          failedSyncAttempts++
+          status =
+            if (failedSyncAttempts >= MAX_FAILED_ATTEMPTS) RequestStatus.FAILED
+            else uploadRequest.status
         }
       }
     }
     updateUploadRequest(uploadRequest)
     /** Update status of ResourceInfo only when UploadRequest.status changes */
     if (requestsPreviousStatus != uploadRequest.status) {
-      val resourceInfo = database.getResourceInfo(uploadRequest.resourceInfoId)!!
+      val resourceInfo = database.getResourceInfo(uploadRequest.resourceInfoId)
       resourceInfo.apply { status = uploadRequest.status }
       updateResourceInfo(resourceInfo)
     }
+  }
+
+  companion object {
+    const val MAX_FAILED_ATTEMPTS = 3
   }
 }

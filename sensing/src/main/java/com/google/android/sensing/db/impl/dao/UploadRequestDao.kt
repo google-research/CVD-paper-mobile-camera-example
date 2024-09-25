@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Google LLC
+ * Copyright 2023-2024 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import androidx.room.Update
 import com.google.android.sensing.db.impl.entities.UploadRequestEntity
 import com.google.android.sensing.model.RequestStatus
 import com.google.android.sensing.model.UploadRequest
+import com.google.android.sensing.upload.Part
 import java.util.Date
 
 @Dao
@@ -72,7 +73,9 @@ internal fun UploadRequestEntity.toUploadRequest() =
     nextPart = nextPart,
     uploadId = uploadId,
     status = status,
-    lastUpdatedTime = Date.from(lastUpdatedTime)
+    lastUpdatedTime = Date.from(lastUpdatedTime),
+    failedSyncAttempts = failedSyncAttempts,
+    parts = partEtags.toPartList().toMutableList()
   )
 
 internal fun UploadRequest.toUploadRequestEntity() =
@@ -88,5 +91,20 @@ internal fun UploadRequest.toUploadRequestEntity() =
     nextPart = nextPart,
     uploadId = uploadId,
     status = status,
-    lastUpdatedTime = lastUpdatedTime.toInstant()
+    lastUpdatedTime = lastUpdatedTime.toInstant(),
+    failedSyncAttempts = failedSyncAttempts,
+    partEtags = parts.toPartEtagsString()
   )
+
+fun String.toPartList() = buildList {
+  if (isNotEmpty()) {
+    split(",").forEach { pair ->
+      val (partNumber, etag) = pair.split(":")
+      add(Part(partNumber.toInt(), etag))
+    }
+  }
+}
+
+fun List<Part>.toPartEtagsString(): String {
+  return this.joinToString(",") { (partNumber, etag) -> "$partNumber:$etag" }
+}

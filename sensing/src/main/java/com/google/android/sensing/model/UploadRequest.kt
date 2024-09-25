@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Google LLC
+ * Copyright 2023-2024 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.google.android.sensing.model
 
+import com.google.android.sensing.upload.Part
 import java.util.Date
 import java.util.UUID
 
@@ -33,4 +34,6 @@ data class UploadRequest(
   var uploadId: String? = null,
   var status: RequestStatus,
   var lastUpdatedTime: Date,
+  var failedSyncAttempts: Int = 0,
+  val parts: MutableList<Part> = mutableListOf()
 )

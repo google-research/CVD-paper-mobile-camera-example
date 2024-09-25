@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Google LLC
+ * Copyright 2023-2024 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -81,4 +81,13 @@ internal data class UploadRequestEntity(
 
   /** Time of initialization or successful part upload or completion. */
   val lastUpdatedTime: Instant,
+
+  /** Number of times sync has been attempted for this request. */
+  val failedSyncAttempts: Int = 0,
+
+  /**
+   * A string to store all etags paired with the part number. The format is
+   * "partNumber:etag,partNumber:etag,...". For example: "1:abc,2:def,3:ghi"
+   */
+  val partEtags: String = ""
 )
