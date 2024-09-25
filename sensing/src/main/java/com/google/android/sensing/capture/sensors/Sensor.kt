@@ -80,7 +80,7 @@ interface Sensor {
    */
   interface InternalSensorListener {
     suspend fun onStarted(sensorType: SensorType)
-    suspend fun onData(sensorType: SensorType)
+    suspend fun onData(sensorType: SensorType, data: SensorData)
     suspend fun onStopped(sensorType: SensorType)
     suspend fun onCancelled(sensorType: SensorType)
     suspend fun onError(sensorType: SensorType, exception: Exception)
@@ -147,3 +147,5 @@ interface Sensor {
 
   fun getCaptureMode(): CaptureMode
 }
+
+interface SensorData

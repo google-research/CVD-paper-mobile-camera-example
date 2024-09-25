@@ -103,6 +103,7 @@ internal class MicrophoneSensor(
           val read = audioRecord.read(audioData, 0, minBufferSize)
           if (read != AudioRecord.ERROR_INVALID_OPERATION) {
             outputStream.write(audioData, 0, read)
+            internalListener.onData(InternalSensorType.MICROPHONE, MicrophoneData(audioData))
           } else {
             Timber.w("Some audio error = $read")
           }
@@ -178,3 +179,5 @@ internal object MicrophoneSensorFactory : SensorFactory {
     initConfig: InitConfig,
   ) = MicrophoneSensor(context, lifecycleOwner, initConfig as MicrophoneInitConfig)
 }
+
+data class MicrophoneData(val audioBytes: ByteArray) : SensorData

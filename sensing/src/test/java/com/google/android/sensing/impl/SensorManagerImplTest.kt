@@ -23,6 +23,7 @@ import androidx.test.core.app.ApplicationProvider
 import com.google.android.sensing.SensingEngine
 import com.google.android.sensing.SensingEngineConfiguration
 import com.google.android.sensing.SensorManager
+import com.google.android.sensing.capture.sensors.SensorData
 import com.google.android.sensing.model.CaptureInfo
 import com.google.android.sensing.testing.TEST_EXTERNAL_ID
 import com.google.android.sensing.testing.TEST_OUTPUT_FOLDER
@@ -55,7 +56,7 @@ class SensorManagerImplTest {
     SensingEngine.getInstance(ApplicationProvider.getApplicationContext<TestApplication>())
 
   @Before
-  fun beforeSetup() {
+  fun beforeSetup() = runTest {
     check(
       ApplicationProvider.getApplicationContext<TestApplication>()
         is SensingEngineConfiguration.Provider
@@ -67,7 +68,7 @@ class SensorManagerImplTest {
   }
 
   @After
-  fun afterSetup() {
+  fun afterSetup() = runTest {
     sensorManager.reset(TEST_SENSOR_TYPE)
     sensorManager.unregisterSensorFactory(TEST_SENSOR_TYPE)
   }
@@ -175,13 +176,17 @@ class SensorManagerImplTest {
             assertThat(captureInfo.externalIdentifier).isEqualTo(TEST_EXTERNAL_ID)
           }
 
-          override fun onComplete(captureInfo: CaptureInfo) {
+          override fun onData(data: SensorData) {}
+
+          override fun onStopped(captureInfo: CaptureInfo) {
             assertThat(captureInfo.resourceInfoList).isNotEmpty()
             runTest {
-              val captureInfoInRecords = sensingEngine.getCaptureInfo(captureInfo.captureId!!)
+              val captureInfoInRecords = sensingEngine.getCaptureInfo(captureInfo.captureId)
               assertThat(captureInfoInRecords).isEqualTo(captureInfo)
             }
           }
+
+          override fun onCancelled(captureInfo: CaptureInfo?) {}
 
           override fun onError(exception: Exception, captureInfo: CaptureInfo?) {}
         }
