@@ -37,7 +37,9 @@ import com.google.android.material.progressindicator.CircularProgressIndicator
 import com.google.android.material.progressindicator.LinearProgressIndicator
 import com.google.android.sensing.SensorManager
 import com.google.android.sensing.capture.sensors.MicrophoneCaptureRequest
+import com.google.android.sensing.capture.sensors.MicrophoneData
 import com.google.android.sensing.capture.sensors.MicrophoneInitConfig
+import com.google.android.sensing.capture.sensors.SensorData
 import com.google.android.sensing.hear.HearApplication
 import com.google.android.sensing.hear.R
 import com.google.android.sensing.model.CaptureInfo
@@ -122,6 +124,12 @@ class RecordingFragment : Fragment(R.layout.fragment_recording) {
       object : SensorManager.AppDataCaptureListener {
         override fun onStart(captureInfo: CaptureInfo) {
           handleOnStart()
+        }
+
+        override fun onData(data: SensorData) {
+          if (data is MicrophoneData) {
+            data.audioBytes // use this to view waveform.
+          }
         }
 
         override fun onStopped(captureInfo: CaptureInfo) {

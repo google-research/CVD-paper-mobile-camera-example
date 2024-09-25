@@ -67,11 +67,6 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 
-data class CameraData(
-  val sharedImageProxy: SharedCloseable<ImageProxy>,
-  val captureResult: CaptureResult
-)
-
 internal class CameraSensor(
   context: Context,
   private val lifecycleOwner: LifecycleOwner,
@@ -220,7 +215,7 @@ internal class CameraSensor(
       }
       .onEach {
         dataCount++
-        internalListener.onData(InternalSensorType.CAMERA)
+        internalListener.onData(InternalSensorType.CAMERA, it)
       }
       .onCompletion {
         /**
@@ -417,3 +412,8 @@ internal object CameraSensorFactor : SensorFactory {
   override fun create(context: Context, lifecycleOwner: LifecycleOwner, initConfig: InitConfig) =
     CameraSensor(context, lifecycleOwner, initConfig as CameraInitConfig)
 }
+
+data class CameraData(
+  val sharedImageProxy: SharedCloseable<ImageProxy>,
+  val captureResult: CaptureResult
+) : SensorData

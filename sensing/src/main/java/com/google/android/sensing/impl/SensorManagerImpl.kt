@@ -28,6 +28,7 @@ import com.google.android.sensing.capture.CaptureRequest
 import com.google.android.sensing.capture.CaptureUtil
 import com.google.android.sensing.capture.InitConfig
 import com.google.android.sensing.capture.sensors.Sensor
+import com.google.android.sensing.capture.sensors.SensorData
 import com.google.android.sensing.db.Database
 import com.google.android.sensing.db.ResourceNotFoundException
 import com.google.android.sensing.model.CaptureInfo
@@ -173,7 +174,11 @@ internal class SensorManagerImpl(
         }
       }
 
-      override suspend fun onData(sensorType: SensorType) {}
+      override suspend fun onData(sensorType: SensorType, data: SensorData) {
+        componentsMap[sensorType]?.let { captureComponents ->
+          captureComponents.listener?.onData(data)
+        }
+      }
 
       override suspend fun onStopped(sensorType: SensorType) {
         componentsMap[sensorType]?.let { captureComponents ->

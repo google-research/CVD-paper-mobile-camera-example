@@ -24,6 +24,7 @@ import com.google.android.sensing.capture.sensors.CameraCaptureRequest
 import com.google.android.sensing.capture.sensors.CameraInitConfig
 import com.google.android.sensing.capture.sensors.CameraSensorFactor
 import com.google.android.sensing.capture.sensors.MicrophoneSensorFactory
+import com.google.android.sensing.capture.sensors.SensorData
 import com.google.android.sensing.db.Database
 import com.google.android.sensing.impl.SensorManagerImpl
 import com.google.android.sensing.model.CaptureInfo
@@ -160,6 +161,7 @@ interface SensorManager {
    */
   interface AppDataCaptureListener {
     fun onStart(captureInfo: CaptureInfo)
+    fun onData(data: SensorData)
     fun onStopped(captureInfo: CaptureInfo)
     fun onCancelled(captureInfo: CaptureInfo?)
     fun onError(exception: Exception, captureInfo: CaptureInfo? = null)
@@ -228,5 +230,10 @@ interface SensorManager {
               }
               .also { instance = it }
         }
+
+    internal fun cleanup() {
+      Database.cleanup()
+      instance = null
+    }
   }
 }
