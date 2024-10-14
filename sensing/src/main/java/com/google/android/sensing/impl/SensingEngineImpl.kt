@@ -89,22 +89,23 @@ internal class SensingEngineImpl(
 
       /** [CaptureFragment] stores files in app's internal storage directory */
       val resourceFolder = File(context.filesDir, resourceFolderRelativePath)
-      val outputZipFile = resourceFolder.absolutePath + ".zip"
 
-      serverConfiguration?.let {
-        /** Zipping logic from: https://stackoverflow.com/a/63828765 */
-        val zipOutputStream = ZipOutputStream(BufferedOutputStream(FileOutputStream(outputZipFile)))
-        zipOutputStream.use { zos ->
-          resourceFolder.walkTopDown().forEach { file ->
-            val zipFileName =
-              file.absolutePath.removePrefix(resourceFolder.absolutePath).removePrefix("/")
-            val entry = ZipEntry("$zipFileName${(if (file.isDirectory) "/" else "")}")
-            zos.putNextEntry(entry)
-            if (file.isFile) {
-              file.inputStream().use { fis -> fis.copyTo(zos) }
-            }
+      val outputZipFile = resourceFolder.absolutePath + ".zip"
+      /** Zipping logic from: https://stackoverflow.com/a/63828765 */
+      val zipOutputStream = ZipOutputStream(BufferedOutputStream(FileOutputStream(outputZipFile)))
+      zipOutputStream.use { zos ->
+        resourceFolder.walkTopDown().forEach { file ->
+          val zipFileName =
+            file.absolutePath.removePrefix(resourceFolder.absolutePath).removePrefix("/")
+          val entry = ZipEntry("$zipFileName${(if (file.isDirectory) "/" else "")}")
+          zos.putNextEntry(entry)
+          if (file.isFile) {
+            file.inputStream().use { fis -> fis.copyTo(zos) }
           }
         }
+      }
+
+      serverConfiguration?.let {
         val uploadRequest =
           UploadRequest(
             requestUuid = UUID.randomUUID(),
