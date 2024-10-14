@@ -74,8 +74,6 @@ private class DefaultUploadResultProcessor(private val sensingEngine: SensingEng
           lastUpdatedTime = uploadResult.completeTime
           status = RequestStatus.UPLOADED
         }
-        /** Delete the zipped file as its no longer required. */
-        File(uploadRequest.zipFile).delete()
       }
       is UploadResult.Failure -> {
         uploadRequest.apply {
@@ -85,6 +83,10 @@ private class DefaultUploadResultProcessor(private val sensingEngine: SensingEng
       }
     }
     sensingEngine.updateUploadRequest(uploadRequest)
+    if (uploadResult is UploadResult.Completed) {
+      /** Delete the zipped file as its no longer required. */
+      File(uploadRequest.zipFile).delete()
+    }
     /** Update status of ResourceInfo only when UploadRequest.status changes */
     if (requestsPreviousStatus != uploadRequest.status) {
       val resourceInfo = sensingEngine.getResourceInfo(uploadRequest.resourceInfoId)!!
