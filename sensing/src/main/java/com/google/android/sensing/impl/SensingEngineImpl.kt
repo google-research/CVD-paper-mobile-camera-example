@@ -223,42 +223,40 @@ internal class SensingEngineImpl(
     val failedNotInPendingOrCompletedList = failedUploadRequestList
       .filter { it.resourceInfoId !in pendingResourceIds && it.resourceInfoId !in uploadedResourceIds }
 
-    if (failedNotInPendingOrCompletedList.isNotEmpty()) {
-      failedNotInPendingOrCompletedList.forEach{ failedNotInPendingOrCompleted ->
-        val uploadRequest =
-          UploadRequest(
-            requestUuid = UUID.randomUUID(),
-            resourceInfoId = failedNotInPendingOrCompleted.resourceInfoId,
-            zipFile = failedNotInPendingOrCompleted.zipFile,
-            fileSize = failedNotInPendingOrCompleted.fileSize,
-            bucketName = failedNotInPendingOrCompleted.bucketName,
-            uploadRelativeURL = failedNotInPendingOrCompleted.uploadRelativeURL,
-            isMultiPart = failedNotInPendingOrCompleted.isMultiPart
-          )
-        with(File(uploadRequest.zipFile)) {
-          if (!this.exists()) {
-            val folderPath = this.absolutePath.substring(0, this.absolutePath.length - 4)
-            if (!File(folderPath).exists()) throw FileNotFoundException()
-            // zip the folder using same logic in SensingEngineImpl.
-            /** Zipping logic from: https://stackoverflow.com/a/63828765 */
-            val resourceFolder = File(folderPath)
-            val zipOutputStream =
-              ZipOutputStream(BufferedOutputStream(FileOutputStream(this.absolutePath)))
-            zipOutputStream.use { zos ->
-              resourceFolder.walkTopDown().forEach { file ->
-                val zipFileName =
-                  file.absolutePath.removePrefix(resourceFolder.absolutePath).removePrefix("/")
-                val entry = ZipEntry("$zipFileName${(if (file.isDirectory) "/" else "")}")
-                zos.putNextEntry(entry)
-                if (file.isFile) {
-                  file.inputStream().use { fis -> fis.copyTo(zos) }
-                }
+    failedNotInPendingOrCompletedList.forEach{ failedRequest ->
+      val uploadRequest =
+        UploadRequest(
+          requestUuid = UUID.randomUUID(),
+          resourceInfoId = failedRequest.resourceInfoId,
+          zipFile = failedRequest.zipFile,
+          fileSize = failedRequest.fileSize,
+          bucketName = failedRequest.bucketName,
+          uploadRelativeURL = failedRequest.uploadRelativeURL,
+          isMultiPart = failedRequest.isMultiPart
+        )
+      with(File(uploadRequest.zipFile)) {
+        if (!this.exists()) {
+          val folderPath = this.absolutePath.substring(0, this.absolutePath.length - 4)
+          if (!File(folderPath).exists()) throw FileNotFoundException()
+          // zip the folder using same logic in SensingEngineImpl.
+          /** Zipping logic from: https://stackoverflow.com/a/63828765 */
+          val resourceFolder = File(folderPath)
+          val zipOutputStream =
+            ZipOutputStream(BufferedOutputStream(FileOutputStream(this.absolutePath)))
+          zipOutputStream.use { zos ->
+            resourceFolder.walkTopDown().forEach { file ->
+              val zipFileName =
+                file.absolutePath.removePrefix(resourceFolder.absolutePath).removePrefix("/")
+              val entry = ZipEntry("$zipFileName${(if (file.isDirectory) "/" else "")}")
+              zos.putNextEntry(entry)
+              if (file.isFile) {
+                file.inputStream().use { fis -> fis.copyTo(zos) }
               }
             }
           }
         }
-        database.addUploadRequest(uploadRequest)
       }
+      database.addUploadRequest(uploadRequest)
     }
   }
 
