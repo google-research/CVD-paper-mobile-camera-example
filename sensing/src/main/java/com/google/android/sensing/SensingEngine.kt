@@ -104,4 +104,7 @@ interface SensingEngine {
   /** Delete data stored in blobstore */
   suspend fun deleteSensorData(uploadURL: String)
   suspend fun deleteSensorMetaData(uploadURL: String)
+
+  suspend fun resetFailedUploadRequests()
+
 }
