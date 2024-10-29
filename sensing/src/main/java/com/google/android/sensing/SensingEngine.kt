@@ -23,6 +23,7 @@ import com.google.android.sensing.model.RequestStatus
 import com.google.android.sensing.model.ResourceInfo
 import com.google.android.sensing.model.UploadRequest
 import kotlinx.coroutines.flow.Flow
+import java.io.File
 
 /**
  * The Sensing Engine interface that handles the local storage of captured resources.
@@ -105,6 +106,10 @@ interface SensingEngine {
   suspend fun deleteSensorData(uploadURL: String)
   suspend fun deleteSensorMetaData(uploadURL: String)
 
+  /** Reset all failed Upload Request in order to re-attempt in next sync **/
   suspend fun resetFailedUploadRequests()
+
+  /** function to create zip file from given path details [resourceFolder] and [outputZipFile]**/
+  suspend fun createZipFile(resourceFolder: File, outputZipFile: String)
 
 }

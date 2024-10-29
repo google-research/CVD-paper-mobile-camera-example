@@ -26,7 +26,6 @@ data class UploadRequest(
   val resourceInfoId: String,
   val zipFile: String,
   val fileSize: Long,
-  var fileOffset: Long = 0,
   val bucketName: String,
   val uploadRelativeURL: String,
   val isMultiPart: Boolean = true,
@@ -35,5 +34,6 @@ data class UploadRequest(
   var status: RequestStatus = RequestStatus.PENDING,
   var lastUpdatedTime: Date = Date.from(Instant.now()),
   var failedSyncAttempts: Int = 0,
-)
+  var fileOffset: Long = 0,
+  )
 
