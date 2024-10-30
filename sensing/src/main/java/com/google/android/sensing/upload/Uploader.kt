@@ -30,11 +30,11 @@ import java.util.Date
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.flow.flowOn
 import timber.log.Timber
 
 interface Uploader {
-  suspend fun upload(uploadRequestList: List<UploadRequest>): Flow<UploadResult>
+  fun upload(uploadRequest: UploadRequest): Flow<UploadResult>
 
   // https://www.baeldung.com/kotlin/singleton-classes#1-companion-object
   companion object {
@@ -62,54 +62,58 @@ private class UploaderImpl(private val blobstoreService: BlobstoreService) : Upl
    */
   private val uploadPartSizeInBytes = 6291456L
   private var minPartSizeInBytes = 5242880L // 5MB
-  override suspend fun upload(uploadRequestList: List<UploadRequest>): Flow<UploadResult> = flow {
-    uploadRequestList.forEach { uploadRequest ->
-      try {
-        if (uploadRequest.uploadId.isNullOrEmpty()) {
-          val headers = HashMultimap.create<String, String>()
-          headers.put("Content-Type", "application/octet-stream")
-          uploadRequest.uploadId =
-            blobstoreService.initMultiPartUpload(
-              uploadRequest.bucketName,
-              null,
-              uploadRequest.uploadRelativeURL,
-              headers,
-              null
+  override fun upload(uploadRequest: UploadRequest): Flow<UploadResult> =
+    flow {
+        try {
+          if (uploadRequest.uploadId.isNullOrEmpty()) {
+            val headers = HashMultimap.create<String, String>()
+            headers.put("Content-Type", "application/octet-stream")
+            uploadRequest.uploadId =
+              blobstoreService.initMultiPartUpload(
+                uploadRequest.bucketName,
+                null,
+                uploadRequest.uploadRelativeURL,
+                headers,
+                null
+              )
+            emit(
+              UploadResult.Started(
+                uploadRequest,
+                Date.from(Instant.now()),
+                uploadRequest.uploadId!!
+              )
             )
-          emit(
-            UploadResult.Started(uploadRequest, Date.from(Instant.now()), uploadRequest.uploadId!!)
-          )
+          }
+          FileInputStream(File(uploadRequest.zipFile)).use { dataStream ->
+            // https://stackoverflow.com/a/28804975
+            dataStream.channel.position(uploadRequest.fileOffset)
+            var bytesUploaded = uploadRequest.fileOffset
+            // Upload until last part
+            while (uploadRequest.isMultiPart &&
+              uploadRequest.fileSize - bytesUploaded >=
+                uploadPartSizeInBytes + minPartSizeInBytes) {
+              val chunkSize = uploadPartSizeInBytes
+              val buffer = ByteArray(chunkSize.toInt())
+              dataStream.read(buffer)
+              Timber.d("Uploading part ${uploadRequest.nextPart}..")
+              uploadPart(uploadRequest, buffer, chunkSize)
+              bytesUploaded += chunkSize
+              emit(UploadResult.Success(uploadRequest, chunkSize, Date.from(Instant.now())))
+            }
+            val chunkSize = uploadRequest.fileSize - bytesUploaded
+            val buffer = ByteArray(chunkSize.toInt())
+            dataStream.read(buffer)
+            Timber.d("Uploading part ${uploadRequest.nextPart}..")
+            uploadPart(uploadRequest, buffer, chunkSize)
+            emit(UploadResult.Success(uploadRequest, chunkSize, Date.from(Instant.now())))
+            emit(mergeMultipartUpload(uploadRequest))
+            Timber.d("File Uploaded and Merged")
+          }
+        } catch (e: Exception) {
+          emit(UploadResult.Failure(uploadRequest, e))
         }
-        val dataStream =
-          withContext(Dispatchers.IO) { FileInputStream(File(uploadRequest.zipFile)) }
-        // https://stackoverflow.com/a/28804975
-        dataStream.channel.position(uploadRequest.fileOffset)
-        var bytesUploaded = uploadRequest.fileOffset
-        // Upload until last part
-        while (uploadRequest.isMultiPart &&
-          uploadRequest.fileSize - bytesUploaded >= uploadPartSizeInBytes + minPartSizeInBytes) {
-          val chunkSize = uploadPartSizeInBytes
-          val buffer = ByteArray(chunkSize.toInt())
-          withContext(Dispatchers.IO) { dataStream.read(buffer) }
-          Timber.d("Uploading part ${uploadRequest.nextPart}..")
-          uploadPart(uploadRequest, buffer, chunkSize)
-          bytesUploaded += chunkSize
-          emit(UploadResult.Success(uploadRequest, chunkSize, Date.from(Instant.now())))
-        }
-        val chunkSize = uploadRequest.fileSize - bytesUploaded
-        val buffer = ByteArray(chunkSize.toInt())
-        withContext(Dispatchers.IO) { dataStream.read(buffer) }
-        Timber.d("Uploading part ${uploadRequest.nextPart}..")
-        uploadPart(uploadRequest, buffer, chunkSize)
-        emit(UploadResult.Success(uploadRequest, chunkSize, Date.from(Instant.now())))
-        emit(mergeMultipartUpload(uploadRequest))
-        Timber.d("File Uploaded and Merged")
-        dataStream.close()
-      } catch (e: Exception) {
-        emit(UploadResult.Failure(uploadRequest, e))
       }
-    }
-  }
+      .flowOn(Dispatchers.IO)
 
   private fun mergeMultipartUpload(uploadRequest: UploadRequest): UploadResult {
     val parts = arrayOfNulls<Part>(1000)
