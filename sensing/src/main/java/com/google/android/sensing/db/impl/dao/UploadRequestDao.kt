@@ -89,7 +89,7 @@ internal fun UploadRequestEntity.toUploadRequest() =
     lastUpdatedTime = Date.from(lastUpdatedTime),
     failedSyncAttempts = failedSyncAttempts,
     fileOffset = fileOffset
-    )
+  )
 
 internal fun UploadRequest.toUploadRequestEntity() =
   UploadRequestEntity(
@@ -106,4 +106,4 @@ internal fun UploadRequest.toUploadRequestEntity() =
     lastUpdatedTime = lastUpdatedTime.toInstant(),
     failedSyncAttempts = failedSyncAttempts,
     fileOffset = fileOffset
-    )
+  )

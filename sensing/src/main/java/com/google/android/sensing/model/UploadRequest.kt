@@ -35,5 +35,4 @@ data class UploadRequest(
   var lastUpdatedTime: Date = Date.from(Instant.now()),
   var failedSyncAttempts: Int = 0,
   var fileOffset: Long = 0,
-  )
-
+)

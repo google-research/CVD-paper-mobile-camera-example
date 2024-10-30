@@ -34,6 +34,7 @@ import com.google.android.sensing.model.SensorType
 import com.google.android.sensing.model.UploadRequest
 import java.io.BufferedOutputStream
 import java.io.File
+import java.io.FileNotFoundException
 import java.io.FileOutputStream
 import java.time.Instant
 import java.util.Date
@@ -43,7 +44,6 @@ import java.util.zip.ZipOutputStream
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.withContext
-import java.io.FileNotFoundException
 
 /**
  * @param database Interface to interact with room database.
@@ -93,7 +93,7 @@ internal class SensingEngineImpl(
       val outputZipFile = resourceFolder.absolutePath + ".zip"
 
       serverConfiguration?.let {
-        createZipFile(resourceFolder,outputZipFile)
+        createZipFile(resourceFolder, outputZipFile)
         val uploadRequest =
           UploadRequest(
             requestUuid = UUID.randomUUID(),
@@ -202,40 +202,47 @@ internal class SensingEngineImpl(
   }
 
   override suspend fun resetFailedUploadRequests() {
-    val failedUploadRequestList: List<UploadRequest>  = database.listUploadRequests(status = RequestStatus.FAILED)
+    val failedUploadRequestList: List<UploadRequest> =
+      database.listUploadRequests(status = RequestStatus.FAILED)
     // Extract the resourceInfoIds from pending requests for quick lookup
-    val pendingResourceIds = database.listUploadRequests(status = RequestStatus.PENDING).map { it.resourceInfoId }.toSet()
+    val pendingResourceIds =
+      database.listUploadRequests(status = RequestStatus.PENDING).map { it.resourceInfoId }.toSet()
     // Extract the resourceInfoIds from uploaded requests for quick lookup
-    val uploadedResourceIds = database.listUploadRequests(status = RequestStatus.UPLOADED).map { it.resourceInfoId }.toSet()
+    val uploadedResourceIds =
+      database.listUploadRequests(status = RequestStatus.UPLOADED).map { it.resourceInfoId }.toSet()
     // Filter failed requests whose resourceInfoId is not in pending and completed requests
-    val failedNotInPendingOrCompletedList = failedUploadRequestList
-      .filter { it.resourceInfoId !in pendingResourceIds && it.resourceInfoId !in uploadedResourceIds }
-
-    failedNotInPendingOrCompletedList.forEach{ failedRequest ->
-      val uploadRequest = with(failedRequest) {
-        UploadRequest(
-          requestUuid = UUID.randomUUID(),
-          resourceInfoId = resourceInfoId,
-          zipFile = zipFile,
-          fileSize = fileSize,
-          bucketName = bucketName,
-          uploadRelativeURL = uploadRelativeURL,
-          isMultiPart = isMultiPart
-        )
+    val failedNotInPendingOrCompletedList =
+      failedUploadRequestList.filter {
+        it.resourceInfoId !in pendingResourceIds && it.resourceInfoId !in uploadedResourceIds
       }
+
+    failedNotInPendingOrCompletedList.forEach { failedRequest ->
+      val uploadRequest =
+        with(failedRequest) {
+          UploadRequest(
+            requestUuid = UUID.randomUUID(),
+            resourceInfoId = resourceInfoId,
+            zipFile = zipFile,
+            fileSize = fileSize,
+            bucketName = bucketName,
+            uploadRelativeURL = uploadRelativeURL,
+            isMultiPart = isMultiPart
+          )
+        }
       with(File(uploadRequest.zipFile)) {
         if (!this.exists()) {
           val folderPath = this.absolutePath.substring(0, this.absolutePath.length - 4)
           if (!File(folderPath).exists()) throw FileNotFoundException()
           val resourceFolder = File(folderPath)
-          createZipFile(resourceFolder,this.absolutePath)
+          createZipFile(resourceFolder, this.absolutePath)
         }
       }
       database.addUploadRequest(uploadRequest)
     }
   }
 
-  override suspend fun createZipFile(resourceFolder: File, outputZipFile: String){
+  /** function to create zip file from given path details [resourceFolder] and [outputZipFile] */
+  private fun createZipFile(resourceFolder: File, outputZipFile: String) {
     /** Zipping logic from: https://stackoverflow.com/a/63828765 */
     val zipOutputStream = ZipOutputStream(BufferedOutputStream(FileOutputStream(outputZipFile)))
     zipOutputStream.use { zos ->
@@ -250,7 +257,6 @@ internal class SensingEngineImpl(
       }
     }
   }
-
 
   companion object {
     /** File format for any sensor is taken from [captureSettings.fileTypeMap]. */
