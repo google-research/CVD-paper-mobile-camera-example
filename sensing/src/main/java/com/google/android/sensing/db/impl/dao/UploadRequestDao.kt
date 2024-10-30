@@ -80,7 +80,6 @@ internal fun UploadRequestEntity.toUploadRequest() =
     resourceInfoId = resourceInfoId,
     zipFile = zipFile,
     fileSize = fileSize,
-    fileOffset = fileOffset,
     bucketName = bucketName,
     uploadRelativeURL = uploadRelativeURL,
     isMultiPart = isMultiPart,
@@ -89,6 +88,7 @@ internal fun UploadRequestEntity.toUploadRequest() =
     status = status,
     lastUpdatedTime = Date.from(lastUpdatedTime),
     failedSyncAttempts = failedSyncAttempts,
+    fileOffset = fileOffset
   )
 
 internal fun UploadRequest.toUploadRequestEntity() =
@@ -97,7 +97,6 @@ internal fun UploadRequest.toUploadRequestEntity() =
     resourceInfoId = resourceInfoId,
     zipFile = zipFile,
     fileSize = fileSize,
-    fileOffset = fileOffset,
     bucketName = bucketName,
     uploadRelativeURL = uploadRelativeURL,
     isMultiPart = isMultiPart,
@@ -106,4 +105,5 @@ internal fun UploadRequest.toUploadRequestEntity() =
     status = status,
     lastUpdatedTime = lastUpdatedTime.toInstant(),
     failedSyncAttempts = failedSyncAttempts,
+    fileOffset = fileOffset
   )

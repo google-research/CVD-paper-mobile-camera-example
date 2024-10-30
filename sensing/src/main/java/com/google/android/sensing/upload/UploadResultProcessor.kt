@@ -55,19 +55,19 @@ private class DefaultUploadResultProcessor(private val sensingEngine: SensingEng
       is UploadResult.Started -> {
         uploadRequest.apply {
           lastUpdatedTime = uploadResult.startTime
-          fileOffset = 0
           status = RequestStatus.UPLOADING
           uploadId = uploadResult.uploadId
           nextPart = 1
           failedSyncAttempts = 0
+          fileOffset = 0
         }
       }
       is UploadResult.Success -> {
         uploadRequest.apply {
           lastUpdatedTime = uploadResult.lastUploadTime
-          fileOffset = uploadRequest.fileOffset + uploadResult.bytesUploaded
           nextPart = uploadRequest.nextPart + 1
           failedSyncAttempts = 0
+          fileOffset = uploadRequest.fileOffset + uploadResult.bytesUploaded
         }
       }
       is UploadResult.Completed -> {

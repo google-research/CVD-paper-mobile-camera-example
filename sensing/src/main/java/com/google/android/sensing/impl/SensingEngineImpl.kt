@@ -34,6 +34,7 @@ import com.google.android.sensing.model.SensorType
 import com.google.android.sensing.model.UploadRequest
 import java.io.BufferedOutputStream
 import java.io.File
+import java.io.FileNotFoundException
 import java.io.FileOutputStream
 import java.time.Instant
 import java.util.Date
@@ -89,37 +90,24 @@ internal class SensingEngineImpl(
 
       /** [CaptureFragment] stores files in app's internal storage directory */
       val resourceFolder = File(context.filesDir, resourceFolderRelativePath)
-
       val outputZipFile = resourceFolder.absolutePath + ".zip"
-      /** Zipping logic from: https://stackoverflow.com/a/63828765 */
-      val zipOutputStream = ZipOutputStream(BufferedOutputStream(FileOutputStream(outputZipFile)))
-      zipOutputStream.use { zos ->
-        resourceFolder.walkTopDown().forEach { file ->
-          val zipFileName =
-            file.absolutePath.removePrefix(resourceFolder.absolutePath).removePrefix("/")
-          val entry = ZipEntry("$zipFileName${(if (file.isDirectory) "/" else "")}")
-          zos.putNextEntry(entry)
-          if (file.isFile) {
-            file.inputStream().use { fis -> fis.copyTo(zos) }
-          }
-        }
-      }
 
       serverConfiguration?.let {
+        createZipFile(resourceFolder, outputZipFile)
         val uploadRequest =
           UploadRequest(
             requestUuid = UUID.randomUUID(),
             resourceInfoId = resourceInfo.resourceInfoId,
             zipFile = outputZipFile,
             fileSize = File(outputZipFile).length(),
-            fileOffset = 0L,
             bucketName = serverConfiguration.bucketName,
             uploadRelativeURL = uploadRelativeUrl,
             isMultiPart = serverConfiguration.networkConfiguration.isMultiPart,
             nextPart = 1,
             uploadId = null,
             status = RequestStatus.PENDING,
-            lastUpdatedTime = Date.from(Instant.now())
+            lastUpdatedTime = Date.from(Instant.now()),
+            fileOffset = 0L
           )
         database.addUploadRequest(uploadRequest)
         emit(SensorCaptureResult.UploadRequestCreated(uploadRequest.requestUuid.toString()))
@@ -211,6 +199,63 @@ internal class SensingEngineImpl(
 
   override suspend fun deleteSensorMetaData(uploadURL: String) {
     TODO("Not yet implemented")
+  }
+
+  override suspend fun resetFailedUploadRequests() {
+    val failedUploadRequestList: List<UploadRequest> =
+      database.listUploadRequests(status = RequestStatus.FAILED)
+    // Extract the resourceInfoIds from pending requests for quick lookup
+    val pendingResourceIds =
+      database.listUploadRequests(status = RequestStatus.PENDING).map { it.resourceInfoId }.toSet()
+    // Extract the resourceInfoIds from uploaded requests for quick lookup
+    val uploadedResourceIds =
+      database.listUploadRequests(status = RequestStatus.UPLOADED).map { it.resourceInfoId }.toSet()
+    // Filter failed requests whose resourceInfoId is not in pending and completed requests
+    val failedNotInPendingOrCompletedList =
+      failedUploadRequestList.filter {
+        it.resourceInfoId !in pendingResourceIds && it.resourceInfoId !in uploadedResourceIds
+      }
+
+    failedNotInPendingOrCompletedList.forEach { failedRequest ->
+      val uploadRequest =
+        with(failedRequest) {
+          UploadRequest(
+            requestUuid = UUID.randomUUID(),
+            resourceInfoId = resourceInfoId,
+            zipFile = zipFile,
+            fileSize = fileSize,
+            bucketName = bucketName,
+            uploadRelativeURL = uploadRelativeURL,
+            isMultiPart = isMultiPart
+          )
+        }
+      with(File(uploadRequest.zipFile)) {
+        if (!this.exists()) {
+          val folderPath = this.absolutePath.substring(0, this.absolutePath.length - 4)
+          if (!File(folderPath).exists()) throw FileNotFoundException()
+          val resourceFolder = File(folderPath)
+          createZipFile(resourceFolder, this.absolutePath)
+        }
+      }
+      database.addUploadRequest(uploadRequest)
+    }
+  }
+
+  /** function to create zip file from given path details [resourceFolder] and [outputZipFile] */
+  private fun createZipFile(resourceFolder: File, outputZipFile: String) {
+    /** Zipping logic from: https://stackoverflow.com/a/63828765 */
+    val zipOutputStream = ZipOutputStream(BufferedOutputStream(FileOutputStream(outputZipFile)))
+    zipOutputStream.use { zos ->
+      resourceFolder.walkTopDown().forEach { file ->
+        val zipFileName =
+          file.absolutePath.removePrefix(resourceFolder.absolutePath).removePrefix("/")
+        val entry = ZipEntry("$zipFileName${(if (file.isDirectory) "/" else "")}")
+        zos.putNextEntry(entry)
+        if (file.isFile) {
+          file.inputStream().use { fis -> fis.copyTo(zos) }
+        }
+      }
+    }
   }
 
   companion object {

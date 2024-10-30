@@ -16,6 +16,7 @@
 
 package com.google.android.sensing.model
 
+import java.time.Instant
 import java.util.Date
 import java.util.UUID
 
@@ -25,13 +26,13 @@ data class UploadRequest(
   val resourceInfoId: String,
   val zipFile: String,
   val fileSize: Long,
-  var fileOffset: Long,
   val bucketName: String,
   val uploadRelativeURL: String,
-  val isMultiPart: Boolean,
-  var nextPart: Int,
+  val isMultiPart: Boolean = true,
+  var nextPart: Int = 1,
   var uploadId: String? = null,
-  var status: RequestStatus,
-  var lastUpdatedTime: Date,
+  var status: RequestStatus = RequestStatus.PENDING,
+  var lastUpdatedTime: Date = Date.from(Instant.now()),
   var failedSyncAttempts: Int = 0,
+  var fileOffset: Long = 0,
 )
