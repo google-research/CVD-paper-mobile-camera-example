@@ -48,6 +48,16 @@ internal abstract class CaptureInfoDao {
   }
 
   @Query("""
+    SELECT * FROM CaptureInfoEntity WHERE captureFolder=:captureFolder
+  """)
+  abstract suspend fun getCaptureInfoEntityByFolder(captureFolder: String): CaptureInfoEntity?
+
+  @Transaction
+  open suspend fun getCaptureInfoByFolder(captureFolder: String): CaptureInfo? {
+    return getCaptureInfoEntityByFolder(captureFolder)?.toCaptureInfo()
+  }
+
+  @Query("""
     DELETE FROM CaptureInfoEntity WHERE captureId=:captureId
   """)
   abstract suspend fun deleteCaptureInfo(captureId: String): Int

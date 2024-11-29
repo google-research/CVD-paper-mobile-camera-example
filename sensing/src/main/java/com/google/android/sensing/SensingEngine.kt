@@ -36,8 +36,11 @@ interface SensingEngine {
   /** Get CaptureInfo record given @param captureId */
   suspend fun getCaptureInfo(captureId: String): CaptureInfo
 
+  /** Get CaptureInfo record given @param captureFolder */
+  suspend fun getCaptureInfoByFolder(captureFolder: String): CaptureInfo?
+
   /** Delete all data associated with [captureId] */
-  suspend fun deleteDataInCapture(captureId: String): Boolean
+  suspend fun deleteDataInCapture(captureId: String, isRecapture: Boolean): Boolean
 
   /**
    * Responsible for creating resource records for captured data and completing upload setup. This

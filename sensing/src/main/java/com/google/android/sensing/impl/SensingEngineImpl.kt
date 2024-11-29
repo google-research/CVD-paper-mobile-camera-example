@@ -60,14 +60,18 @@ internal class SensingEngineImpl(
 
   /** TODO Move zipping and creation of UploadRequest to sync section. */
   override suspend fun onCaptureCompleteCallback(captureInfo: CaptureInfo) = flow {
-    if (captureInfo.recapture == true) {
-      try {
-        val inRecordCaptureInfo = getCaptureInfo(captureInfo.captureId!!)
-        deleteDataInCapture(inRecordCaptureInfo.captureId!!)
-        moveDataFromCacheToFiles(inRecordCaptureInfo.captureFolder)
-      } catch (_: ResourceNotFoundException) {}
-    } // else we don't need to worry about it because the capture module stored data in the
-    // internal filesDir
+    try {
+      val inRecordCaptureInfo =
+        if (captureInfo.recapture == true) {
+          getCaptureInfo(captureInfo.captureId!!)
+        } else {
+          getCaptureInfoByFolder(captureInfo.captureFolder)
+        }
+      inRecordCaptureInfo?.let { info ->
+        deleteDataInCapture(info.captureId!!, captureInfo.recapture == true)
+        moveDataFromCacheToFiles(info.captureFolder)
+      }
+    } catch (_: ResourceNotFoundException) {}
     database.addCaptureInfo(captureInfo)
     emit(SensorCaptureResult.CaptureInfoCreated(captureInfo))
     CaptureUtil.sensorsInvolved(captureInfo.captureType).forEach {
@@ -169,7 +173,11 @@ internal class SensingEngineImpl(
     return database.getCaptureInfo(captureId)
   }
 
-  override suspend fun deleteDataInCapture(captureId: String): Boolean {
+  override suspend fun getCaptureInfoByFolder(captureFolder: String): CaptureInfo? {
+    return database.getCaptureInfoByFolder(captureFolder)
+  }
+
+  override suspend fun deleteDataInCapture(captureId: String, isRecapture: Boolean): Boolean {
     val captureInfo =
       try {
         getCaptureInfo(captureId)
@@ -179,18 +187,21 @@ internal class SensingEngineImpl(
 
     // Step 1: Delete db records
     database.deleteRecordsInCapture(captureId)
-    // Step 2: delete the captureFolder
-    val captureFile = File(context.filesDir, captureInfo.captureFolder)
-    val parentFile = captureFile.parentFile
-    val deleted: Boolean
-    withContext(Dispatchers.IO) {
-      deleted = captureFile.deleteRecursively()
-      // delete Participant's folder if there are no data
-      if (parentFile?.list()?.isEmpty() == true) {
-        parentFile.delete()
+    if (isRecapture) {
+      // Step 2: delete the captureFolder
+      val captureFile = File(context.filesDir, captureInfo.captureFolder)
+      val parentFile = captureFile.parentFile
+      val deleted: Boolean
+      withContext(Dispatchers.IO) {
+        deleted = captureFile.deleteRecursively()
+        // delete Participant's folder if there are no data
+        if (parentFile?.list()?.isEmpty() == true) {
+          parentFile.delete()
+        }
       }
+      return deleted
     }
-    return deleted
+    return false
   }
 
   override suspend fun deleteSensorData(uploadURL: String) {

@@ -100,6 +100,10 @@ internal class DatabaseImpl(context: Context, databaseConfig: DatabaseConfigurat
       ?: throw ResourceNotFoundException("CaptureInfo", captureId)
   }
 
+  override suspend fun getCaptureInfoByFolder(captureFolder: String): CaptureInfo? {
+    return captureInfoDao.getCaptureInfoByFolder(captureFolder)
+  }
+
   override suspend fun deleteRecordsInCapture(captureId: String): Boolean {
     /* We only need to delete CaptureInfo record as we CASCADE it. */
     return captureInfoDao.deleteCaptureInfo(captureId) == 1
