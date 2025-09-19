@@ -36,6 +36,6 @@ sealed class UploadResult {
   data class Completed(override val uploadRequest: UploadRequest, val completeTime: Date) :
     UploadResult()
 
-  data class Failure(override val uploadRequest: UploadRequest, val uploadError: Exception) :
+  data class Failure(override val uploadRequest: UploadRequest, val uploadError: Throwable) :
     UploadResult()
 }
